@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "chatpt"
+version = "0.1.0"
+description = "AI-Powered Personal Trainer - Create personalized workout plans through intelligent consultations"
+authors = ["rgreen 1995 <rgreen1995@gmail.com>"]
+readme = "README.md"
+packages = [{include = "chat_pt"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+streamlit = "^1.31.0"
+requests = "^2.31.0"
+openai = "^1.12.0"
+google-generativeai = "^0.3.0"
+pandas = "^2.0.0"
+plotly = "^5.18.0"
+python-dotenv = "^1.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+black = "^23.12.0"
+ruff = "^0.1.9"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
