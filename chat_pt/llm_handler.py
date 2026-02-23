@@ -103,7 +103,19 @@ IMPORTANT: After providing a workout plan, you can continue the conversation! Th
 - Update the plan due to injuries or schedule changes
 - Get clarification on nutrition or recovery
 
-If the client requests changes, provide an updated JSON plan with the modifications. The conversation history is preserved, so you can reference previous discussions."""
+If the client requests changes to the workout plan:
+1. Acknowledge the change they want
+2. Provide the COMPLETE updated JSON plan (not just the changed parts)
+3. Use the same JSON format as before
+4. Include all days and exercises, even if only some changed
+
+IMPORTANT: Keep plans concise to avoid truncation. Focus on the essential information:
+- Include the core schedule and exercises
+- Keep notes brief and actionable
+- Avoid excessive detail in nutrition/recovery sections
+- If a very detailed plan is needed, offer to provide it in chunks
+
+The conversation history is preserved, so you can reference previous discussions. Always output the full JSON when updating a plan so it can be saved properly."""
 
     def chat(self, messages: List[Dict[str, str]]) -> str:
         """
@@ -168,12 +180,13 @@ If the client requests changes, provide an updated JSON plan with the modificati
             response = chat.send_message(full_prompt)
             return response.text
 
-    def extract_workout_plan(self, response: str) -> Optional[Dict[str, Any]]:
+    def extract_workout_plan(self, response: str, debug: bool = False) -> Optional[Dict[str, Any]]:
         """
         Extract JSON workout plan from LLM response if present.
 
         Args:
             response: LLM response text
+            debug: If True, print debug information
 
         Returns:
             Parsed JSON dict or None if no valid JSON found
@@ -186,11 +199,15 @@ If the client requests changes, provide an updated JSON plan with the modificati
             end = response.find("```", start)
             if end != -1:
                 json_str = response[start:end].strip()
+                if debug:
+                    print("Found JSON in ```json code block")
         elif "```" in response:
             start = response.find("```") + 3
             end = response.find("```", start)
             if end != -1:
                 json_str = response[start:end].strip()
+                if debug:
+                    print("Found JSON in ``` code block")
 
         # If no code block found, look for JSON object
         if not json_str:
@@ -206,19 +223,42 @@ If the client requests changes, provide an updated JSON plan with the modificati
                         brace_count -= 1
                         if brace_count == 0:
                             json_str = response[start_idx:i+1]
+                            if debug:
+                                print("Found raw JSON object")
                             break
 
         if not json_str:
+            if debug:
+                print("No JSON found in response")
+                print(f"Response preview: {response[:200]}...")
             return None
 
         try:
             plan = json.loads(json_str)
             # Validate required fields
             if "schedule" in plan and isinstance(plan["schedule"], dict):
+                if debug:
+                    print(f"✓ Valid workout plan found with {len(plan['schedule'])} days")
                 return plan
+            else:
+                if debug:
+                    print("JSON parsed but missing 'schedule' field or schedule is not a dict")
+                    print(f"Available keys: {plan.keys()}")
+                return None
         except json.JSONDecodeError as e:
-            # Log the error for debugging
-            print(f"JSON decode error: {e}")
-            return None
+            # Check if it's an incomplete JSON (common when token limit is hit)
+            error_msg = str(e)
+            if "Expecting" in error_msg or "Unterminated" in error_msg:
+                print(f"⚠️ Incomplete JSON detected: {error_msg}")
+                if debug:
+                    print("The LLM response was likely truncated. Try asking for a shorter or more concise plan.")
+                    # Show where it failed
+                    lines = json_str.split('\n')
+                    print(f"JSON has {len(lines)} lines, failed near the end")
+            else:
+                print(f"JSON decode error: {e}")
 
-        return None
+            if debug:
+                print(f"Failed to parse JSON string (first 500 chars): {json_str[:500]}")
+                print(f"Last 200 chars: ...{json_str[-200:]}")
+            return None

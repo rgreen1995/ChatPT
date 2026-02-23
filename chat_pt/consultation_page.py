@@ -88,19 +88,64 @@ def render():
                         return
 
                     # Check if response contains workout plan
-                    workout_plan = llm.extract_workout_plan(response)
+                    workout_plan = llm.extract_workout_plan(response, debug=True)
+
+                    # Display the response
+                    st.markdown(response)
 
                     if workout_plan:
-                        # Save workout plan
+                        # Save workout plan (this will update if one already exists)
                         save_workout_plan(st.session_state.consultation_id, workout_plan)
                         st.session_state.workout_plan = workout_plan
 
-                        # Show success message
-                        st.markdown(response)
-                        st.success("✅ Workout plan generated successfully!")
+                        # Show success message with details
+                        num_days = len(workout_plan.get('schedule', {}))
+                        if st.session_state.get('workout_plan_previously_generated'):
+                            st.success(f"✅ Workout plan updated successfully! ({num_days} training days)")
+                        else:
+                            st.success(f"✅ Workout plan generated successfully! ({num_days} training days)")
+                            st.session_state.workout_plan_previously_generated = True
+
+                        # Show a preview of what was detected
+                        with st.expander("📋 Detected Plan Summary"):
+                            st.write(f"**Training days:** {num_days}")
+                            st.write(f"**Schedule:** {', '.join(workout_plan.get('schedule', {}).keys())}")
+                            if 'summary' in workout_plan:
+                                st.write(f"**Summary:** {workout_plan['summary'][:200]}...")
                     else:
-                        # Regular conversation
-                        st.markdown(response)
+                        # No plan detected - check if response contains JSON-like content
+                        has_json_markers = '```json' in response.lower() or '```' in response or '{' in response
+
+                        if has_json_markers:
+                            # Check if JSON looks incomplete (common signs)
+                            is_incomplete = (
+                                response.rstrip().endswith(',') or
+                                response.rstrip().endswith(':') or
+                                not response.rstrip().endswith('}')
+                            )
+
+                            if is_incomplete:
+                                st.error("⚠️ The workout plan JSON appears incomplete - the AI response was cut off mid-generation.")
+                                st.info("💡 **Solution:** Ask me to provide a more concise plan, or ask for just the workout schedule without the detailed nutrition/recovery sections.")
+
+                                with st.expander("Why does this happen?"):
+                                    st.markdown("""
+                                    The AI has a maximum response length. Very detailed plans can exceed this limit.
+
+                                    **Options:**
+                                    1. Ask for "just the workout schedule in JSON"
+                                    2. Request "a more concise plan with less detail"
+                                    3. Get the plan in chunks (schedule first, then nutrition separately)
+                                    """)
+                            else:
+                                st.warning("⚠️ I detected JSON-like content but couldn't extract a valid workout plan. The JSON might be missing the 'schedule' field.")
+                                st.info("💡 Please ask me to provide the complete workout plan in the correct JSON format.")
+                        elif st.session_state.get('workout_plan'):
+                            # User has a plan but this response doesn't contain one
+                            # Check if they're asking for changes
+                            change_keywords = ['change', 'update', 'modify', 'adjust', 'swap', 'replace', 'add', 'remove']
+                            if any(word in response.lower() for word in change_keywords):
+                                st.info("💡 Tip: If you want to save these changes, ask me to provide the complete updated plan in JSON format!")
 
                     # Save assistant message
                     assistant_message = {"role": "assistant", "content": response}
