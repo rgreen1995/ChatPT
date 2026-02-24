@@ -102,6 +102,9 @@ IMPORTANT: After providing a workout plan, you can continue the conversation! Th
 - Ask questions about exercises or techniques
 - Update the plan due to injuries or schedule changes
 - Get clarification on nutrition or recovery
+- If the client wants multiple blocks then call it block 1 - day 1 but otherwise keep to the 
+exact same format, so don't have block inside the reps or anything like that. 
+
 
 If the client requests changes to the workout plan:
 1. Acknowledge the change they want
@@ -114,7 +117,8 @@ IMPORTANT: Keep plans concise to avoid truncation. Focus on the essential inform
 - Keep notes brief and actionable
 - Avoid excessive detail in nutrition/recovery sections
 - If a very detailed plan is needed, offer to provide it in chunks
-
+- The most important part is the core schedule and exercises, so focus on that first and ensure 
+that the json format is correct and complete. 
 The conversation history is preserved, so you can reference previous discussions. Always output the full JSON when updating a plan so it can be saved properly."""
 
     def chat(self, messages: List[Dict[str, str]]) -> str:

@@ -15,9 +15,17 @@ def init_db():
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
+            email TEXT UNIQUE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+
+    # Migration: Add email column if it doesn't exist
+    try:
+        cursor.execute("SELECT email FROM users LIMIT 1")
+    except sqlite3.OperationalError:
+        cursor.execute("ALTER TABLE users ADD COLUMN email TEXT UNIQUE")
+        conn.commit()
 
     # Consultations table
     cursor.execute("""
@@ -199,3 +207,23 @@ def get_exercise_progress(user_id: int, exercise_name: str) -> List[Dict[str, An
     ]
     conn.close()
     return progress
+
+def get_or_create_user_by_email(email: str, name: str) -> int:
+    """Get existing user by email or create a new one."""
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+
+    # Try to find existing user by email
+    cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+    result = cursor.fetchone()
+
+    if result:
+        user_id = result[0]
+    else:
+        # Create new user with email
+        cursor.execute("INSERT INTO users (name, email) VALUES (?, ?)", (name, email))
+        user_id = cursor.lastrowid
+        conn.commit()
+
+    conn.close()
+    return user_id

@@ -1,6 +1,7 @@
 import streamlit as st
-from chat_pt.database import init_db, create_user, get_users, create_consultation, get_user_consultations
+from chat_pt.database import init_db, create_user, get_users, create_consultation, get_user_consultations, get_or_create_user_by_email
 from chat_pt.llm_handler import LLMHandler
+from chat_pt.google_auth import is_google_auth_configured, get_google_authenticator
 
 # Initialize database
 init_db()
@@ -9,8 +10,11 @@ init_db()
 st.set_page_config(
     page_title="ChatPT - AI Personal Trainer",
     page_icon="💪",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="centered",  # Better for mobile
+    initial_sidebar_state="collapsed",  # Collapsed by default on mobile
+    menu_items={
+        'About': "ChatPT - Your AI-Powered Personal Trainer"
+    }
 )
 
 # Initialize session state
@@ -23,13 +27,40 @@ if "page" not in st.session_state:
 if "llm_provider" not in st.session_state:
     st.session_state.llm_provider = "anthropic"
 
+# Google OAuth login (if configured)
+google_auth_enabled = is_google_auth_configured()
+authenticator = None
+
+if google_auth_enabled:
+    try:
+        authenticator = get_google_authenticator()
+        if authenticator and st.session_state.user_id is None:
+            authenticator.check_authentification()
+            authenticator.login()
+
+            if st.session_state.get('connected', False):
+                user_info = st.session_state.get('user_info', {})
+                email = user_info.get('email')
+                name = user_info.get('name')
+
+                if email and name:
+                    # Create or get user based on Google email
+                    user_id = get_or_create_user_by_email(email, name)
+                    st.session_state.user_id = user_id
+                    st.session_state.user_name = name
+                    st.session_state.user_email = email
+                    st.rerun()
+    except Exception as e:
+        st.sidebar.warning(f"Google OAuth error: {e}. Using manual login.")
+        google_auth_enabled = False
+
 # Sidebar navigation
 with st.sidebar:
     st.title("💪 ChatPT")
     st.markdown("---")
 
     # User selection/creation
-    if st.session_state.user_id is None:
+    if st.session_state.user_id is None and not google_auth_enabled:
         st.subheader("Welcome!")
         users = get_users()
 
@@ -132,6 +163,18 @@ if st.session_state.user_id is None:
         export ANTHROPIC_API_KEY="your-anthropic-key"
         export GEMINI_API_KEY="your-gemini-key"
         ```
+
+        ### Google OAuth (Optional)
+
+        To enable Google Sign-In, set these environment variables:
+
+        ```bash
+        export GOOGLE_CLIENT_ID="your-google-client-id"
+        export GOOGLE_CLIENT_SECRET="your-google-client-secret"
+        export GOOGLE_REDIRECT_URI="http://localhost:8501"
+        ```
+
+        Get your credentials from [Google Cloud Console](https://console.cloud.google.com/)
 
         Or create a `.env` file in the project directory.
         """)
