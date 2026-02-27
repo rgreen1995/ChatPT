@@ -41,6 +41,7 @@ with st.sidebar:
         try:
             authenticator = get_google_authenticator()
             if authenticator:
+                st.write("**Login with Google:**")
                 authenticator.check_authentification()
                 authenticator.login()
 
@@ -57,11 +58,20 @@ with st.sidebar:
                         st.session_state.user_email = email
                         st.rerun()
         except Exception as e:
-            st.warning(f"Google OAuth error: {e}")
+            st.error("⚠️ Google login is currently unavailable.")
+            with st.expander("Show error details"):
+                st.code(str(e))
+                st.info("""
+**Common fixes:**
+1. Check that GOOGLE_REDIRECT_URI in secrets matches your app URL
+2. Verify redirect URI is authorized in Google Cloud Console
+3. Use manual account creation below instead
+                """)
             google_auth_enabled = False
 
-        st.markdown("---")
-        st.write("**Or create account manually:**")
+        if google_auth_enabled:
+            st.markdown("---")
+            st.write("**Or create account manually:**")
 
     # User selection/creation
     if st.session_state.user_id is None and not google_auth_enabled:
