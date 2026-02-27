@@ -1,5 +1,9 @@
 import streamlit as st
-from chat_pt.database import init_db, create_user, get_users, create_consultation, get_user_consultations, get_or_create_user_by_email
+from chat_pt.database import (
+    init_db, create_user, get_users, create_consultation,
+    get_user_consultations, get_or_create_user_by_email,
+    authenticate_user, user_exists
+)
 from chat_pt.llm_handler import LLMHandler
 from chat_pt.google_auth import is_google_auth_configured, get_google_authenticator
 
@@ -38,71 +42,130 @@ with st.sidebar:
 
     # Google OAuth login section
     if google_auth_enabled and st.session_state.user_id is None:
-        try:
-            authenticator = get_google_authenticator()
-            if authenticator:
-                st.write("**Login with Google:**")
-                authenticator.check_authentification()
-                authenticator.login()
+        # Add option to skip Google auth (useful on mobile where it can be buggy)
+        if 'skip_google_auth' not in st.session_state:
+            st.session_state.skip_google_auth = False
 
-                if st.session_state.get('connected', False):
-                    user_info = st.session_state.get('user_info', {})
-                    email = user_info.get('email')
-                    name = user_info.get('name')
+        if not st.session_state.skip_google_auth:
+            try:
+                authenticator = get_google_authenticator()
+                if authenticator:
+                    st.write("**Quick Login with Google:**")
 
-                    if email and name:
-                        # Create or get user based on Google email
-                        user_id = get_or_create_user_by_email(email, name)
-                        st.session_state.user_id = user_id
-                        st.session_state.user_name = name
-                        st.session_state.user_email = email
+                    # Wrap in try-catch to handle mobile browser issues
+                    try:
+                        authenticator.check_authentification()
+                        authenticator.login()
+
+                        if st.session_state.get('connected', False):
+                            user_info = st.session_state.get('user_info', {})
+                            email = user_info.get('email')
+                            name = user_info.get('name')
+
+                            if email and name:
+                                # Create or get user based on Google email
+                                user_id = get_or_create_user_by_email(email, name, auth_provider='google')
+                                st.session_state.user_id = user_id
+                                st.session_state.user_name = name
+                                st.session_state.user_email = email
+                                st.rerun()
+                    except Exception as auth_error:
+                        # Gracefully handle authentication widget errors
+                        st.warning("Google login widget failed to load. Using email/password instead.")
+                        st.session_state.skip_google_auth = True
                         st.rerun()
-        except Exception as e:
-            st.error("⚠️ Google login is currently unavailable.")
-            with st.expander("Show error details"):
-                st.code(str(e))
-                st.info("""
-**Common fixes:**
-1. Check that GOOGLE_REDIRECT_URI in secrets matches your app URL
-2. Verify redirect URI is authorized in Google Cloud Console
-3. Use manual account creation below instead
-                """)
-            google_auth_enabled = False
 
-        if google_auth_enabled:
+                    # Add small button to skip Google auth
+                    if st.button("Use Email/Password Instead", key="skip_google", help="Skip Google login"):
+                        st.session_state.skip_google_auth = True
+                        st.rerun()
+
+            except Exception as e:
+                # Handle configuration errors
+                st.warning("⚠️ Google login is not available.")
+                with st.expander("Why?"):
+                    st.caption("""
+**Possible reasons:**
+- Mobile browser compatibility issues
+- Configuration not complete
+- Network restrictions
+
+**Solution:** Use email/password login below instead.
+                    """)
+                st.session_state.skip_google_auth = True
+
             st.markdown("---")
-            st.write("**Or create account manually:**")
 
     # User selection/creation (only show when NOT logged in)
     if st.session_state.user_id is None:
         st.subheader("Welcome!")
-        users = get_users()
 
-        if users:
-            user_options = ["Create New User"] + [f"{u['name']} (ID: {u['id']})" for u in users]
-            selected = st.selectbox("Select User", user_options)
+        # Initialize auth mode in session state
+        if 'auth_mode' not in st.session_state:
+            st.session_state.auth_mode = 'login'
 
-            if selected != "Create New User":
-                selected_user = next(u for u in users if f"{u['name']} (ID: {u['id']})" == selected)
-                if st.button("Login"):
-                    st.session_state.user_id = selected_user["id"]
-                    st.session_state.user_name = selected_user["name"]
-                    st.rerun()
-            else:
-                new_name = st.text_input("Enter your name")
-                if st.button("Create Account") and new_name:
-                    user_id = create_user(new_name)
-                    st.session_state.user_id = user_id
-                    st.session_state.user_name = new_name
-                    st.rerun()
-        else:
-            st.write("No users yet. Create your account!")
-            new_name = st.text_input("Enter your name")
-            if st.button("Create Account") and new_name:
-                user_id = create_user(new_name)
-                st.session_state.user_id = user_id
-                st.session_state.user_name = new_name
+        # Toggle between login and signup
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Login", use_container_width=True, type="primary" if st.session_state.auth_mode == 'login' else "secondary"):
+                st.session_state.auth_mode = 'login'
                 st.rerun()
+        with col2:
+            if st.button("Sign Up", use_container_width=True, type="primary" if st.session_state.auth_mode == 'signup' else "secondary"):
+                st.session_state.auth_mode = 'signup'
+                st.rerun()
+
+        st.markdown("---")
+
+        if st.session_state.auth_mode == 'login':
+            # Login form
+            st.write("**Login to your account:**")
+            email = st.text_input("Email", key="login_email")
+            password = st.text_input("Password", type="password", key="login_password")
+
+            if st.button("Login", key="login_submit"):
+                if not email or not password:
+                    st.error("Please enter both email and password")
+                else:
+                    user = authenticate_user(email, password)
+                    if user:
+                        st.session_state.user_id = user["id"]
+                        st.session_state.user_name = user["name"]
+                        st.session_state.user_email = user["email"]
+                        st.success(f"Welcome back, {user['name']}!")
+                        st.rerun()
+                    else:
+                        st.error("Invalid email or password")
+
+        else:
+            # Signup form
+            st.write("**Create a new account:**")
+            name = st.text_input("Name", key="signup_name")
+            email = st.text_input("Email", key="signup_email")
+            password = st.text_input("Password", type="password", key="signup_password")
+            password_confirm = st.text_input("Confirm Password", type="password", key="signup_password_confirm")
+
+            if st.button("Create Account", key="signup_submit"):
+                # Validation
+                if not name or not email or not password:
+                    st.error("Please fill in all fields")
+                elif password != password_confirm:
+                    st.error("Passwords don't match")
+                elif len(password) < 6:
+                    st.error("Password must be at least 6 characters")
+                elif user_exists(email):
+                    st.error("An account with this email already exists")
+                else:
+                    # Create user
+                    try:
+                        user_id = create_user(name, email, password, auth_provider='email')
+                        st.session_state.user_id = user_id
+                        st.session_state.user_name = name
+                        st.session_state.user_email = email
+                        st.success(f"Account created! Welcome, {name}!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error creating account: {str(e)}")
     else:
         # User IS logged in
         st.success(f"Logged in as: {st.session_state.user_name}")
@@ -111,6 +174,9 @@ with st.sidebar:
             st.session_state.user_id = None
             st.session_state.user_name = None
             st.session_state.page = "home"
+            # Reset auth mode
+            st.session_state.auth_mode = 'login'
+            st.session_state.skip_google_auth = False
             # Clear Google auth session if it exists
             if 'connected' in st.session_state:
                 st.session_state.connected = False

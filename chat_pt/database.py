@@ -2,8 +2,25 @@ import sqlite3
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 import json
+import hashlib
+import secrets
 
 DATABASE_NAME = "chatpt.db"
+
+def hash_password(password: str, salt: str = None) -> tuple[str, str]:
+    """Hash a password with a salt using SHA-256."""
+    if salt is None:
+        salt = secrets.token_hex(16)
+
+    # Combine password and salt, then hash
+    password_salt = (password + salt).encode('utf-8')
+    hashed = hashlib.sha256(password_salt).hexdigest()
+    return hashed, salt
+
+def verify_password(password: str, hashed_password: str, salt: str) -> bool:
+    """Verify a password against a hash."""
+    test_hash, _ = hash_password(password, salt)
+    return test_hash == hashed_password
 
 def init_db():
     """Initialize the database with required tables."""
@@ -16,15 +33,26 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             email TEXT UNIQUE,
+            password_hash TEXT,
+            password_salt TEXT,
+            auth_provider TEXT DEFAULT 'email',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
-    # Migration: Add email column if it doesn't exist
+    # Migrations: Add columns if they don't exist
     try:
         cursor.execute("SELECT email FROM users LIMIT 1")
     except sqlite3.OperationalError:
         cursor.execute("ALTER TABLE users ADD COLUMN email TEXT UNIQUE")
+        conn.commit()
+
+    try:
+        cursor.execute("SELECT password_hash FROM users LIMIT 1")
+    except sqlite3.OperationalError:
+        cursor.execute("ALTER TABLE users ADD COLUMN password_hash TEXT")
+        cursor.execute("ALTER TABLE users ADD COLUMN password_salt TEXT")
+        cursor.execute("ALTER TABLE users ADD COLUMN auth_provider TEXT DEFAULT 'email'")
         conn.commit()
 
     # Consultations table
@@ -72,15 +100,65 @@ def init_db():
     conn.commit()
     conn.close()
 
-def create_user(name: str) -> int:
+def create_user(name: str, email: str = None, password: str = None, auth_provider: str = 'email') -> int:
     """Create a new user and return their ID."""
     conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO users (name) VALUES (?)", (name,))
+
+    if password:
+        # Hash the password
+        hashed_password, salt = hash_password(password)
+        cursor.execute(
+            "INSERT INTO users (name, email, password_hash, password_salt, auth_provider) VALUES (?, ?, ?, ?, ?)",
+            (name, email, hashed_password, salt, auth_provider)
+        )
+    else:
+        # Legacy support for users without passwords
+        cursor.execute(
+            "INSERT INTO users (name, email, auth_provider) VALUES (?, ?, ?)",
+            (name, email, auth_provider)
+        )
+
     user_id = cursor.lastrowid
     conn.commit()
     conn.close()
     return user_id
+
+def authenticate_user(email: str, password: str) -> Optional[Dict[str, Any]]:
+    """Authenticate a user by email and password. Returns user dict or None."""
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT id, name, email, password_hash, password_salt FROM users WHERE email = ?",
+        (email,)
+    )
+    result = cursor.fetchone()
+    conn.close()
+
+    if not result:
+        return None
+
+    user_id, name, email, password_hash, password_salt = result
+
+    # Check if user has a password set
+    if not password_hash or not password_salt:
+        return None
+
+    # Verify password
+    if verify_password(password, password_hash, password_salt):
+        return {"id": user_id, "name": name, "email": email}
+
+    return None
+
+def user_exists(email: str) -> bool:
+    """Check if a user with this email already exists."""
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+    result = cursor.fetchone()
+    conn.close()
+    return result is not None
 
 def get_users() -> List[Dict[str, Any]]:
     """Get all users."""
@@ -208,8 +286,8 @@ def get_exercise_progress(user_id: int, exercise_name: str) -> List[Dict[str, An
     conn.close()
     return progress
 
-def get_or_create_user_by_email(email: str, name: str) -> int:
-    """Get existing user by email or create a new one."""
+def get_or_create_user_by_email(email: str, name: str, auth_provider: str = 'google') -> int:
+    """Get existing user by email or create a new one (for OAuth)."""
     conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
 
@@ -220,8 +298,11 @@ def get_or_create_user_by_email(email: str, name: str) -> int:
     if result:
         user_id = result[0]
     else:
-        # Create new user with email
-        cursor.execute("INSERT INTO users (name, email) VALUES (?, ?)", (name, email))
+        # Create new user with email (OAuth users don't have passwords)
+        cursor.execute(
+            "INSERT INTO users (name, email, auth_provider) VALUES (?, ?, ?)",
+            (name, email, auth_provider)
+        )
         user_id = cursor.lastrowid
         conn.commit()
 
