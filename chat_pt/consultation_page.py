@@ -11,6 +11,9 @@ def render():
     """Render the consultation page."""
     st.title("💬 Personal Training Consultation")
 
+    # Show helpful tip at the top
+    st.info("💡 **Tip:** The more information you share about your goals, experience, schedule, and preferences, the better I can tailor your workout plan!")
+
     # Display any stored errors
     if "last_error" in st.session_state:
         st.error(st.session_state.last_error["message"])

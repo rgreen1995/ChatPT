@@ -138,46 +138,44 @@ if st.session_state.user_id is None:
     st.markdown("""
     ## Your AI-Powered Personal Trainer
 
-    ChatPT helps you create personalized workout plans through an intelligent consultation process.
+    ChatPT creates personalized workout plans tailored to your goals, experience, and lifestyle through an intelligent AI consultation.
 
-    ### Features:
-    - 🤖 **AI Consultation**: Chat with advanced AI models (GPT-4, Claude, or Gemini)
-    - 📋 **Custom Plans**: Get tailored workout programs based on your goals
-    - 📊 **Progress Tracking**: Log your workouts and track improvements
-    - 💾 **Conversation History**: Update your plan based on injuries or changes
-    - 🎯 **Multiple LLM Support**: Choose your preferred AI model
+    ### What You'll Get:
+    - 🎯 **Custom Workout Plan**: Designed specifically for your goals and experience level
+    - 💬 **Interactive Consultation**: Chat naturally with AI to build your perfect program
+    - 📋 **Detailed Exercise Programs**: Complete with sets, reps, and progression guidance
+    - 🔄 **Easy Updates**: Modify your plan anytime by chatting with the AI
+    - 📊 **Progress Tracking**: Log workouts and track your improvements over time
+
+    ### How It Works:
+    1. **Create an account** using the sidebar 👈
+    2. **Tell us about yourself** - fitness goals, experience, available time
+    3. **Get your custom plan** - Generated in minutes
+    4. **Start training** - Follow your personalized program
 
     ### Get Started:
     👈 Create an account or login using the sidebar!
     """)
 
-    # API Key setup info
-    with st.expander("⚙️ Setup Instructions"):
-        st.markdown("""
-        ### Required API Keys
+    # Only show setup instructions if this appears to be self-hosted (not on Streamlit Cloud)
+    import os
+    if os.path.exists('.env') or not os.getenv('STREAMLIT_SHARING_MODE'):
+        with st.expander("🔧 Self-Hosting Setup"):
+            st.markdown("""
+            **For developers running ChatPT locally:**
 
-        Set up your environment variables for the LLM provider(s) you want to use:
+            Create a `.env` file with your API keys:
+            ```
+            ANTHROPIC_API_KEY=your-key-here
+            ```
 
-        ```bash
-        export OPENAI_API_KEY="your-openai-key"
-        export ANTHROPIC_API_KEY="your-anthropic-key"
-        export GEMINI_API_KEY="your-gemini-key"
-        ```
-
-        ### Google OAuth (Optional)
-
-        To enable Google Sign-In, set these environment variables:
-
-        ```bash
-        export GOOGLE_CLIENT_ID="your-google-client-id"
-        export GOOGLE_CLIENT_SECRET="your-google-client-secret"
-        export GOOGLE_REDIRECT_URI="http://localhost:8501"
-        ```
-
-        Get your credentials from [Google Cloud Console](https://console.cloud.google.com/)
-
-        Or create a `.env` file in the project directory.
-        """)
+            Optional Google OAuth:
+            ```
+            GOOGLE_CLIENT_ID=your-client-id
+            GOOGLE_CLIENT_SECRET=your-secret
+            GOOGLE_REDIRECT_URI=http://localhost:8501
+            ```
+            """)
 
 elif st.session_state.page == "home":
     st.title(f"Welcome back, {st.session_state.user_name}! 💪")
