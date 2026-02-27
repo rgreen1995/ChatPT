@@ -85,7 +85,7 @@ def render():
                     exercise_data = []
                     for idx, exercise in enumerate(exercises, 1):
                         exercise_data.append({
-                            "#": idx,
+                            "#": exercise.get("sequence", "N/A"),
                             "Exercise": exercise.get("name", "N/A"),
                             "Sets": exercise.get("sets", "N/A"),
                             "Reps": exercise.get("reps", "N/A"),
