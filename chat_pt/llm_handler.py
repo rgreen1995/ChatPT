@@ -35,7 +35,7 @@ class LLMHandler:
             # Store API key for direct REST API calls
             self.client = api_key  # Store the key directly
             # Use correct model name - Claude 3.5 Sonnet
-            self.model = "claude-haiku-4-5-20251001"
+            self.model = "claude-sonnet-4-6"
         elif provider == "gemini":
             api_key = os.getenv("GEMINI_API_KEY")
             if not api_key:
@@ -143,6 +143,9 @@ IMPORTANT: Keep plans concise to avoid truncation. Focus on the essential inform
 - If a very detailed plan is needed, offer to provide it in chunks
 - The most important part is the core schedule and exercises, so focus on that first and ensure 
 that the json format is correct and complete. 
+- REPEAT: THE ABSOLUTELY CRITICAL ASPECT OF THIS CONSULTATION IS THAT A JSON IS CREATED,CREATED IN 
+THE PRESCRIBED FORMAT. BRACKETS MUST BE CHECKED TO ENSURE IT IS NOT TRUNCATED
+
 The conversation history is preserved, so you can reference previous discussions. 
 
 ."""
@@ -177,7 +180,7 @@ The conversation history is preserved, so you can reference previous discussions
 
             data = {
                 "model": self.model,
-                "max_tokens": 4096,
+                "max_tokens": 8000,  # Increased from 4096 to handle longer JSON responses
                 "system": self.get_system_prompt(),
                 "messages": messages,
                 "temperature": 0.7
@@ -209,6 +212,28 @@ The conversation history is preserved, so you can reference previous discussions
 
             response = chat.send_message(full_prompt)
             return response.text
+
+    def is_json_truncated(self, json_str: str) -> bool:
+        """Check if JSON appears to be truncated."""
+        if not json_str:
+            return True
+
+        json_str = json_str.strip()
+
+        # Check for obvious truncation signs
+        truncation_signs = [
+            json_str.endswith(','),
+            json_str.endswith(':'),
+            json_str.endswith('['),
+            json_str.endswith('{'),
+            not json_str.endswith('}') and not json_str.endswith(']'),
+        ]
+
+        # Also check brace balance
+        open_braces = json_str.count('{')
+        close_braces = json_str.count('}')
+
+        return any(truncation_signs) or (open_braces != close_braces)
 
     def extract_workout_plan(self, response: str, debug: bool = False) -> Optional[Dict[str, Any]]:
         """
@@ -276,7 +301,30 @@ The conversation history is preserved, so you can reference previous discussions
                     print(f"Available keys: {plan.keys()}")
                 return None
         except json.JSONDecodeError as e:
-            # Check if it's an incomplete JSON (common when token limit is hit)
+            # Try to salvage partial JSON by attempting to close it
+            if debug:
+                print(f"Initial parse failed: {e}. Attempting to salvage partial JSON...")
+
+            # Try closing incomplete structures
+            salvage_attempts = [
+                json_str + '}}',  # Close two levels
+                json_str + '}',   # Close one level
+                json_str + ']}}', # Close array and objects
+                json_str.rstrip(',') + '}}',  # Remove trailing comma and close
+                json_str.rstrip(',').rstrip() + '}}}',  # Close three levels
+            ]
+
+            for attempt in salvage_attempts:
+                try:
+                    plan = json.loads(attempt)
+                    if "schedule" in plan and isinstance(plan["schedule"], dict) and len(plan["schedule"]) > 0:
+                        if debug:
+                            print(f"✓ Salvaged partial workout plan with {len(plan['schedule'])} days")
+                        return plan
+                except json.JSONDecodeError:
+                    continue
+
+            # Original error handling
             error_msg = str(e)
             if "Expecting" in error_msg or "Unterminated" in error_msg:
                 print(f"⚠️ Incomplete JSON detected: {error_msg}")

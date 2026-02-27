@@ -93,6 +93,39 @@ def render():
                     # Display the response
                     st.markdown(response)
 
+                    # Handle incomplete JSON - auto-retry once
+                    if not workout_plan and ('```json' in response.lower() or '{' in response):
+                        # Check if it looks like truncated JSON
+                        json_start = response.find('{')
+                        if json_start != -1:
+                            potential_json = response[json_start:]
+                            if llm.is_json_truncated(potential_json):
+                                st.warning("⚠️ Detected incomplete JSON. Requesting completion...")
+
+                                # Auto-retry: ask the LLM to provide just the remaining part
+                                retry_prompt = "The previous response was cut off. Please provide the COMPLETE workout plan JSON again, but more concisely. Focus only on the essential schedule and exercises."
+
+                                with st.spinner("Requesting complete plan..."):
+                                    try:
+                                        # Add the retry as a system request (not saved to conversation)
+                                        retry_messages = st.session_state.messages.copy()
+                                        retry_messages.append({"role": "user", "content": retry_prompt})
+
+                                        retry_response = llm.chat(retry_messages)
+                                        workout_plan = llm.extract_workout_plan(retry_response, debug=True)
+
+                                        if workout_plan:
+                                            st.success("✅ Received complete workout plan!")
+                                            # Replace the incomplete response with the complete one
+                                            response = retry_response
+                                            # Clear the warning and show new response
+                                            st.markdown("---")
+                                            st.markdown(retry_response)
+                                        else:
+                                            st.error("Still couldn't extract complete plan. Please ask me to 'provide a more concise workout plan in JSON format'.")
+                                    except Exception as retry_error:
+                                        st.error(f"Retry failed: {str(retry_error)}")
+
                     if workout_plan:
                         # Save workout plan (this will update if one already exists)
                         save_workout_plan(st.session_state.consultation_id, workout_plan)
