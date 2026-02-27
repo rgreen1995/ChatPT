@@ -4,22 +4,33 @@ import tempfile
 import streamlit as st
 from streamlit_google_auth import Authenticate
 
+def get_secret(key: str, default: str = None) -> str:
+    """Get secret from Streamlit secrets or environment variables."""
+    # Try Streamlit secrets first (preferred method)
+    try:
+        if hasattr(st, 'secrets') and key in st.secrets:
+            return st.secrets[key]
+    except (FileNotFoundError, KeyError):
+        pass
+    # Fall back to environment variables
+    return os.getenv(key, default)
+
 def get_google_authenticator():
     """Get Google OAuth authenticator if configured."""
     # Check if using credentials file
-    credentials_path = os.getenv("GOOGLE_CREDENTIALS_PATH")
+    credentials_path = get_secret("GOOGLE_CREDENTIALS_PATH")
     if credentials_path and os.path.exists(credentials_path):
         authenticator = Authenticate(
             secret_credentials_path=credentials_path,
             cookie_name='chatpt_auth_cookie',
-            cookie_key=os.getenv("COOKIE_SECRET_KEY", "default_secret_key_change_me"),
-            redirect_uri=os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8501"),
+            cookie_key=get_secret("COOKIE_SECRET_KEY", "default_secret_key_change_me"),
+            redirect_uri=get_secret("GOOGLE_REDIRECT_URI", "http://localhost:8501"),
         )
         return authenticator
 
-    # Otherwise, check for env vars and create credentials dynamically
-    client_id = os.getenv("GOOGLE_CLIENT_ID")
-    client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+    # Otherwise, check for secrets and create credentials dynamically
+    client_id = get_secret("GOOGLE_CLIENT_ID")
+    client_secret = get_secret("GOOGLE_CLIENT_SECRET")
 
     if not (client_id and client_secret):
         return None
@@ -32,7 +43,7 @@ def get_google_authenticator():
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
             "token_uri": "https://oauth2.googleapis.com/token",
             "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "redirect_uris": [os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8501")]
+            "redirect_uris": [get_secret("GOOGLE_REDIRECT_URI", "http://localhost:8501")]
         }
     }
 
@@ -44,17 +55,17 @@ def get_google_authenticator():
     authenticator = Authenticate(
         secret_credentials_path=temp_path,
         cookie_name='chatpt_auth_cookie',
-        cookie_key=os.getenv("COOKIE_SECRET_KEY", "default_secret_key_change_me"),
-        redirect_uri=os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8501"),
+        cookie_key=get_secret("COOKIE_SECRET_KEY", "default_secret_key_change_me"),
+        redirect_uri=get_secret("GOOGLE_REDIRECT_URI", "http://localhost:8501"),
     )
     return authenticator
 
 def is_google_auth_configured():
     """Check if Google OAuth is properly configured."""
-    credentials_path = os.getenv("GOOGLE_CREDENTIALS_PATH")
+    credentials_path = get_secret("GOOGLE_CREDENTIALS_PATH")
     if credentials_path and os.path.exists(credentials_path):
         return True
 
-    client_id = os.getenv("GOOGLE_CLIENT_ID")
-    client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+    client_id = get_secret("GOOGLE_CLIENT_ID")
+    client_secret = get_secret("GOOGLE_CLIENT_SECRET")
     return bool(client_id and client_secret)

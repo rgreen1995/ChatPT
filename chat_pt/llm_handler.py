@@ -5,9 +5,21 @@ from dotenv import load_dotenv
 import requests
 import google.generativeai as genai
 from openai import OpenAI
+import streamlit as st
 
-# Load environment variables from .env file
+# Load environment variables from .env file (fallback for local dev)
 load_dotenv()
+
+def get_secret(key: str, default: str = None) -> str:
+    """Get secret from Streamlit secrets or environment variables."""
+    # Try Streamlit secrets first (preferred method)
+    try:
+        if hasattr(st, 'secrets') and key in st.secrets:
+            return st.secrets[key]
+    except (FileNotFoundError, KeyError):
+        pass
+    # Fall back to environment variables
+    return os.getenv(key, default)
 
 class LLMHandler:
     """Handle interactions with different LLM providers."""
@@ -22,24 +34,24 @@ class LLMHandler:
         self.provider = provider
 
         if provider == "openai":
-            api_key = os.getenv("OPENAI_API_KEY")
+            api_key = get_secret("OPENAI_API_KEY")
             if not api_key:
-                raise ValueError("OPENAI_API_KEY not found in environment variables")
+                raise ValueError("OPENAI_API_KEY not found in Streamlit secrets or environment variables")
             self.client = OpenAI(api_key=api_key)
             self.model = "gpt-4o"
         elif provider == "anthropic":
-            api_key = os.getenv("ANTHROPIC_API_KEY")
+            api_key = get_secret("ANTHROPIC_API_KEY")
             if not api_key:
-                raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
+                raise ValueError("ANTHROPIC_API_KEY not found in Streamlit secrets or environment variables")
 
             # Store API key for direct REST API calls
             self.client = api_key  # Store the key directly
             # Use correct model name - Claude 3.5 Sonnet
             self.model = "claude-sonnet-4-6"
         elif provider == "gemini":
-            api_key = os.getenv("GEMINI_API_KEY")
+            api_key = get_secret("GEMINI_API_KEY")
             if not api_key:
-                raise ValueError("GEMINI_API_KEY not found in environment variables")
+                raise ValueError("GEMINI_API_KEY not found in Streamlit secrets or environment variables")
             genai.configure(api_key=api_key)
 
             # Try different model names that Gemini supports

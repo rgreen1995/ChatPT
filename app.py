@@ -31,33 +31,37 @@ if "llm_provider" not in st.session_state:
 google_auth_enabled = is_google_auth_configured()
 authenticator = None
 
-if google_auth_enabled:
-    try:
-        authenticator = get_google_authenticator()
-        if authenticator and st.session_state.user_id is None:
-            authenticator.check_authentification()
-            authenticator.login()
-
-            if st.session_state.get('connected', False):
-                user_info = st.session_state.get('user_info', {})
-                email = user_info.get('email')
-                name = user_info.get('name')
-
-                if email and name:
-                    # Create or get user based on Google email
-                    user_id = get_or_create_user_by_email(email, name)
-                    st.session_state.user_id = user_id
-                    st.session_state.user_name = name
-                    st.session_state.user_email = email
-                    st.rerun()
-    except Exception as e:
-        st.sidebar.warning(f"Google OAuth error: {e}. Using manual login.")
-        google_auth_enabled = False
-
 # Sidebar navigation
 with st.sidebar:
     st.title("💪 ChatPT")
     st.markdown("---")
+
+    # Google OAuth login section
+    if google_auth_enabled and st.session_state.user_id is None:
+        try:
+            authenticator = get_google_authenticator()
+            if authenticator:
+                authenticator.check_authentification()
+                authenticator.login()
+
+                if st.session_state.get('connected', False):
+                    user_info = st.session_state.get('user_info', {})
+                    email = user_info.get('email')
+                    name = user_info.get('name')
+
+                    if email and name:
+                        # Create or get user based on Google email
+                        user_id = get_or_create_user_by_email(email, name)
+                        st.session_state.user_id = user_id
+                        st.session_state.user_name = name
+                        st.session_state.user_email = email
+                        st.rerun()
+        except Exception as e:
+            st.warning(f"Google OAuth error: {e}")
+            google_auth_enabled = False
+
+        st.markdown("---")
+        st.write("**Or create account manually:**")
 
     # User selection/creation
     if st.session_state.user_id is None and not google_auth_enabled:
