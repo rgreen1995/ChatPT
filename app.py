@@ -73,8 +73,8 @@ with st.sidebar:
             st.markdown("---")
             st.write("**Or create account manually:**")
 
-    # User selection/creation
-    if st.session_state.user_id is None and not google_auth_enabled:
+    # User selection/creation (only show when NOT logged in)
+    if st.session_state.user_id is None:
         st.subheader("Welcome!")
         users = get_users()
 
@@ -104,11 +104,25 @@ with st.sidebar:
                 st.session_state.user_name = new_name
                 st.rerun()
     else:
+        # User IS logged in
         st.success(f"Logged in as: {st.session_state.user_name}")
         if st.button("Logout"):
+            # Clear all session state
             st.session_state.user_id = None
             st.session_state.user_name = None
             st.session_state.page = "home"
+            # Clear Google auth session if it exists
+            if 'connected' in st.session_state:
+                st.session_state.connected = False
+            if 'user_info' in st.session_state:
+                del st.session_state.user_info
+            # Clear consultation data
+            if 'consultation_id' in st.session_state:
+                del st.session_state.consultation_id
+            if 'messages' in st.session_state:
+                del st.session_state.messages
+            if 'workout_plan' in st.session_state:
+                del st.session_state.workout_plan
             st.rerun()
 
         st.markdown("---")
