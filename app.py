@@ -108,11 +108,20 @@ with st.sidebar:
 
                             # Send welcome email (non-blocking)
                             try:
-                                from chat_pt.email_service import send_welcome_email
-                                send_welcome_email(email, name)
+                                from chat_pt.email_service import send_welcome_email, is_email_configured
+
+                                if is_email_configured():
+                                    email_sent = send_welcome_email(email, name)
+                                    if email_sent:
+                                        st.info("📧 Welcome email sent! Check your inbox.")
+                                    else:
+                                        st.warning("⚠️ Email service configured but email failed to send.")
+                                else:
+                                    st.caption("💡 Email service not configured - no welcome email sent")
+
                             except Exception as email_error:
                                 # Don't fail signup if email fails
-                                pass
+                                st.warning(f"Email error: {str(email_error)}")
 
                             st.success(f"Account created! Welcome, {name}!")
                             st.rerun()
