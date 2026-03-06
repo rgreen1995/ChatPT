@@ -1,5 +1,5 @@
 import streamlit as st
-from chat_pt.database import (
+from chat_pt.db_interface import (
     create_consultation,
     save_message,
     get_conversation_history,

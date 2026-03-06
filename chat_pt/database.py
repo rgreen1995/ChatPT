@@ -97,6 +97,23 @@ def init_db():
         )
     """)
 
+    # Exercise library table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS exercise_library (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            category TEXT NOT NULL,
+            primary_muscles TEXT NOT NULL,
+            secondary_muscles TEXT,
+            equipment TEXT,
+            difficulty TEXT,
+            youtube_url TEXT,
+            instructions TEXT,
+            form_cues TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
     conn.commit()
     conn.close()
 

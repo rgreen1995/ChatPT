@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from datetime import datetime
-from chat_pt.database import (
+from chat_pt.db_interface import (
     get_user_consultations,
     get_workout_plan,
     save_exercise_progress,

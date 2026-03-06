@@ -1,6 +1,6 @@
 import streamlit as st
-from chat_pt.database import (
-    init_db, create_user, get_users, create_consultation,
+from chat_pt.db_interface import (
+    init_db, create_user, create_consultation,
     get_user_consultations, get_or_create_user_by_email,
     authenticate_user, user_exists
 )
@@ -40,9 +40,11 @@ with st.sidebar:
     st.title("💪 ChatPT")
     st.markdown("---")
 
-    # Google OAuth login section
+    # Google OAuth login section - TEMPORARILY DISABLED
+    # TODO: Re-enable when streamlit-google-auth library issues are resolved
+    # The code below is kept for future re-implementation
+    """
     if google_auth_enabled and st.session_state.user_id is None:
-        # Add option to skip Google auth (useful on mobile where it can be buggy)
         if 'skip_google_auth' not in st.session_state:
             st.session_state.skip_google_auth = False
 
@@ -51,8 +53,6 @@ with st.sidebar:
                 authenticator = get_google_authenticator()
                 if authenticator:
                     st.write("**Quick Login with Google:**")
-
-                    # Wrap in try-catch to handle mobile browser issues
                     try:
                         authenticator.check_authentification()
                         authenticator.login()
@@ -63,38 +63,21 @@ with st.sidebar:
                             name = user_info.get('name')
 
                             if email and name:
-                                # Create or get user based on Google email
                                 user_id = get_or_create_user_by_email(email, name, auth_provider='google')
                                 st.session_state.user_id = user_id
                                 st.session_state.user_name = name
                                 st.session_state.user_email = email
                                 st.rerun()
-                    except Exception as auth_error:
-                        # Gracefully handle authentication widget errors
-                        st.warning("Google login widget failed to load. Using email/password instead.")
-                        st.session_state.skip_google_auth = True
-                        st.rerun()
 
-                    # Add small button to skip Google auth
-                    if st.button("Use Email/Password Instead", key="skip_google", help="Skip Google login"):
-                        st.session_state.skip_google_auth = True
-                        st.rerun()
+                    except Exception as auth_error:
+                        st.warning("⚠️ Google login encountered an issue")
+                        st.caption("Try email/password login below instead")
 
             except Exception as e:
-                # Handle configuration errors
-                st.warning("⚠️ Google login is not available.")
-                with st.expander("Why?"):
-                    st.caption("""
-**Possible reasons:**
-- Mobile browser compatibility issues
-- Configuration not complete
-- Network restrictions
+                pass
 
-**Solution:** Use email/password login below instead.
-                    """)
-                st.session_state.skip_google_auth = True
-
-            st.markdown("---")
+        st.markdown("---")
+    """
 
     # User selection/creation (only show when NOT logged in)
     if st.session_state.user_id is None:
@@ -120,55 +103,74 @@ with st.sidebar:
         if st.session_state.auth_mode == 'login':
             # Login form
             st.write("**Login to your account:**")
-            email = st.text_input("Email", key="login_email")
-            password = st.text_input("Password", type="password", key="login_password")
+            with st.form("login_form"):
+                email = st.text_input("Email")
+                password = st.text_input("Password", type="password")
+                submitted = st.form_submit_button("Login", use_container_width=True, type="primary")
 
-            if st.button("Login", key="login_submit"):
-                if not email or not password:
-                    st.error("Please enter both email and password")
-                else:
-                    user = authenticate_user(email, password)
-                    if user:
-                        st.session_state.user_id = user["id"]
-                        st.session_state.user_name = user["name"]
-                        st.session_state.user_email = user["email"]
-                        st.success(f"Welcome back, {user['name']}!")
-                        st.rerun()
+                if submitted:
+                    if not email or not password:
+                        st.error("Please enter both email and password")
                     else:
-                        st.error("Invalid email or password")
+                        user = authenticate_user(email, password)
+                        if user:
+                            st.session_state.user_id = user["id"]
+                            st.session_state.user_name = user["name"]
+                            st.session_state.user_email = user["email"]
+                            st.success(f"Welcome back, {user['name']}!")
+                            st.rerun()
+                        else:
+                            st.error("Invalid email or password")
 
         else:
             # Signup form
             st.write("**Create a new account:**")
-            name = st.text_input("Name", key="signup_name")
-            email = st.text_input("Email", key="signup_email")
-            password = st.text_input("Password", type="password", key="signup_password")
-            password_confirm = st.text_input("Confirm Password", type="password", key="signup_password_confirm")
+            with st.form("signup_form"):
+                name = st.text_input("Name")
+                email = st.text_input("Email")
+                password = st.text_input("Password", type="password")
+                password_confirm = st.text_input("Confirm Password", type="password")
+                submitted = st.form_submit_button("Create Account", use_container_width=True, type="primary")
 
-            if st.button("Create Account", key="signup_submit"):
-                # Validation
-                if not name or not email or not password:
-                    st.error("Please fill in all fields")
-                elif password != password_confirm:
-                    st.error("Passwords don't match")
-                elif len(password) < 6:
-                    st.error("Password must be at least 6 characters")
-                elif user_exists(email):
-                    st.error("An account with this email already exists")
-                else:
-                    # Create user
-                    try:
-                        user_id = create_user(name, email, password, auth_provider='email')
-                        st.session_state.user_id = user_id
-                        st.session_state.user_name = name
-                        st.session_state.user_email = email
-                        st.success(f"Account created! Welcome, {name}!")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error creating account: {str(e)}")
+                if submitted:
+                    # Validation
+                    if not name or not email or not password:
+                        st.error("Please fill in all fields")
+                    elif password != password_confirm:
+                        st.error("Passwords don't match")
+                    elif len(password) < 6:
+                        st.error("Password must be at least 6 characters")
+                    elif user_exists(email):
+                        st.error("An account with this email already exists")
+                    else:
+                        # Create user
+                        try:
+                            user_id = create_user(name, email, password, auth_provider='email')
+                            st.session_state.user_id = user_id
+                            st.session_state.user_name = name
+                            st.session_state.user_email = email
+
+                            # Send welcome email (non-blocking)
+                            try:
+                                from chat_pt.email_service import send_welcome_email
+                                send_welcome_email(email, name)
+                            except Exception as email_error:
+                                # Don't fail signup if email fails
+                                pass
+
+                            st.success(f"Account created! Welcome, {name}!")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error creating account: {str(e)}")
     else:
         # User IS logged in
         st.success(f"Logged in as: {st.session_state.user_name}")
+
+        # Show database status (helpful for debugging)
+        if st.session_state.get('db_type'):
+            db_emoji = "☁️" if st.session_state.db_type == 'supabase' else "💾"
+            st.caption(f"{db_emoji} {st.session_state.db_type.title()}")
+
         if st.button("Logout"):
             # Clear all session state
             st.session_state.user_id = None

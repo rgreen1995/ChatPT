@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from chat_pt.database import get_user_consultations, get_workout_plan, get_conversation_history
+from chat_pt.db_interface import get_user_consultations, get_workout_plan, get_conversation_history
 
 def render():
     """Render the workout plans page."""
