@@ -81,24 +81,38 @@ def render():
                 exercises = day_data.get("exercises", [])
 
                 if exercises:
-                    # Create a dataframe for better display
-                    exercise_data = []
+                    # Display exercises with clickable links to exercise library
                     for idx, exercise in enumerate(exercises, 1):
-                        exercise_data.append({
-                            "#": exercise.get("sequence", "N/A"),
-                            "Exercise": exercise.get("name", "N/A"),
-                            "Sets": exercise.get("sets", "N/A"),
-                            "Reps": exercise.get("reps", "N/A"),
-                            "Rest (sec)": exercise.get("rest_seconds", "N/A"),
-                            "Notes": exercise.get("notes", "")
-                        })
+                        exercise_name = exercise.get("name", "N/A")
 
-                    df = pd.DataFrame(exercise_data)
-                    st.dataframe(df, use_container_width=True, hide_index=True)
+                        # Exercise header with info button
+                        col1, col2 = st.columns([4, 1])
+                        with col1:
+                            st.markdown(f"**{exercise.get('sequence', idx)}. {exercise_name}**")
+                        with col2:
+                            if st.button("ℹ️ Info", key=f"{day_name}_{idx}_info", help="View exercise details"):
+                                st.session_state.viewing_exercise = exercise_name
+                                st.session_state.page = "exercises"
+                                st.rerun()
+
+                        # Exercise details
+                        col1, col2, col3, col4 = st.columns(4)
+                        with col1:
+                            st.caption(f"**Sets:** {exercise.get('sets', 'N/A')}")
+                        with col2:
+                            st.caption(f"**Reps:** {exercise.get('reps', 'N/A')}")
+                        with col3:
+                            st.caption(f"**Rest:** {exercise.get('rest_seconds', 'N/A')}s")
+                        with col4:
+                            pass
+
+                        if exercise.get("notes"):
+                            st.caption(f"💡 {exercise['notes']}")
+
+                        st.markdown("---")
 
                     # Add option to log this workout
-                    st.markdown("---")
-                    if st.button(f"📊 Log {day_name} Workout", key=f"log_{day_name}"):
+                    if st.button(f"📊 Log {day_name} Workout", key=f"log_{day_name}", use_container_width=True):
                         st.session_state.page = "progress"
                         st.session_state.selected_day = day_name
                         st.session_state.selected_consultation = consultation_id

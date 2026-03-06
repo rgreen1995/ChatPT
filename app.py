@@ -5,7 +5,6 @@ from chat_pt.db_interface import (
     authenticate_user, user_exists
 )
 from chat_pt.llm_handler import LLMHandler
-from chat_pt.google_auth import is_google_auth_configured, get_google_authenticator
 
 # Initialize database
 init_db()
@@ -31,53 +30,10 @@ if "page" not in st.session_state:
 if "llm_provider" not in st.session_state:
     st.session_state.llm_provider = "anthropic"
 
-# Google OAuth login (if configured)
-google_auth_enabled = is_google_auth_configured()
-authenticator = None
-
 # Sidebar navigation
 with st.sidebar:
     st.title("💪 ChatPT")
     st.markdown("---")
-
-    # Google OAuth login section - TEMPORARILY DISABLED
-    # TODO: Re-enable when streamlit-google-auth library issues are resolved
-    # The code below is kept for future re-implementation
-    """
-    if google_auth_enabled and st.session_state.user_id is None:
-        if 'skip_google_auth' not in st.session_state:
-            st.session_state.skip_google_auth = False
-
-        if not st.session_state.skip_google_auth:
-            try:
-                authenticator = get_google_authenticator()
-                if authenticator:
-                    st.write("**Quick Login with Google:**")
-                    try:
-                        authenticator.check_authentification()
-                        authenticator.login()
-
-                        if st.session_state.get('connected', False):
-                            user_info = st.session_state.get('user_info', {})
-                            email = user_info.get('email')
-                            name = user_info.get('name')
-
-                            if email and name:
-                                user_id = get_or_create_user_by_email(email, name, auth_provider='google')
-                                st.session_state.user_id = user_id
-                                st.session_state.user_name = name
-                                st.session_state.user_email = email
-                                st.rerun()
-
-                    except Exception as auth_error:
-                        st.warning("⚠️ Google login encountered an issue")
-                        st.caption("Try email/password login below instead")
-
-            except Exception as e:
-                pass
-
-        st.markdown("---")
-    """
 
     # User selection/creation (only show when NOT logged in)
     if st.session_state.user_id is None:
@@ -224,6 +180,9 @@ with st.sidebar:
         if st.button("📋 My Plans", use_container_width=True):
             st.session_state.page = "plans"
             st.rerun()
+        if st.button("📚 Exercise Library", use_container_width=True):
+            st.session_state.page = "exercises"
+            st.rerun()
         if st.button("📊 Progress Tracking", use_container_width=True):
             st.session_state.page = "progress"
             st.rerun()
@@ -308,6 +267,20 @@ elif st.session_state.page == "plans":
     # Import plans page
     from chat_pt import plans_page
     plans_page.render()
+
+elif st.session_state.page == "exercises":
+    # Import exercise library page
+    from chat_pt import exercise_library_page
+    from chat_pt.exercise_data import EXERCISE_LIBRARY
+
+    # Check if viewing a specific exercise
+    if st.session_state.get('viewing_exercise'):
+        exercise_library_page.render_exercise_detail(
+            st.session_state.viewing_exercise,
+            EXERCISE_LIBRARY
+        )
+    else:
+        exercise_library_page.render()
 
 elif st.session_state.page == "progress":
     # Import progress page
