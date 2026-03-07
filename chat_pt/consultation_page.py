@@ -94,8 +94,24 @@ def render():
         </div>
         """, unsafe_allow_html=True)
 
+    # Check for pre-filled message from plans page
+    prefilled = st.session_state.get('prefilled_message', '')
+    if prefilled:
+        st.info(f"💬 Pre-filled request: {prefilled}")
+        if st.button("✅ Send this request", type="primary", use_container_width=True):
+            prompt = prefilled
+            del st.session_state.prefilled_message
+        else:
+            st.caption("Or type your own message below")
+            prompt = None
+    else:
+        prompt = None
+
     # Chat input
-    if prompt := st.chat_input("Type your message here..."):
+    if not prompt:
+        prompt = st.chat_input("Type your message here...")
+
+    if prompt:
         # Add user message
         user_message = {"role": "user", "content": prompt}
         st.session_state.messages.append(user_message)
@@ -107,7 +123,13 @@ def render():
 
         # Get AI response
         with st.chat_message("assistant"):
-            with st.spinner("Thinking..."):
+            # Check if this might be a plan generation request
+            plan_keywords = ['create', 'generate', 'plan', 'workout', 'program', 'schedule', 'json']
+            is_likely_plan_request = any(keyword in prompt.lower() for keyword in plan_keywords)
+
+            spinner_text = "Creating your personalized plan... This may take a minute ⏳" if is_likely_plan_request else "Thinking..."
+
+            with st.spinner(spinner_text):
                 try:
                     # Initialize LLM handler
                     llm = LLMHandler(provider=st.session_state.llm_provider)
@@ -122,8 +144,56 @@ def render():
                     # Check if response contains workout plan
                     workout_plan = llm.extract_workout_plan(response, debug=True)
 
-                    # Display the response
-                    st.markdown(response)
+                    # Display the response (but hide JSON blocks if plan was extracted)
+                    if workout_plan:
+                        # Remove JSON code blocks from the response before displaying
+                        import re
+                        display_response = re.sub(r'```json.*?```', '', response, flags=re.DOTALL | re.IGNORECASE)
+                        display_response = re.sub(r'```.*?```', '', display_response, flags=re.DOTALL)
+
+                        # Also remove common JSON-related phrases
+                        display_response = re.sub(r'in json format\s*[:\.]?', '', display_response, flags=re.IGNORECASE)
+                        display_response = re.sub(r'json format\s*[:\.]?', '', display_response, flags=re.IGNORECASE)
+                        display_response = re.sub(r'here\'?s? (the |your )?json', '', display_response, flags=re.IGNORECASE)
+                        display_response = re.sub(r'below is (the |your )?json', '', display_response, flags=re.IGNORECASE)
+
+                        # Clean up extra whitespace
+                        display_response = re.sub(r'\n\n\n+', '\n\n', display_response.strip())
+
+                        # If very little text remains (mostly JSON), create a nice summary message
+                        if len(display_response.strip()) < 50:
+                            # Generate a nice message based on the plan
+                            num_days = len(workout_plan.get('schedule', {}))
+                            days_per_week = workout_plan.get('training_days', num_days)
+                            weeks = workout_plan.get('program_duration_weeks', 'several')
+
+                            summary_msg = f"Perfect! I've created your personalized **{days_per_week}-day per week** training program"
+                            if weeks != 'several':
+                                summary_msg += f" for **{weeks} weeks**"
+                            summary_msg += f".\n\n"
+
+                            # Add schedule overview
+                            if num_days > 0:
+                                day_names = list(workout_plan.get('schedule', {}).keys())
+                                summary_msg += f"**Your {num_days}-day schedule:**\n"
+                                for day in day_names[:5]:  # Show first 5 days
+                                    focus = workout_plan['schedule'][day].get('focus', 'Workout')
+                                    summary_msg += f"- {day}: {focus}\n"
+                                if num_days > 5:
+                                    summary_msg += f"- ...and {num_days - 5} more days\n"
+
+                            summary_msg += f"\n✨ Your plan is ready to view! Click **'View My Plan'** below to see the full details."
+
+                            st.markdown(summary_msg)
+                            display_response = summary_msg  # Save the clean version
+                        else:
+                            st.markdown(display_response)
+
+                        # Replace response with cleaned version for saving to history
+                        response = display_response
+                    else:
+                        # No plan extracted, show full response
+                        st.markdown(response)
 
                     # Handle incomplete JSON - auto-retry once
                     if not workout_plan and ('```json' in response.lower() or '{' in response):
@@ -150,9 +220,16 @@ def render():
                                             st.success("✅ Received complete workout plan!")
                                             # Replace the incomplete response with the complete one
                                             response = retry_response
-                                            # Clear the warning and show new response
+                                            # Clear the warning and show new response (hide JSON)
                                             st.markdown("---")
-                                            st.markdown(retry_response)
+                                            import re
+                                            retry_display = re.sub(r'```json.*?```', '', retry_response, flags=re.DOTALL | re.IGNORECASE)
+                                            retry_display = re.sub(r'```.*?```', '', retry_display, flags=re.DOTALL)
+                                            retry_display = re.sub(r'\n\n\n+', '\n\n', retry_display.strip())
+                                            if retry_display.strip():
+                                                st.markdown(retry_display)
+                                            else:
+                                                st.markdown("I've created your personalized workout plan! 🎉")
                                         else:
                                             st.error("Still couldn't extract complete plan. Please ask me to 'provide a more concise workout plan in JSON format'.")
                                     except Exception as retry_error:

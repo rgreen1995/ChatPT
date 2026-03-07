@@ -9,6 +9,45 @@ from chat_pt.db_interface import (
     get_exercise_progress,
 )
 
+def sort_workout_days(schedule_dict):
+    """Sort workout days in a sensible order (days of week or numerical)."""
+    days_of_week = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    day_abbrev = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+
+    keys = list(schedule_dict.keys())
+
+    def day_sort_key(day_name):
+        day_lower = day_name.lower()
+
+        # Check for full day names
+        for idx, dow in enumerate(days_of_week):
+            if dow in day_lower:
+                return (0, idx)
+
+        # Check for abbreviated day names
+        for idx, abbr in enumerate(day_abbrev):
+            if abbr in day_lower:
+                return (0, idx)
+
+        # Check for "Day X" format
+        if 'day' in day_lower:
+            import re
+            match = re.search(r'day\s*(\d+)', day_lower)
+            if match:
+                return (1, int(match.group(1)))
+
+        # Check for pure numbers at start
+        import re
+        match = re.match(r'^(\d+)', day_name)
+        if match:
+            return (2, int(match.group(1)))
+
+        # Fallback: alphabetical
+        return (3, day_name.lower())
+
+    sorted_keys = sorted(keys, key=day_sort_key)
+    return {k: schedule_dict[k] for k in sorted_keys}
+
 def render():
     """Render the progress tracking page."""
     st.markdown("""
@@ -52,9 +91,35 @@ def render():
                 preselected_idx = idx
                 break
 
-    consultation_options = [
-        f"Plan {c['id']} - {c['created_at']}" for c in completed
-    ]
+    # Create descriptive names for each plan (short - 3-4 words max)
+    consultation_options = []
+    for c in completed:
+        plan = get_workout_plan(c['id'])
+        if plan:
+            # Extract key details
+            days = plan.get('training_days')
+            weeks = plan.get('program_duration_weeks')
+            num_days = len(plan.get('schedule', {}))
+
+            # Build concise name
+            if days and weeks:
+                plan_name = f"{days}-Day • {weeks}wk"
+            elif days:
+                plan_name = f"{days}-Day Program"
+            elif num_days:
+                plan_name = f"{num_days}-Day Program"
+            else:
+                # Use date as fallback
+                import datetime
+                try:
+                    date_obj = datetime.datetime.fromisoformat(c['created_at'])
+                    plan_name = date_obj.strftime("%b %d, %Y")
+                except:
+                    plan_name = "Workout Plan"
+
+            consultation_options.append(plan_name)
+        else:
+            consultation_options.append("Workout Plan")
 
     selected_idx = st.selectbox(
         "Choose a plan",
@@ -91,16 +156,19 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
         st.warning("No workout schedule found.")
         return
 
+    # Sort schedule in sensible order
+    sorted_schedule = sort_workout_days(schedule)
+
     # Day selector
     preselected_day = 0
     if hasattr(st.session_state, "selected_day"):
-        days = list(schedule.keys())
+        days = list(sorted_schedule.keys())
         if st.session_state.selected_day in days:
             preselected_day = days.index(st.session_state.selected_day)
 
     selected_day = st.selectbox(
         "Select Training Day",
-        list(schedule.keys()),
+        list(sorted_schedule.keys()),
         index=preselected_day
     )
 
