@@ -11,21 +11,38 @@ from chat_pt.db_interface import (
 
 def render():
     """Render the progress tracking page."""
-    st.title("📊 Progress Tracking")
+    st.markdown("""
+    <div style="text-align: center; padding: 1rem 0 2rem 0;">
+        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">📊 Progress Tracking</h1>
+        <p style="font-size: 1.1rem; color: #666;">Log workouts and track your fitness journey</p>
+    </div>
+    """, unsafe_allow_html=True)
 
     # Get user's completed consultations
     consultations = get_user_consultations(st.session_state.user_id)
     completed = [c for c in consultations if c["completed"]]
 
     if not completed:
-        st.warning("No workout plans found. Create a plan first!")
-        if st.button("Start Consultation"):
-            st.session_state.page = "consultation"
-            st.rerun()
+        st.markdown("""
+        <div style="background: #f8f9fa; padding: 2rem; border-radius: 10px; text-align: center; margin: 2rem 0;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">📊</div>
+            <h3 style="margin-bottom: 0.5rem;">No workout plans yet</h3>
+            <p style="color: #666; margin-bottom: 1.5rem;">Create a personalized plan first, then come back to track your progress!</p>
+        </div>
+        """, unsafe_allow_html=True)
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button("🚀 Start Consultation", type="primary", use_container_width=True):
+                st.session_state.page = "consultation"
+                st.rerun()
         return
 
     # Consultation selector
-    st.subheader("Select Workout Plan")
+    st.markdown("""
+    <div style="margin: 1rem 0;">
+        <h3>Select Workout Plan</h3>
+    </div>
+    """, unsafe_allow_html=True)
 
     # Check if coming from plans page with selected consultation
     preselected_idx = 0
@@ -43,7 +60,8 @@ def render():
         "Choose a plan",
         range(len(consultation_options)),
         format_func=lambda i: consultation_options[i],
-        index=preselected_idx
+        index=preselected_idx,
+        label_visibility="collapsed"
     )
 
     consultation_id = completed[selected_idx]["id"]
@@ -176,7 +194,11 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
 
 def render_view_progress(workout_plan: dict):
     """Render the progress viewing interface."""
-    st.subheader("Your Progress Over Time")
+    st.markdown("""
+    <div style="margin: 2rem 0 1rem 0;">
+        <h3>Your Progress Over Time</h3>
+    </div>
+    """, unsafe_allow_html=True)
 
     schedule = workout_plan.get("schedule", {})
 
@@ -199,7 +221,13 @@ def render_view_progress(workout_plan: dict):
     progress = get_exercise_progress(st.session_state.user_id, selected_exercise)
 
     if not progress:
-        st.info(f"No progress logged yet for {selected_exercise}. Log your first workout!")
+        st.markdown(f"""
+        <div style="background: #f8f9fa; padding: 2rem; border-radius: 10px; text-align: center; margin: 2rem 0;">
+            <div style="font-size: 2.5rem; margin-bottom: 1rem;">📈</div>
+            <h4 style="margin-bottom: 0.5rem;">No progress logged yet for {selected_exercise}</h4>
+            <p style="color: #666;">Switch to the "Log Workout" tab to record your first session!</p>
+        </div>
+        """, unsafe_allow_html=True)
         return
 
     # Display progress table

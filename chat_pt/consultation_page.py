@@ -9,10 +9,29 @@ from chat_pt.llm_handler import LLMHandler
 
 def render():
     """Render the consultation page."""
-    st.title("💬 Personal Training Consultation")
+    st.markdown("""
+    <div style="text-align: center; padding: 1rem 0 2rem 0;">
+        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">💬 AI Consultation</h1>
+        <p style="font-size: 1.1rem; color: #666;">Chat with your personal AI trainer to create a custom workout plan</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # Show helpful tip at the top
-    st.info("💡 **Tip:** The more information you share about your goals, experience, schedule, and preferences, the better I can tailor your workout plan!")
+    # Show helpful tips in an expandable card for first-time users
+    message_count = len(st.session_state.get("messages", []))
+    if message_count <= 2:  # Show for first 2 messages
+        with st.expander("💡 Tips for a Great Consultation", expanded=True):
+            st.markdown("""
+            **Share these details to get the best personalized plan:**
+
+            - 🎯 **Your Goals:** Build muscle, lose weight, improve endurance, sports performance, etc.
+            - 💪 **Experience Level:** Beginner, intermediate, advanced
+            - ⏰ **Schedule:** How many days per week can you train? How long per session?
+            - 🏋️ **Equipment:** Gym access, home equipment, or bodyweight only?
+            - 🏃 **Preferences:** Exercise types you enjoy or want to avoid
+            - 🚫 **Limitations:** Any injuries or exercises to avoid
+
+            The AI will ask follow-up questions to ensure your plan is perfect for you!
+            """)
 
     # Display any stored errors
     if "last_error" in st.session_state:
@@ -48,7 +67,13 @@ def render():
 
     # Check if workout plan was generated - show notification but allow conversation to continue
     if st.session_state.workout_plan:
-        st.success("✅ Your workout plan has been generated and saved!")
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 1.5rem; border-radius: 10px; text-align: center; color: white; margin: 1rem 0;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">✅</div>
+            <h3 style="margin: 0.5rem 0; color: white;">Your Workout Plan is Ready!</h3>
+            <p style="margin: 0; opacity: 0.9;">View your personalized plan or continue chatting to refine it</p>
+        </div>
+        """, unsafe_allow_html=True)
 
         col1, col2 = st.columns(2)
         with col1:
@@ -63,7 +88,11 @@ def render():
                 del st.session_state.workout_plan
                 st.rerun()
 
-        st.info("💬 You can continue chatting to refine your plan or ask questions. Any new plan generated will update the existing one.")
+        st.markdown("""
+        <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #667eea; margin: 1rem 0;">
+            💬 You can continue chatting to refine your plan or ask questions. Any new plan generated will update the existing one.
+        </div>
+        """, unsafe_allow_html=True)
 
     # Chat input
     if prompt := st.chat_input("Type your message here..."):
@@ -211,9 +240,9 @@ def render():
     # Sidebar controls
     with st.sidebar:
         st.markdown("---")
-        st.subheader("Consultation Controls")
+        st.markdown("### Consultation Controls")
 
-        if st.button("🔄 Reset Consultation", type="secondary"):
+        if st.button("🔄 Reset Consultation", type="secondary", use_container_width=True):
             if st.session_state.get("confirm_reset"):
                 del st.session_state.consultation_id
                 del st.session_state.messages
@@ -223,18 +252,4 @@ def render():
                 st.rerun()
             else:
                 st.session_state.confirm_reset = True
-                st.warning("Click again to confirm reset")
-
-        st.markdown("---")
-        st.subheader("💡 Tips")
-        st.markdown("""
-        **Be specific about:**
-        - Your fitness goals
-        - Training experience
-        - Available days per week
-        - Equipment access
-        - Any injuries or limitations
-        - Preferred workout style
-
-        The more detail you provide, the better your personalized plan!
-        """)
+                st.warning("⚠️ Click again to confirm")
