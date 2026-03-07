@@ -309,53 +309,126 @@ if st.session_state.user_id is None:
         </div>
         """, unsafe_allow_html=True)
 
-    # CTA Section with prominent buttons
-    st.markdown("""
-    <div style="text-align: center; margin: 3rem 0 1rem 0;">
-        <h3 style="margin-bottom: 1rem;">Ready to Transform Your Fitness?</h3>
-        <p style="font-size: 1.1rem; color: #666; margin-bottom: 1.5rem;">Get started with your free personalized workout plan</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Prominent auth buttons for mobile
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
+    # Check if user clicked auth button - show form in main area
+    if st.session_state.get('show_auth_in_main'):
         st.markdown("""
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2rem; border-radius: 15px; text-align: center; margin-bottom: 1rem;">
-            <h4 style="color: white; margin: 0 0 0.5rem 0;">New to ChatPT?</h4>
-            <p style="color: rgba(255,255,255,0.9); margin: 0 0 1rem 0; font-size: 0.9rem;">Create your free account in 30 seconds</p>
+        <div style="text-align: center; margin: 2rem 0 1rem 0;">
+            <h3>Let's Get Started! 🚀</h3>
         </div>
         """, unsafe_allow_html=True)
 
-        if st.button("🚀 Sign Up Free", use_container_width=True, type="primary", key="main_signup"):
-            st.session_state.auth_mode = 'signup'
-            # JavaScript to open sidebar on mobile
-            st.markdown("""
-            <script>
-                // Try to open the sidebar
-                const sidebar = window.parent.document.querySelector('[data-testid="stSidebar"]');
-                if (sidebar) {
-                    sidebar.style.transform = 'translateX(0)';
-                }
-            </script>
-            """, unsafe_allow_html=True)
-            st.rerun()
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            # Toggle between login and signup
+            tab1, tab2 = st.tabs(["Sign Up", "Login"])
 
-        st.markdown("<div style='text-align: center; margin: 1rem 0;'><p style='color: #666;'>Already have an account?</p></div>", unsafe_allow_html=True)
+            with tab1:
+                # Signup form
+                with st.form("main_signup_form"):
+                    st.markdown("**Create your free account:**")
+                    name = st.text_input("Name")
+                    email = st.text_input("Email")
+                    password = st.text_input("Password", type="password")
+                    password_confirm = st.text_input("Confirm Password", type="password")
+                    submitted = st.form_submit_button("Create Account", use_container_width=True, type="primary")
 
-        if st.button("Login", use_container_width=True, key="main_login"):
-            st.session_state.auth_mode = 'login'
-            # JavaScript to open sidebar on mobile
+                    if submitted:
+                        # Validation
+                        if not name or not email or not password:
+                            st.error("Please fill in all fields")
+                        elif password != password_confirm:
+                            st.error("Passwords don't match")
+                        elif len(password) < 6:
+                            st.error("Password must be at least 6 characters")
+                        elif user_exists(email):
+                            st.error("An account with this email already exists")
+                        else:
+                            # Create user
+                            try:
+                                user_id = create_user(name, email, password, auth_provider='email')
+                                st.session_state.user_id = user_id
+                                st.session_state.user_name = name
+                                st.session_state.user_email = email
+                                st.session_state.signup_email_status = None
+
+                                # Send welcome email (non-blocking)
+                                try:
+                                    from chat_pt.email_service import send_welcome_email, is_email_configured
+
+                                    if is_email_configured():
+                                        email_sent = send_welcome_email(email, name)
+                                        if email_sent:
+                                            st.session_state.signup_email_status = "success"
+                                        else:
+                                            st.session_state.signup_email_status = "failed"
+                                    else:
+                                        st.session_state.signup_email_status = "not_configured"
+
+                                except Exception as email_error:
+                                    st.session_state.signup_email_status = f"error: {str(email_error)}"
+
+                                st.session_state.show_auth_in_main = False
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Error creating account: {str(e)}")
+
+            with tab2:
+                # Login form
+                with st.form("main_login_form"):
+                    st.markdown("**Login to your account:**")
+                    email = st.text_input("Email")
+                    password = st.text_input("Password", type="password")
+                    submitted = st.form_submit_button("Login", use_container_width=True, type="primary")
+
+                    if submitted:
+                        if not email or not password:
+                            st.error("Please enter both email and password")
+                        else:
+                            user = authenticate_user(email, password)
+                            if user:
+                                st.session_state.user_id = user["id"]
+                                st.session_state.user_name = user["name"]
+                                st.session_state.user_email = user["email"]
+                                st.session_state.show_auth_in_main = False
+                                st.success(f"Welcome back, {user['name']}!")
+                                st.rerun()
+                            else:
+                                st.error("Invalid email or password")
+
+            if st.button("← Back to Home", key="back_to_home"):
+                st.session_state.show_auth_in_main = False
+                st.rerun()
+
+    else:
+        # CTA Section with prominent buttons
+        st.markdown("""
+        <div style="text-align: center; margin: 3rem 0 1rem 0;">
+            <h3 style="margin-bottom: 1rem;">Ready to Transform Your Fitness?</h3>
+            <p style="font-size: 1.1rem; color: #666; margin-bottom: 1.5rem;">Get started with your free personalized workout plan</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Prominent auth buttons for mobile
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
             st.markdown("""
-            <script>
-                // Try to open the sidebar
-                const sidebar = window.parent.document.querySelector('[data-testid="stSidebar"]');
-                if (sidebar) {
-                    sidebar.style.transform = 'translateX(0)';
-                }
-            </script>
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2rem; border-radius: 15px; text-align: center; margin-bottom: 1rem;">
+                <h4 style="color: white; margin: 0 0 0.5rem 0;">New to ChatPT?</h4>
+                <p style="color: rgba(255,255,255,0.9); margin: 0 0 1rem 0; font-size: 0.9rem;">Create your free account in 30 seconds</p>
+            </div>
             """, unsafe_allow_html=True)
-            st.rerun()
+
+            if st.button("🚀 Sign Up Free", use_container_width=True, type="primary", key="main_signup"):
+                st.session_state.auth_mode = 'signup'
+                st.session_state.show_auth_in_main = True
+                st.rerun()
+
+            st.markdown("<div style='text-align: center; margin: 1rem 0;'><p style='color: #666;'>Already have an account?</p></div>", unsafe_allow_html=True)
+
+            if st.button("Login", use_container_width=True, key="main_login"):
+                st.session_state.auth_mode = 'login'
+                st.session_state.show_auth_in_main = True
+                st.rerun()
 
     st.markdown("<br>", unsafe_allow_html=True)
 
