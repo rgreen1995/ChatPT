@@ -132,11 +132,41 @@ def send_welcome_email(email: str, name: str) -> bool:
         </html>
         """
 
+        # Plain text version improves deliverability
+        text_content = f"""
+Hi {name}!
+
+Thank you for joining ChatPT - your AI-powered personal trainer!
+
+We're excited to help you achieve your fitness goals. Here's what you can do with ChatPT:
+
+- Get Personalized Workout Plans - Chat with our AI trainer to create a custom program tailored to your goals
+- Track Your Progress - Log your workouts and visualize your improvements over time
+- Continuous Support - Ask questions and adjust your plan anytime through the AI chat
+- Detailed Exercise Guidance - Get complete workout schedules with sets, reps, and rest periods
+
+Ready to Get Started?
+
+1. Log in to your account
+2. Start a new consultation
+3. Tell us about your fitness goals and experience
+4. Get your personalized workout plan in minutes!
+
+Visit ChatPT: https://chat-pt.streamlit.app
+
+Need help? Reply to this email and we'll be happy to assist.
+
+ChatPT - Your AI-Powered Personal Trainer
+You received this email because you signed up for a ChatPT account.
+        """
+
         params = {
             "from": from_email,
             "to": [email],
-            "subject": f"Welcome to ChatPT, {name}! 💪",
+            "subject": f"Welcome to ChatPT, {name}",  # Removed emoji from subject - can trigger spam
             "html": html_content,
+            "text": text_content,  # Adding plain text version
+            "reply_to": from_email,  # Enable replies
         }
 
         response = resend.Emails.send(params)

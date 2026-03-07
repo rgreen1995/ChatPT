@@ -306,40 +306,39 @@ def render():
                 exercises = day_data.get("exercises", [])
 
                 if exercises:
-                    # Display exercises with clickable links to exercise library
+                    # Display exercises in compact format
                     for idx, exercise in enumerate(exercises, 1):
                         exercise_name = exercise.get("name", "N/A")
+                        sets = exercise.get('sets', 'N/A')
+                        reps = exercise.get('reps', 'N/A')
+                        rest = exercise.get('rest_seconds', 'N/A')
 
-                        # Exercise header with info and swap buttons
-                        col1, col2, col3 = st.columns([3, 1, 1])
+                        # Compact single-row layout: Name | Sets x Reps | Rest | Buttons
+                        col1, col2, col3, col4 = st.columns([3, 2, 1.5, 1.5])
+
                         with col1:
-                            st.markdown(f"**{exercise.get('sequence', idx)}. {exercise_name}**")
+                            st.markdown(f"**{idx}. {exercise_name}**")
+                            if exercise.get("notes"):
+                                st.caption(f"💡 {exercise['notes']}")
+
                         with col2:
-                            if st.button("🔄", key=f"{day_name}_{idx}_swap", help="Request alternative exercise"):
+                            st.markdown(f"**{sets}** × **{reps}**")
+
+                        with col3:
+                            st.caption(f"Rest: **{rest}s**")
+
+                        with col4:
+                            # Stack buttons vertically in this column
+                            if st.button("🔄", key=f"{day_name}_{idx}_swap", help="Swap exercise", use_container_width=True):
                                 st.session_state.swap_exercise = exercise_name
                                 st.session_state.swap_day = day_name
                                 st.session_state.swap_consultation_id = consultation_id
                                 st.session_state.show_swap_dialog = True
                                 st.rerun()
-                        with col3:
-                            if st.button("ℹ️", key=f"{day_name}_{idx}_info", help="View exercise details"):
+                            if st.button("ℹ️", key=f"{day_name}_{idx}_info", help="Exercise info", use_container_width=True):
                                 st.session_state.viewing_exercise = exercise_name
                                 st.session_state.page = "exercises"
                                 st.rerun()
-
-                        # Exercise details
-                        col1, col2, col3, col4 = st.columns(4)
-                        with col1:
-                            st.caption(f"**Sets:** {exercise.get('sets', 'N/A')}")
-                        with col2:
-                            st.caption(f"**Reps:** {exercise.get('reps', 'N/A')}")
-                        with col3:
-                            st.caption(f"**Rest:** {exercise.get('rest_seconds', 'N/A')}s")
-                        with col4:
-                            pass
-
-                        if exercise.get("notes"):
-                            st.caption(f"💡 {exercise['notes']}")
 
                         st.markdown("---")
 
