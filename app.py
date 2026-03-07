@@ -212,6 +212,15 @@ with st.sidebar:
 
 # Main content area
 if st.session_state.user_id is None:
+    # Mobile-friendly tip about sidebar (only show if not already in sidebar)
+    st.markdown("""
+    <div style="background: #f0f2f6; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; text-align: center;">
+        <p style="margin: 0; font-size: 0.9rem; color: #666;">
+            💡 <strong>Tip:</strong> On mobile? Tap <strong>></strong> in the top-left to access login/signup
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
     # Hero Section
     st.markdown("""
     <div style="text-align: center; padding: 2rem 0 3rem 0;">
@@ -300,13 +309,55 @@ if st.session_state.user_id is None:
         </div>
         """, unsafe_allow_html=True)
 
-    # CTA Section
+    # CTA Section with prominent buttons
     st.markdown("""
-    <div style="text-align: center; margin: 3rem 0 2rem 0;">
+    <div style="text-align: center; margin: 3rem 0 1rem 0;">
         <h3 style="margin-bottom: 1rem;">Ready to Transform Your Fitness?</h3>
-        <p style="font-size: 1.1rem; color: #666; margin-bottom: 1.5rem;">👈 Create an account or login using the sidebar to get started!</p>
+        <p style="font-size: 1.1rem; color: #666; margin-bottom: 1.5rem;">Get started with your free personalized workout plan</p>
     </div>
     """, unsafe_allow_html=True)
+
+    # Prominent auth buttons for mobile
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2rem; border-radius: 15px; text-align: center; margin-bottom: 1rem;">
+            <h4 style="color: white; margin: 0 0 0.5rem 0;">New to ChatPT?</h4>
+            <p style="color: rgba(255,255,255,0.9); margin: 0 0 1rem 0; font-size: 0.9rem;">Create your free account in 30 seconds</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if st.button("🚀 Sign Up Free", use_container_width=True, type="primary", key="main_signup"):
+            st.session_state.auth_mode = 'signup'
+            # JavaScript to open sidebar on mobile
+            st.markdown("""
+            <script>
+                // Try to open the sidebar
+                const sidebar = window.parent.document.querySelector('[data-testid="stSidebar"]');
+                if (sidebar) {
+                    sidebar.style.transform = 'translateX(0)';
+                }
+            </script>
+            """, unsafe_allow_html=True)
+            st.rerun()
+
+        st.markdown("<div style='text-align: center; margin: 1rem 0;'><p style='color: #666;'>Already have an account?</p></div>", unsafe_allow_html=True)
+
+        if st.button("Login", use_container_width=True, key="main_login"):
+            st.session_state.auth_mode = 'login'
+            # JavaScript to open sidebar on mobile
+            st.markdown("""
+            <script>
+                // Try to open the sidebar
+                const sidebar = window.parent.document.querySelector('[data-testid="stSidebar"]');
+                if (sidebar) {
+                    sidebar.style.transform = 'translateX(0)';
+                }
+            </script>
+            """, unsafe_allow_html=True)
+            st.rerun()
+
+    st.markdown("<br>", unsafe_allow_html=True)
 
     # Install as App Section
     with st.expander("📱 Install ChatPT as an App on Your Phone"):
