@@ -100,7 +100,12 @@ def render():
     """Render the exercise library browser."""
     from chat_pt.exercise_data import EXERCISE_LIBRARY
 
-    st.title("📚 Exercise Library")
+    st.markdown("""
+    <div style="text-align: center; padding: 1rem 0 2rem 0;">
+        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">📚 Exercise Library</h1>
+        <p style="font-size: 1.1rem; color: #666;">Browse 40+ exercises with video demonstrations</p>
+    </div>
+    """, unsafe_allow_html=True)
 
     # Body part groupings
     BODY_PART_GROUPS = {
@@ -115,32 +120,40 @@ def render():
 
     # If no body part selected, show body part selection
     if st.session_state.selected_body_part is None:
-        st.write("**Select a body part to browse exercises:**")
-        st.markdown("---")
+        st.markdown("""
+        <div style="margin: 1rem 0;">
+            <h3>Select a body part to browse exercises</h3>
+        </div>
+        """, unsafe_allow_html=True)
 
-        # Create body part cards
+        # Create body part cards with gradients
         cols = st.columns(3)
 
         body_parts = [
-            {"name": "Upper Body", "emoji": "💪", "description": "Chest, Back, Shoulders, Arms"},
-            {"name": "Lower Body", "emoji": "🦵", "description": "Legs, Glutes, Calves"},
-            {"name": "Core", "emoji": "🔥", "description": "Abs, Obliques, Lower Back"},
+            {"name": "Upper Body", "emoji": "💪", "description": "Chest, Back, Shoulders, Arms", "gradient": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"},
+            {"name": "Lower Body", "emoji": "🦵", "description": "Legs, Glutes, Calves", "gradient": "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"},
+            {"name": "Core", "emoji": "🔥", "description": "Abs, Obliques, Lower Back", "gradient": "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"},
         ]
 
         for idx, body_part in enumerate(body_parts):
             with cols[idx]:
-                st.markdown(f"### {body_part['emoji']} {body_part['name']}")
-                st.caption(body_part['description'])
-
                 # Count exercises in this body part
                 exercise_count = len([ex for ex in EXERCISE_LIBRARY if ex["category"] in BODY_PART_GROUPS.get(body_part['name'], [])])
-                st.info(f"{exercise_count} exercises")
 
-                if st.button(f"Browse {body_part['name']}", key=f"select_{body_part['name']}", use_container_width=True):
+                st.markdown(f"""
+                <div style="background: {body_part['gradient']}; padding: 2rem 1.5rem; border-radius: 10px; text-align: center; color: white; min-height: 200px; display: flex; flex-direction: column; justify-content: center;">
+                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">{body_part['emoji']}</div>
+                    <h3 style="margin: 0.5rem 0; color: white;">{body_part['name']}</h3>
+                    <p style="margin: 0.5rem 0; font-size: 0.9rem; opacity: 0.9;">{body_part['description']}</p>
+                    <div style="font-size: 1.2rem; margin-top: 1rem; font-weight: bold;">{exercise_count} exercises</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                st.markdown("<br>", unsafe_allow_html=True)
+
+                if st.button(f"Browse {body_part['name']}", key=f"select_{body_part['name']}", use_container_width=True, type="primary"):
                     st.session_state.selected_body_part = body_part['name']
                     st.rerun()
-
-                st.markdown("---")
 
         return
 

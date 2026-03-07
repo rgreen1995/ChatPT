@@ -139,12 +139,15 @@ def send_welcome_email(email: str, name: str) -> bool:
             "html": html_content,
         }
 
-        resend.Emails.send(params)
+        response = resend.Emails.send(params)
+        print(f"✅ Email sent successfully: {response}")
         return True
 
     except Exception as e:
         # Log error but don't fail signup if email fails
-        print(f"Failed to send welcome email: {str(e)}")
+        print(f"❌ Failed to send welcome email: {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return False
 
 

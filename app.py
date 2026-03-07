@@ -105,6 +105,7 @@ with st.sidebar:
                             st.session_state.user_id = user_id
                             st.session_state.user_name = name
                             st.session_state.user_email = email
+                            st.session_state.signup_email_status = None
 
                             # Send welcome email (non-blocking)
                             try:
@@ -113,23 +114,36 @@ with st.sidebar:
                                 if is_email_configured():
                                     email_sent = send_welcome_email(email, name)
                                     if email_sent:
-                                        st.info("📧 Welcome email sent! Check your inbox.")
+                                        st.session_state.signup_email_status = "success"
                                     else:
-                                        st.warning("⚠️ Email service configured but email failed to send.")
+                                        st.session_state.signup_email_status = "failed"
                                 else:
-                                    st.caption("💡 Email service not configured - no welcome email sent")
+                                    st.session_state.signup_email_status = "not_configured"
 
                             except Exception as email_error:
                                 # Don't fail signup if email fails
-                                st.warning(f"Email error: {str(email_error)}")
+                                st.session_state.signup_email_status = f"error: {str(email_error)}"
 
-                            st.success(f"Account created! Welcome, {name}!")
                             st.rerun()
                         except Exception as e:
                             st.error(f"Error creating account: {str(e)}")
     else:
         # User IS logged in
         st.success(f"Logged in as: {st.session_state.user_name}")
+
+        # Show email status if just signed up
+        if st.session_state.get('signup_email_status'):
+            status = st.session_state.signup_email_status
+            if status == "success":
+                st.success("✅ Welcome email sent! Check your inbox.")
+            elif status == "failed":
+                st.error("❌ Email failed to send. Check API key.")
+            elif status == "not_configured":
+                st.warning("⚠️ Email service not configured")
+            elif status.startswith("error:"):
+                st.error(f"📧 {status}")
+            # Clear the status after showing it
+            st.session_state.signup_email_status = None
 
         # Show database status (helpful for debugging)
         if st.session_state.get('db_type'):
@@ -198,74 +212,262 @@ with st.sidebar:
 
 # Main content area
 if st.session_state.user_id is None:
-    st.title("Welcome to ChatPT 💪")
+    # Hero Section
     st.markdown("""
-    ## Your AI-Powered Personal Trainer
+    <div style="text-align: center; padding: 2rem 0 3rem 0;">
+        <h1 style="font-size: 3rem; margin-bottom: 0.5rem;">💪 ChatPT</h1>
+        <p style="font-size: 1.5rem; color: #666; margin-bottom: 2rem;">Your AI-Powered Personal Trainer</p>
+        <p style="font-size: 1.1rem; max-width: 600px; margin: 0 auto; line-height: 1.6;">
+            Get personalized workout plans tailored to your goals, experience, and lifestyle through an intelligent AI consultation.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
-    ChatPT creates personalized workout plans tailored to your goals, experience, and lifestyle through an intelligent AI consultation.
-
-    ### What You'll Get:
-    - 🎯 **Custom Workout Plan**: Designed specifically for your goals and experience level
-    - 💬 **Interactive Consultation**: Chat naturally with AI to build your perfect program
-    - 📋 **Detailed Exercise Programs**: Complete with sets, reps, and progression guidance
-    - 🔄 **Easy Updates**: Modify your plan anytime by chatting with the AI
-    - 📊 **Progress Tracking**: Log workouts and track your improvements over time
-
-    ### How It Works:
-    1. **Create an account** using the sidebar 👈
-    2. **Tell us about yourself** - fitness goals, experience, available time
-    3. **Get your custom plan** - Generated in minutes
-    4. **Start training** - Follow your personalized program
-
-    ### Get Started:
-    👈 Create an account or login using the sidebar!
-    """)
-
-    # Only show setup instructions if this appears to be self-hosted (not on Streamlit Cloud)
-    import os
-    if os.path.exists('.env') or not os.getenv('STREAMLIT_SHARING_MODE'):
-        with st.expander("🔧 Self-Hosting Setup"):
-            st.markdown("""
-            **For developers running ChatPT locally:**
-
-            Create a `.env` file with your API keys:
-            ```
-            ANTHROPIC_API_KEY=your-key-here
-            ```
-
-            Optional Google OAuth:
-            ```
-            GOOGLE_CLIENT_ID=your-client-id
-            GOOGLE_CLIENT_SECRET=your-secret
-            GOOGLE_REDIRECT_URI=http://localhost:8501
-            ```
-            """)
-
-elif st.session_state.page == "home":
-    st.title(f"Welcome back, {st.session_state.user_name}! 💪")
-
-    col1, col2 = st.columns(2)
+    # Features Grid
+    col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.subheader("📋 Your Consultations")
-        consultations = get_user_consultations(st.session_state.user_id)
-        if consultations:
-            st.metric("Total Consultations", len(consultations))
-            st.metric("Completed Plans", sum(1 for c in consultations if c["completed"]))
-        else:
-            st.info("No consultations yet. Start your first one!")
+        st.markdown("""
+        <div style="text-align: center; padding: 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; color: white; height: 100%;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🎯</div>
+            <h3 style="margin: 0.5rem 0; color: white;">Custom Plans</h3>
+            <p style="margin: 0; font-size: 0.9rem;">Designed specifically for your goals and experience level</p>
+        </div>
+        """, unsafe_allow_html=True)
 
     with col2:
-        st.subheader("🚀 Quick Actions")
-        if st.button("Start New Consultation", use_container_width=True, type="primary"):
+        st.markdown("""
+        <div style="text-align: center; padding: 1.5rem; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 10px; color: white; height: 100%;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">💬</div>
+            <h3 style="margin: 0.5rem 0; color: white;">AI Consultation</h3>
+            <p style="margin: 0; font-size: 0.9rem;">Chat naturally with AI to build your perfect program</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col3:
+        st.markdown("""
+        <div style="text-align: center; padding: 1.5rem; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 10px; color: white; height: 100%;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📊</div>
+            <h3 style="margin: 0.5rem 0; color: white;">Track Progress</h3>
+            <p style="margin: 0; font-size: 0.9rem;">Log workouts and visualize your improvements</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # How It Works Section
+    st.markdown("""
+    <div style="background: #f8f9fa; padding: 2rem; border-radius: 10px; margin: 2rem 0;">
+        <h2 style="text-align: center; margin-bottom: 2rem;">How It Works</h2>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.markdown("""
+        <div style="text-align: center;">
+            <div style="background: #667eea; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto; font-size: 1.5rem; font-weight: bold;">1</div>
+            <h4>Sign Up</h4>
+            <p style="font-size: 0.9rem; color: #666;">Create your free account</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col2:
+        st.markdown("""
+        <div style="text-align: center;">
+            <div style="background: #667eea; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto; font-size: 1.5rem; font-weight: bold;">2</div>
+            <h4>Consult AI</h4>
+            <p style="font-size: 0.9rem; color: #666;">Share your goals and experience</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col3:
+        st.markdown("""
+        <div style="text-align: center;">
+            <div style="background: #667eea; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto; font-size: 1.5rem; font-weight: bold;">3</div>
+            <h4>Get Plan</h4>
+            <p style="font-size: 0.9rem; color: #666;">Receive your custom program</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col4:
+        st.markdown("""
+        <div style="text-align: center;">
+            <div style="background: #667eea; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto; font-size: 1.5rem; font-weight: bold;">4</div>
+            <h4>Start Training</h4>
+            <p style="font-size: 0.9rem; color: #666;">Follow your personalized plan</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # CTA Section
+    st.markdown("""
+    <div style="text-align: center; margin: 3rem 0 2rem 0;">
+        <h3 style="margin-bottom: 1rem;">Ready to Transform Your Fitness?</h3>
+        <p style="font-size: 1.1rem; color: #666; margin-bottom: 1.5rem;">👈 Create an account or login using the sidebar to get started!</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Install as App Section
+    with st.expander("📱 Install ChatPT as an App on Your Phone"):
+        st.markdown("""
+        ### iPhone (Safari)
+        1. Open ChatPT in **Safari** browser
+        2. Tap the **Share** button (square with arrow pointing up) at the bottom
+        3. Scroll down and tap **"Add to Home Screen"**
+        4. Customize the name if you want, then tap **"Add"**
+        5. ChatPT will now appear as an app icon on your home screen!
+
+        ### Android (Chrome)
+        1. Open ChatPT in **Chrome** browser
+        2. Tap the **three dots** menu (⋮) in the top right
+        3. Tap **"Add to Home screen"** or **"Install app"**
+        4. Customize the name if you want, then tap **"Add"**
+        5. ChatPT will now appear as an app icon on your home screen!
+
+        **Benefits of installing as an app:**
+        - 🚀 Faster access from your home screen
+        - 📱 Full-screen experience without browser UI
+        - 💾 Works offline (for previously loaded pages)
+        - 🔔 Better notifications support
+        """)
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
+
+elif st.session_state.page == "home":
+    # Hero welcome section
+    st.markdown(f"""
+    <div style="text-align: center; padding: 2rem 0 1rem 0;">
+        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Welcome back, {st.session_state.user_name}! 💪</h1>
+        <p style="font-size: 1.1rem; color: #666;">Let's crush your fitness goals today</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Quick Actions - Featured CTAs
+    st.markdown("""
+    <div style="margin: 2rem 0 1rem 0;">
+        <h3 style="margin-bottom: 1rem;">🚀 Quick Actions</h3>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        if st.button("💬 New\nConsultation", use_container_width=True, type="primary", key="home_new_consult"):
             st.session_state.page = "consultation"
             st.rerun()
-        if st.button("View My Plans", use_container_width=True):
+
+    with col2:
+        if st.button("📋 My\nPlans", use_container_width=True, key="home_plans"):
             st.session_state.page = "plans"
             st.rerun()
-        if st.button("Track Progress", use_container_width=True):
+
+    with col3:
+        if st.button("📚 Exercise\nLibrary", use_container_width=True, key="home_exercises"):
+            st.session_state.page = "exercises"
+            st.rerun()
+
+    with col4:
+        if st.button("📊 Track\nProgress", use_container_width=True, key="home_progress"):
             st.session_state.page = "progress"
             st.rerun()
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Stats Dashboard
+    consultations = get_user_consultations(st.session_state.user_id)
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 10px; text-align: center; color: white;">
+            <div style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem;">{}</div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">Total Consultations</div>
+        </div>
+        """.format(len(consultations)), unsafe_allow_html=True)
+
+    with col2:
+        completed = sum(1 for c in consultations if c["completed"])
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 1.5rem; border-radius: 10px; text-align: center; color: white;">
+            <div style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem;">{}</div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">Completed Plans</div>
+        </div>
+        """.format(completed), unsafe_allow_html=True)
+
+    with col3:
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 1.5rem; border-radius: 10px; text-align: center; color: white;">
+            <div style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem;">🎯</div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">Stay Consistent</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
+
+    # Recent Activity
+    if consultations:
+        st.markdown("""
+        <div style="margin: 2rem 0 1rem 0;">
+            <h3>📋 Your Recent Consultations</h3>
+        </div>
+        """, unsafe_allow_html=True)
+
+        for i, consultation in enumerate(consultations[:3]):  # Show last 3
+            status_color = "#28a745" if consultation["completed"] else "#ffc107"
+            status_text = "✅ Completed" if consultation["completed"] else "⏳ In Progress"
+
+            st.markdown(f"""
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; border-left: 4px solid {status_color};">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>Consultation #{i+1}</strong>
+                        <span style="margin-left: 1rem; color: {status_color}; font-size: 0.9rem;">{status_text}</span>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <div style="background: #f8f9fa; padding: 2rem; border-radius: 10px; text-align: center; margin: 2rem 0;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🏋️</div>
+            <h3 style="margin-bottom: 0.5rem;">Ready to start your fitness journey?</h3>
+            <p style="color: #666; margin-bottom: 1.5rem;">Create your first personalized workout plan by starting a consultation with our AI trainer.</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button("🚀 Start Your First Consultation", use_container_width=True, type="primary", key="home_first_consult"):
+                st.session_state.page = "consultation"
+                st.rerun()
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Install as App Section
+    with st.expander("📱 Install ChatPT as an App on Your Phone"):
+        st.markdown("""
+        ### iPhone (Safari)
+        1. Open ChatPT in **Safari** browser
+        2. Tap the **Share** button (square with arrow pointing up) at the bottom
+        3. Scroll down and tap **"Add to Home Screen"**
+        4. Customize the name if you want, then tap **"Add"**
+        5. ChatPT will now appear as an app icon on your home screen!
+
+        ### Android (Chrome)
+        1. Open ChatPT in **Chrome** browser
+        2. Tap the **three dots** menu (⋮) in the top right
+        3. Tap **"Add to Home screen"** or **"Install app"**
+        4. Customize the name if you want, then tap **"Add"**
+        5. ChatPT will now appear as an app icon on your home screen!
+
+        **Benefits of installing as an app:**
+        - 🚀 Faster access from your home screen
+        - 📱 Full-screen experience without browser UI
+        - 💾 Works offline (for previously loaded pages)
+        - 🔔 Better notifications support
+        """)
 
 elif st.session_state.page == "consultation":
     # Import consultation page
