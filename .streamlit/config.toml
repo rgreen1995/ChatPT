@@ -1,7 +1,7 @@
 [theme]
-primaryColor = "#FF4B4B"
+primaryColor = "#667eea"
 backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F0F2F6"
+secondaryBackgroundColor = "#F8F9FA"
 textColor = "#262730"
 font = "sans serif"
 
@@ -12,3 +12,8 @@ enableXsrfProtection = true
 
 [browser]
 gatherUsageStats = false
+
+[client]
+# Keep session alive for 30 days
+maxSessionLifeTimeInMinutes = 43200
+showErrorDetails = false

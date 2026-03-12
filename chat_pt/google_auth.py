@@ -44,6 +44,7 @@ def get_google_authenticator():
             cookie_name='chatpt_auth_cookie',
             cookie_key=get_secret("COOKIE_SECRET_KEY", "default_secret_key_change_me"),
             redirect_uri=redirect_uri,
+            cookie_expiry_days=30,  # Stay logged in for 30 days
         )
         return authenticator
 
@@ -76,6 +77,7 @@ def get_google_authenticator():
         cookie_name='chatpt_auth_cookie',
         cookie_key=get_secret("COOKIE_SECRET_KEY", "default_secret_key_change_me"),
         redirect_uri=redirect_uri,
+        cookie_expiry_days=30,  # Stay logged in for 30 days
     )
     return authenticator
 

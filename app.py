@@ -20,15 +20,206 @@ st.set_page_config(
     }
 )
 
+# Auto-close sidebar on navigation, add smooth transitions, and handle persistent login
+st.markdown("""
+<script>
+// Auto-close sidebar when any button is clicked
+document.addEventListener('DOMContentLoaded', function() {
+    // Close sidebar on any navigation
+    const closeSidebar = () => {
+        const sidebar = window.parent.document.querySelector('[data-testid="stSidebar"]');
+        if (sidebar && !sidebar.classList.contains('collapsed')) {
+            const closeButton = window.parent.document.querySelector('[data-testid="collapsedControl"]');
+            if (closeButton) {
+                closeButton.click();
+            }
+        }
+    };
+
+    // Listen for button clicks
+    document.querySelectorAll('button').forEach(button => {
+        button.addEventListener('click', closeSidebar);
+    });
+
+    // Store auth token in localStorage when logging in
+    window.storeAuthToken = function(userId, userName, userEmail) {
+        const authData = {
+            userId: userId,
+            userName: userName,
+            userEmail: userEmail,
+            timestamp: Date.now()
+        };
+        localStorage.setItem('chatpt_auth', JSON.stringify(authData));
+    };
+
+    // Clear auth token on logout
+    window.clearAuthToken = function() {
+        localStorage.removeItem('chatpt_auth');
+    };
+
+    // Get stored auth token
+    window.getAuthToken = function() {
+        const stored = localStorage.getItem('chatpt_auth');
+        if (!stored) return null;
+
+        const authData = JSON.parse(stored);
+        const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+
+        // Check if token is still valid (30 days)
+        if (Date.now() - authData.timestamp > thirtyDays) {
+            localStorage.removeItem('chatpt_auth');
+            return null;
+        }
+
+        return authData;
+    };
+});
+</script>
+
+<style>
+/* Smooth transitions for all interactive elements */
+button, .stButton button {
+    transition: all 0.2s ease-in-out !important;
+}
+
+button:hover, .stButton button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+}
+
+button:active, .stButton button:active {
+    transform: translateY(0px) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+/* Smooth sidebar transitions */
+[data-testid="stSidebar"] {
+    transition: all 0.3s ease-in-out !important;
+}
+
+[data-testid="stSidebar"][aria-expanded="true"] {
+    box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+}
+
+/* Smooth page transitions */
+.main .block-container {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Smooth form transitions */
+.stForm {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Input field improvements */
+input[type="text"], input[type="email"], input[type="password"], textarea {
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out !important;
+}
+
+input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, textarea:focus {
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 1px #667eea !important;
+}
+
+/* Better mobile tap targets */
+@media (max-width: 768px) {
+    button, .stButton button {
+        min-height: 44px !important;
+        padding: 0.75rem 1rem !important;
+    }
+
+    /* Larger touch targets for forms */
+    input, textarea, select {
+        min-height: 44px !important;
+        font-size: 16px !important; /* Prevents iOS zoom on focus */
+    }
+}
+
+/* Loading spinner smoothness */
+.stSpinner > div {
+    animation: spin 1s cubic-bezier(0.4, 0.0, 0.2, 1) infinite !important;
+}
+
+/* Smooth expander transitions */
+.streamlit-expanderHeader {
+    transition: background-color 0.2s ease-in-out !important;
+}
+
+.streamlit-expanderHeader:hover {
+    background-color: rgba(0,0,0,0.02) !important;
+}
+
+/* Card-like containers with subtle shadows */
+div[data-testid="stVerticalBlock"] > div {
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+/* Smooth scroll behavior */
+html {
+    scroll-behavior: smooth;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # Initialize session state
 if "user_id" not in st.session_state:
     st.session_state.user_id = None
 if "user_name" not in st.session_state:
     st.session_state.user_name = None
+if "user_email" not in st.session_state:
+    st.session_state.user_email = None
 if "page" not in st.session_state:
     st.session_state.page = "home"
 if "llm_provider" not in st.session_state:
     st.session_state.llm_provider = "anthropic"
+if "auth_checked" not in st.session_state:
+    st.session_state.auth_checked = False
+
+# Check for stored auth on first load
+if not st.session_state.auth_checked and st.session_state.user_id is None:
+    st.session_state.auth_checked = True
+    # Inject component to check localStorage
+    check_auth_html = """
+    <script>
+    const authData = window.getAuthToken ? window.getAuthToken() : null;
+    if (authData) {
+        // Send auth data to Streamlit via query params (simple approach)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (!urlParams.has('auto_login')) {
+            const url = new URL(window.location);
+            url.searchParams.set('auto_login', '1');
+            url.searchParams.set('user_id', authData.userId);
+            url.searchParams.set('user_name', authData.userName);
+            url.searchParams.set('user_email', authData.userEmail || '');
+            window.location.href = url.toString();
+        }
+    }
+    </script>
+    """
+    st.components.v1.html(check_auth_html, height=0)
+
+    # Check query params for auto-login
+    try:
+        query_params = st.query_params
+        if query_params.get('auto_login') == '1':
+            user_id = query_params.get('user_id')
+            user_name = query_params.get('user_name')
+            user_email = query_params.get('user_email', '')
+
+            if user_id and user_name:
+                st.session_state.user_id = int(user_id)
+                st.session_state.user_name = user_name
+                st.session_state.user_email = user_email
+                # Clear query params
+                st.query_params.clear()
+                st.rerun()
+    except Exception:
+        pass
 
 # Sidebar navigation
 with st.sidebar:
@@ -73,6 +264,14 @@ with st.sidebar:
                             st.session_state.user_id = user["id"]
                             st.session_state.user_name = user["name"]
                             st.session_state.user_email = user["email"]
+                            # Store auth in localStorage
+                            st.components.v1.html(f"""
+                            <script>
+                            if (window.storeAuthToken) {{
+                                window.storeAuthToken({user["id"]}, '{user["name"]}', '{user["email"]}');
+                            }}
+                            </script>
+                            """, height=0)
                             st.success(f"Welcome back, {user['name']}!")
                             st.rerun()
                         else:
@@ -106,6 +305,15 @@ with st.sidebar:
                             st.session_state.user_name = name
                             st.session_state.user_email = email
                             st.session_state.signup_email_status = None
+
+                            # Store auth in localStorage
+                            st.components.v1.html(f"""
+                            <script>
+                            if (window.storeAuthToken) {{
+                                window.storeAuthToken({user_id}, '{name}', '{email}');
+                            }}
+                            </script>
+                            """, height=0)
 
                             # Send welcome email (non-blocking)
                             try:
@@ -151,9 +359,19 @@ with st.sidebar:
             st.caption(f"{db_emoji} {st.session_state.db_type.title()}")
 
         if st.button("Logout"):
+            # Clear localStorage auth
+            st.components.v1.html("""
+            <script>
+            if (window.clearAuthToken) {
+                window.clearAuthToken();
+            }
+            </script>
+            """, height=0)
+
             # Clear all session state
             st.session_state.user_id = None
             st.session_state.user_name = None
+            st.session_state.user_email = None
             st.session_state.page = "home"
             # Reset auth mode
             st.session_state.auth_mode = 'login'
@@ -196,18 +414,23 @@ with st.sidebar:
         st.subheader("Navigation")
         if st.button("🏠 Home", use_container_width=True):
             st.session_state.page = "home"
+            st.session_state.sidebar_state = "collapsed"
             st.rerun()
         if st.button("💬 New Consultation", use_container_width=True):
             st.session_state.page = "consultation"
+            st.session_state.sidebar_state = "collapsed"
             st.rerun()
         if st.button("📋 My Plans", use_container_width=True):
             st.session_state.page = "plans"
+            st.session_state.sidebar_state = "collapsed"
             st.rerun()
         if st.button("📚 Exercise Library", use_container_width=True):
             st.session_state.page = "exercises"
+            st.session_state.sidebar_state = "collapsed"
             st.rerun()
         if st.button("📊 Progress Tracking", use_container_width=True):
             st.session_state.page = "progress"
+            st.session_state.sidebar_state = "collapsed"
             st.rerun()
 
 # Main content area
@@ -479,21 +702,25 @@ elif st.session_state.page == "home":
     with col1:
         if st.button("💬 New\nConsultation", use_container_width=True, type="primary", key="home_new_consult"):
             st.session_state.page = "consultation"
+            st.session_state.sidebar_state = "collapsed"
             st.rerun()
 
     with col2:
         if st.button("📋 My\nPlans", use_container_width=True, key="home_plans"):
             st.session_state.page = "plans"
+            st.session_state.sidebar_state = "collapsed"
             st.rerun()
 
     with col3:
         if st.button("📚 Exercise\nLibrary", use_container_width=True, key="home_exercises"):
             st.session_state.page = "exercises"
+            st.session_state.sidebar_state = "collapsed"
             st.rerun()
 
     with col4:
         if st.button("📊 Track\nProgress", use_container_width=True, key="home_progress"):
             st.session_state.page = "progress"
+            st.session_state.sidebar_state = "collapsed"
             st.rerun()
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -565,6 +792,7 @@ elif st.session_state.page == "home":
         with col2:
             if st.button("🚀 Start Your First Consultation", use_container_width=True, type="primary", key="home_first_consult"):
                 st.session_state.page = "consultation"
+                st.session_state.sidebar_state = "collapsed"
                 st.rerun()
 
     st.markdown("<br>", unsafe_allow_html=True)
