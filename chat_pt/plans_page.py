@@ -1,6 +1,103 @@
 import streamlit as st
 import pandas as pd
+import time
 from chat_pt.db_interface import get_user_consultations, get_workout_plan, get_conversation_history
+
+def render_rest_timer(rest_seconds, exercise_key):
+    """Render an interactive rest timer for an exercise."""
+    timer_key = f"timer_{exercise_key}"
+    timer_running_key = f"timer_running_{exercise_key}"
+    timer_start_key = f"timer_start_{exercise_key}"
+    timer_end_key = f"timer_end_{exercise_key}"
+
+    # Initialize timer state
+    if timer_running_key not in st.session_state:
+        st.session_state[timer_running_key] = False
+    if timer_start_key not in st.session_state:
+        st.session_state[timer_start_key] = None
+    if timer_end_key not in st.session_state:
+        st.session_state[timer_end_key] = None
+
+    # Check if timer is running
+    if st.session_state[timer_running_key]:
+        current_time = time.time()
+        end_time = st.session_state[timer_end_key]
+        remaining = max(0, int(end_time - current_time))
+
+        if remaining > 0:
+            # Display countdown timer
+            mins = remaining // 60
+            secs = remaining % 60
+
+            # Timer display with progress bar
+            progress = 1 - (remaining / rest_seconds)
+
+            timer_html = f"""
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        padding: 1.5rem; border-radius: 10px; text-align: center;
+                        margin: 1rem 0; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                <div style="color: white; font-size: 3rem; font-weight: bold; margin-bottom: 0.5rem;">
+                    {mins:02d}:{secs:02d}
+                </div>
+                <div style="background: rgba(255,255,255,0.3); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 1rem;">
+                    <div style="background: white; height: 100%; width: {progress * 100}%; transition: width 0.3s ease;"></div>
+                </div>
+                <div style="color: rgba(255,255,255,0.9); font-size: 1.1rem;">Rest Period</div>
+            </div>
+
+            <script>
+            setTimeout(function() {{
+                window.parent.location.reload();
+            }}, 1000);
+            </script>
+            """
+            st.markdown(timer_html, unsafe_allow_html=True)
+
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("⏸️ Pause", key=f"pause_{exercise_key}", use_container_width=True):
+                    st.session_state[timer_running_key] = False
+                    st.session_state[timer_start_key] = None
+                    st.session_state[timer_end_key] = None
+                    st.rerun()
+            with col2:
+                if st.button("⏭️ Skip", key=f"skip_{exercise_key}", use_container_width=True):
+                    st.session_state[timer_running_key] = False
+                    st.session_state[timer_start_key] = None
+                    st.session_state[timer_end_key] = None
+                    st.success("✅ Rest complete! Ready for next set.")
+                    st.rerun()
+        else:
+            # Timer complete
+            st.session_state[timer_running_key] = False
+            st.session_state[timer_start_key] = None
+            st.session_state[timer_end_key] = None
+
+            # Play completion notification
+            st.markdown("""
+            <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                        padding: 1.5rem; border-radius: 10px; text-align: center;
+                        margin: 1rem 0; animation: pulse 0.5s ease-in-out;">
+                <div style="color: white; font-size: 2rem; margin-bottom: 0.5rem;">✅ Rest Complete!</div>
+                <div style="color: rgba(255,255,255,0.9);">Ready for your next set</div>
+            </div>
+
+            <audio autoplay>
+                <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLaiTkIG2u98OScTgwOUa3k7rlfGwQ9k9TuxXInBSd5yO/blEILElyx6OynVBMJRaHe8bNjGAU0jdXuxXElBSh+zPDWjDwJFl+16OupXxwFPJPT7sNwJgUohM/z1YU2Bhxqvu7mnEsLDlOy5e6zXhoEOpPU7cNxJwUmeMrw2JRCDRFYL+rsnFIKC0Oi3vG0YxgFM4vU7cNyJwUofMzv2Y48CRVftujrqV8cBTyT0+7DcCYFJ4TP89WFNgYcab7u5pxLCw5TsuXus14aBDqT1O3DcScFJnfJ8NiUQg0RWC/q7JxSCgtDot7xtGIYBTOL1O3DcicFKHzM79mOPAkVX7bo66lfHAU8k9Puw3AmBSeEz/PVhTYGHGm+7uacSwsOU7Ll7rNeGgQ6k9Ttw3EnBSZ3yfDYlEINEVgv6uycUgoLQ6Le8bRiGAUzi9Ttw3InBSh8zO/ZjjwJFV+26OupXxwFPJPT7sNwJgUnhM/z1YU2BhxqvO7mnEsLDlOy5e6zXhoEOpPU7cNxJwUmd8nw2JRCDRFYL+rsnFIKC0Oi3vG0YhgFM4vU7cNyJwUofMzv2Y48CRVftujrqV8cBTyT0+7DcCYFJ4TP89WFNgYcabzu5pxLCw5TsuXus14aBDqT1O3DcScFJnfJ8NiUQg0RWC/q7JxSCgtDot7xtGIYBTOL1O3DcicFKHzM79mOPAkVX7bo66lfHAU8k9Puw3AmBSeEz/PVhTYGHGm87uacSwsOU7Ll7rNeGgQ6k9Ttw3EnBSZ3yfDYlEINEVgv6uycUgoLQ6Le8bRiGAUzi9Ttw3InBSh8zO/ZjjwJFV+26OupXxwFPJPT7sNwJgUnhM/z1YU2BhxpvO7mnEsLDlOy5e6zXhoEOpPU7cNxJwUmd8nw2JRCDRFYL+rsnFIKC0Oi3vG0YhgFM4vU7cNyJwUofMzv2Y48CRVftujrqV8cBTyT0+7DcCYFJ4TP89WFNgYcabzu5pxLCw5TsuXus14aBDqT1O3DcScFJnfJ8NiUQg0RWC/q7JxSCgtDot7xtGIYBTOL1O3DcicFKHzM79mOPAkVX7bo66lfHAU8k9Puw3AmBSeEz/PVhTYGHGm87uacSwsOU7Ll7rNeGgQ6k9Ttw3EnBSZ3yfDYlEINEVgv6uycUgoLQ6Le8bRiGAUzi9Ttw3InBSh8zO/ZjjwJFV+26OupXxwFPJPT7sNwJgUnhM/z1YU2BhxpvO7mnEsLDlOy5e6zXhoEOpPU7cNxJwUmd8nw2JRCDRFYL+rsnFIKC0Oi3vG0YhgFM4vU7cNyJwUofMzv2Y48CRVftujrqV8cBTyT0+7DcCYFJ4TP89WFNgYcabzu5pxLCw5TsuXus14aBDqT1O3DcScFJnfJ8NiUQg0RWC/q7JxSCgtDot7xtGIYBTOL1O3DcicFKHzM79mOPAkVX7bo66lfHAU8k9Puw3AmBSeEz/PVhTYGHGm87uacSwsOU7Ll7rNeGgQ6k9Ttw3EnBSZ3yfDYlEINEVgv6uycUgoLA==" type="audio/wav">
+            </audio>
+
+            <style>
+            @keyframes pulse {{
+                0%, 100% {{ transform: scale(1); }}
+                50% {{ transform: scale(1.05); }}
+            }}
+            </style>
+            """, unsafe_allow_html=True)
+
+            time.sleep(2)
+            st.rerun()
+
+    return st.session_state[timer_running_key]
 
 def sort_workout_days(schedule_dict):
     """Sort workout days in a sensible order (days of week or numerical)."""
@@ -303,6 +400,51 @@ def render():
             with day_tab:
                 st.markdown(f"### {day_data.get('focus', 'Workout')}")
 
+                # Workout session timer
+                session_timer_key = f"session_timer_{day_name}"
+                session_start_key = f"session_start_{day_name}"
+
+                if session_timer_key not in st.session_state:
+                    st.session_state[session_timer_key] = False
+                if session_start_key not in st.session_state:
+                    st.session_state[session_start_key] = None
+
+                # Display session timer controls
+                col1, col2, col3 = st.columns([2, 2, 2])
+                with col1:
+                    if not st.session_state[session_timer_key]:
+                        if st.button("▶️ Start Workout", key=f"start_session_{day_name}", use_container_width=True, type="primary"):
+                            st.session_state[session_timer_key] = True
+                            st.session_state[session_start_key] = time.time()
+                            st.rerun()
+                    else:
+                        if st.button("⏹️ End Workout", key=f"end_session_{day_name}", use_container_width=True):
+                            st.session_state[session_timer_key] = False
+                            elapsed = int(time.time() - st.session_state[session_start_key])
+                            st.session_state[session_start_key] = None
+                            st.success(f"✅ Workout complete! Duration: {elapsed // 60}m {elapsed % 60}s")
+                            st.rerun()
+
+                with col2:
+                    if st.session_state[session_timer_key]:
+                        elapsed = int(time.time() - st.session_state[session_start_key])
+                        mins = elapsed // 60
+                        secs = elapsed % 60
+                        st.markdown(f"""
+                        <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                                    padding: 0.75rem; border-radius: 8px; text-align: center; color: white;">
+                            <div style="font-size: 1.5rem; font-weight: bold;">⏱️ {mins:02d}:{secs:02d}</div>
+                            <div style="font-size: 0.8rem; opacity: 0.9;">Workout Duration</div>
+                        </div>
+                        <script>
+                        setTimeout(function() {{
+                            window.parent.location.reload();
+                        }}, 1000);
+                        </script>
+                        """, unsafe_allow_html=True)
+
+                st.markdown("<br>", unsafe_allow_html=True)
+
                 exercises = day_data.get("exercises", [])
 
                 if exercises:
@@ -311,10 +453,12 @@ def render():
                         exercise_name = exercise.get("name", "N/A")
                         sets = exercise.get('sets', 'N/A')
                         reps = exercise.get('reps', 'N/A')
-                        rest = exercise.get('rest_seconds', 'N/A')
+                        rest = exercise.get('rest_seconds', 60)  # Default to 60s if not specified
+
+                        exercise_key = f"{day_name}_{idx}"
 
                         # Compact single-row layout: Name | Sets x Reps | Rest | Buttons
-                        col1, col2, col3, col4 = st.columns([3, 2, 1.5, 1.5])
+                        col1, col2, col3, col4 = st.columns([3, 2, 1.5, 2])
 
                         with col1:
                             st.markdown(f"**{idx}. {exercise_name}**")
@@ -328,17 +472,29 @@ def render():
                             st.caption(f"Rest: **{rest}s**")
 
                         with col4:
-                            # Stack buttons vertically in this column
-                            if st.button("🔄", key=f"{day_name}_{idx}_swap", help="Swap exercise", use_container_width=True):
-                                st.session_state.swap_exercise = exercise_name
-                                st.session_state.swap_day = day_name
-                                st.session_state.swap_consultation_id = consultation_id
-                                st.session_state.show_swap_dialog = True
-                                st.rerun()
-                            if st.button("ℹ️", key=f"{day_name}_{idx}_info", help="Exercise info", use_container_width=True):
-                                st.session_state.viewing_exercise = exercise_name
-                                st.session_state.page = "exercises"
-                                st.rerun()
+                            # Action buttons in a row
+                            btn_col1, btn_col2, btn_col3 = st.columns(3)
+                            with btn_col1:
+                                if st.button("⏱️", key=f"{exercise_key}_timer", help="Start rest timer", use_container_width=True):
+                                    st.session_state[f"timer_running_{exercise_key}"] = True
+                                    st.session_state[f"timer_start_{exercise_key}"] = time.time()
+                                    st.session_state[f"timer_end_{exercise_key}"] = time.time() + rest
+                                    st.rerun()
+                            with btn_col2:
+                                if st.button("🔄", key=f"{exercise_key}_swap", help="Swap exercise", use_container_width=True):
+                                    st.session_state.swap_exercise = exercise_name
+                                    st.session_state.swap_day = day_name
+                                    st.session_state.swap_consultation_id = consultation_id
+                                    st.session_state.show_swap_dialog = True
+                                    st.rerun()
+                            with btn_col3:
+                                if st.button("ℹ️", key=f"{exercise_key}_info", help="Exercise info", use_container_width=True):
+                                    st.session_state.viewing_exercise = exercise_name
+                                    st.session_state.page = "exercises"
+                                    st.rerun()
+
+                        # Show timer if active for this exercise
+                        timer_running = render_rest_timer(rest, exercise_key)
 
                         st.markdown("---")
 
