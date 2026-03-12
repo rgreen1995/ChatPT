@@ -448,55 +448,119 @@ def render():
                 exercises = day_data.get("exercises", [])
 
                 if exercises:
-                    # Display exercises in compact format
-                    for idx, exercise in enumerate(exercises, 1):
-                        exercise_name = exercise.get("name", "N/A")
-                        sets = exercise.get('sets', 'N/A')
-                        reps = exercise.get('reps', 'N/A')
-                        rest = exercise.get('rest_seconds', 60)  # Default to 60s if not specified
+                    # Group exercises by sequence for supersets
+                    # Build groups: {sequence_num: [exercises]}
+                    sequence_groups = {}
+                    exercise_index = 0
 
-                        exercise_key = f"{day_name}_{idx}"
+                    for exercise in exercises:
+                        sequence = exercise.get('sequence')
+                        if sequence:
+                            # Extract numeric part (e.g., "2A" -> 2, "3B" -> 3)
+                            import re
+                            match = re.match(r'(\d+)', str(sequence))
+                            if match:
+                                seq_num = int(match.group(1))
+                            else:
+                                seq_num = None
+                        else:
+                            seq_num = None
 
-                        # Compact single-row layout: Name | Sets x Reps | Rest | Buttons
-                        col1, col2, col3, col4 = st.columns([3, 2, 1.5, 2])
+                        if seq_num is not None:
+                            if seq_num not in sequence_groups:
+                                sequence_groups[seq_num] = []
+                            sequence_groups[seq_num].append((exercise_index, exercise))
+                        else:
+                            # Standalone exercise
+                            sequence_groups[f"solo_{exercise_index}"] = [(exercise_index, exercise)]
 
-                        with col1:
-                            st.markdown(f"**{idx}. {exercise_name}**")
-                            if exercise.get("notes"):
-                                st.caption(f"💡 {exercise['notes']}")
+                        exercise_index += 1
 
-                        with col2:
-                            st.markdown(f"**{sets}** × **{reps}**")
+                    # Display exercises grouped by sequence
+                    display_idx = 1
+                    sorted_keys = sorted([k for k in sequence_groups.keys() if isinstance(k, int)]) + \
+                                  [k for k in sequence_groups.keys() if isinstance(k, str)]
 
-                        with col3:
-                            st.caption(f"Rest: **{rest}s**")
+                    for seq_key in sorted_keys:
+                        group = sequence_groups[seq_key]
 
-                        with col4:
-                            # Action buttons in a row
-                            btn_col1, btn_col2, btn_col3 = st.columns(3)
-                            with btn_col1:
-                                if st.button("⏱️", key=f"{exercise_key}_timer", help="Start rest timer", use_container_width=True):
-                                    st.session_state[f"timer_running_{exercise_key}"] = True
-                                    st.session_state[f"timer_start_{exercise_key}"] = time.time()
-                                    st.session_state[f"timer_end_{exercise_key}"] = time.time() + rest
-                                    st.rerun()
-                            with btn_col2:
-                                if st.button("🔄", key=f"{exercise_key}_swap", help="Swap exercise", use_container_width=True):
-                                    st.session_state.swap_exercise = exercise_name
-                                    st.session_state.swap_day = day_name
-                                    st.session_state.swap_consultation_id = consultation_id
-                                    st.session_state.show_swap_dialog = True
-                                    st.rerun()
-                            with btn_col3:
-                                if st.button("ℹ️", key=f"{exercise_key}_info", help="Exercise info", use_container_width=True):
-                                    st.session_state.viewing_exercise = exercise_name
-                                    st.session_state.page = "exercises"
-                                    st.rerun()
+                        # Check if this is a superset (multiple exercises with same sequence)
+                        is_superset = len(group) > 1 and isinstance(seq_key, int)
 
-                        # Show timer if active for this exercise
-                        timer_running = render_rest_timer(rest, exercise_key)
+                        if is_superset:
+                            # Display superset header
+                            st.markdown(f"""
+                            <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                                        padding: 0.5rem 1rem; border-radius: 8px; margin: 1rem 0 0.5rem 0;">
+                                <strong style="color: white;">🔗 Superset {seq_key}</strong>
+                                <span style="color: rgba(255,255,255,0.9); font-size: 0.9rem; margin-left: 1rem;">
+                                    Alternate between exercises with minimal rest
+                                </span>
+                            </div>
+                            """, unsafe_allow_html=True)
 
+                        # Display each exercise in the group
+                        for orig_idx, exercise in group:
+                            exercise_name = exercise.get("name", "N/A")
+                            sets = exercise.get('sets', 'N/A')
+                            reps = exercise.get('reps', 'N/A')
+                            rest = exercise.get('rest_seconds', 60)
+                            sequence = exercise.get('sequence', '')
+
+                            exercise_key = f"{day_name}_{orig_idx}"
+
+                            # Compact single-row layout: Name | Sets x Reps | Rest | Buttons
+                            col1, col2, col3, col4 = st.columns([3, 2, 1.5, 2])
+
+                            with col1:
+                                # Show sequence indicator for supersets
+                                if is_superset:
+                                    st.markdown(f"**{sequence}. {exercise_name}**")
+                                else:
+                                    st.markdown(f"**{display_idx}. {exercise_name}**")
+
+                                if exercise.get("notes"):
+                                    st.caption(f"💡 {exercise['notes']}")
+
+                            with col2:
+                                st.markdown(f"**{sets}** × **{reps}**")
+
+                            with col3:
+                                st.caption(f"Rest: **{rest}s**")
+
+                            with col4:
+                                # Action buttons in a row
+                                btn_col1, btn_col2, btn_col3 = st.columns(3)
+                                with btn_col1:
+                                    if st.button("⏱️", key=f"{exercise_key}_timer", help="Start rest timer", use_container_width=True):
+                                        st.session_state[f"timer_running_{exercise_key}"] = True
+                                        st.session_state[f"timer_start_{exercise_key}"] = time.time()
+                                        st.session_state[f"timer_end_{exercise_key}"] = time.time() + rest
+                                        st.rerun()
+                                with btn_col2:
+                                    if st.button("🔄", key=f"{exercise_key}_swap", help="Swap exercise", use_container_width=True):
+                                        st.session_state.swap_exercise = exercise_name
+                                        st.session_state.swap_day = day_name
+                                        st.session_state.swap_consultation_id = consultation_id
+                                        st.session_state.show_swap_dialog = True
+                                        st.rerun()
+                                with btn_col3:
+                                    if st.button("ℹ️", key=f"{exercise_key}_info", help="Exercise info", use_container_width=True):
+                                        st.session_state.viewing_exercise = exercise_name
+                                        st.session_state.page = "exercises"
+                                        st.rerun()
+
+                            # Show timer if active for this exercise
+                            timer_running = render_rest_timer(rest, exercise_key)
+
+                        # Add separator after each exercise group
                         st.markdown("---")
+
+                        # Increment display index only for non-superset groups
+                        if not is_superset:
+                            display_idx += 1
+                        else:
+                            display_idx += 1  # Increment once per superset group
 
                     # Add option to log this workout
                     if st.button(f"📊 Log {day_name} Workout", key=f"log_{day_name}", use_container_width=True):

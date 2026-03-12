@@ -108,13 +108,29 @@ When you have enough information, provide a complete workout plan in the followi
     "Mon": {
       "focus": "Upper Body",
       "exercises": [
-        { 
+        {
           "name": "Barbell Bench Press",
-          "sequence": 2A,
+          "sequence": "1",
           "sets": 4,
           "reps": "8-10",
           "rest_seconds": 120,
           "notes": "Focus on controlled eccentric"
+        },
+        {
+          "name": "Dumbbell Rows",
+          "sequence": "2A",
+          "sets": 3,
+          "reps": "10-12",
+          "rest_seconds": 60,
+          "notes": "Superset with face pulls"
+        },
+        {
+          "name": "Face Pulls",
+          "sequence": "2B",
+          "sets": 3,
+          "reps": "15-20",
+          "rest_seconds": 90,
+          "notes": "Superset with rows"
         }
       ]
     }
@@ -122,6 +138,9 @@ When you have enough information, provide a complete workout plan in the followi
   "notes": "Additional guidance, progression plan, nutrition tips"
 }
 ```
+
+IMPORTANT: For supersets, use the SAME number with different letters (e.g., "2A", "2B", "2C") to group exercises together.
+For standalone exercises, just use numbers (e.g., "1", "3", "4"). The app will automatically group and display supersets with a special header.
 
 Check with the client but your preference should be to program days of the week, e,g. Monday 
 rather than day 1. You can ask questions to work out which days are best. 
