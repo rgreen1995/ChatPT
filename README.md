@@ -213,20 +213,18 @@ This helps by:
 
 ### Practical example
 
-Feature branch:
 ```
-
-text progress-tracking/feature``` 
-
-Small branches off that feature:
+git checkout -b something/feature 
+<do_some_trivial change or add an empty file>
+git commit -m 'creature featre for something'
+git push 
+<GO TO GITHUB mark as WIP, this branch will be eventually merge into main>
+git checkout -b "something/some_actual_stuff"
+<do stuff> 
+git commit -m 'adding some work to feature branch '
+git push
+<IN GITHUB, THIS BRANCH WILL BE MERGED INTO FEATURE BRANCH>
 ```
-
-text progress-tracking/add-volume-chart progress-tracking/fix-session-timer progress-tracking/improve-progress-ui``` 
-
-Then:
-
-- each small branch merges into `progress-tracking/feature`
-- once the feature branch is ready, it merges into `main`
 
 ## Contribution guidelines
 
