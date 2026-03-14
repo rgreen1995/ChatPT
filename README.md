@@ -5,7 +5,7 @@ ChatPT is an AI-powered fitness app built for generating and managing personalis
 
 It is designed first and foremost as a **personal tool** — something highly specific that I personally want to use. 
 
-It was also an experiment in using **AI agents to build software**. ~ 90% of the codebase was written by AI. (including this README)
+It was also an experiment in using **AI agents to build software**. 99% of the codebase was written by AI. (including this README)
 
 It is **not intended for commercialisation** and will remain **open source** (Other than in the unlikely event that someone offers me a **lot** of money).
 
