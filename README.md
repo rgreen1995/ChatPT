@@ -1,13 +1,16 @@
 # ChatPT
 
-## TLDR 
-ChatPT is an AI-powered fitness app built for generating and managing personalised workout and nutrition plans through conversational consultations. 
+## TL;DR
 
-It is designed first and foremost as a **personal tool** — something highly specific that I personally want to use. But the ultimate aim is that it becomes good enough to replace all online human coaches. 
+ChatPT is an AI-powered fitness app for building, delivering, and adapting personalised training and nutrition plans.
 
-It was also an experiment in using **AI agents to build software**. 99% of the codebase was written by AI. (including this README)
+It started as a personal tool: I was already using AI to generate programmes, then manually copying them into other apps for logging and in-workout use. That middle step was obviously pointless, so this project exists to remove it.
 
-It is **not intended for commercialisation** and will remain **open source** (Other than in the unlikely event that someone offers me a **lot** of money).
+The broader ambition is much bigger: to build a **free, genuinely personalised, always-available fitness assistant** that is good enough to replace most online coaching. Not a watered-down chatbot, but something that can eventually give ordinary people a level of support, responsiveness, and personalisation that even very wealthy people have never really had.
+
+This project was also an experiment in using **AI agents to build software**. Close to **99% of the codebase** was written by AI — including most of this README.
+
+It is **not intended for commercialisation** and is expected to remain **open source**.
 
 
 ## What the app does
@@ -25,21 +28,42 @@ ChatPT helps users:
 The app aims to make plan creation feel conversational rather than form-heavy.
 
 ## Why this project exists
-I originally found myself using AI chatbots to generate training programmes, then manually transferring those programmes into apps like Strong for logging and in-workout features. After doing that enough times, it became obvious that this middle step shouldn’t exist. If AI can write the programme, it should also be able to deliver it, track it, adapt it, and support you while you actually train.
 
-Cost is the other major reason this project exists. Good coaching and nutrition advice is expensive — often **£30 to £200+ a month**, and sometimes far more. That pricing makes sense in the old model, where access to useful knowledge and personal attention was limited. It makes far less sense now that a large amount of that knowledge is already available through high-end AI systems.
+I originally found myself using AI chatbots to generate training programmes, then manually transferring those programmes
+into apps like Strong for logging and in-workout features. After doing that enough times, it became obvious that this
+middle step shouldn’t exist. If AI can write the programme, it should also be able to deliver it, track it, adapt it,
+and support you while you actually train.
 
-AI also does a number of things which are objectively better by default. It is available **24/7**, it does not lose patience, it does not forget context, and it is completely **judgement-free**. You can ask basic questions, ask the same question five times, change your goals halfway through, or need help at 11pm, and none of that is an issue. For many people, that already makes it a safer space and more useful than a traditional coach.
+Cost is one major reason this project exists. Good coaching and nutrition advice is expensive — often **£30 to £200+ a
+month**, and sometimes far more. That pricing made sense in the old model, where access to useful knowledge and personal
+attention was limited. It makes far less sense now that a large amount of that knowledge is already available 
+through high-end AI systems.
 
-Realistically with the current models I do think AI should replace most online human fitness coaches. If this is not currently true then it will definitely be true within a year or two.
+The other major reason is personalisation. A lot of coaching is sold as highly personalised, but in practice it
+often isn’t nearly as tailored as advertised. It is usually limited by time, scale, attention, and the fact that 
+one coach can only properly juggle so many people at once. A well-built AI system does not have that limitation in the
+same way. It should be able to adapt around one person’s goals, schedule, preferences, injuries, constraints, feedback, 
+and progress with a level of consistency and specificity that most people are unlikely to get from a traditional coach.
 
-Not because good coaches have no value, but because for the vast majority of people the current model is expensive, inconsistent, hard to access, and often not nearly as personalised as it claims to be. A genuinely well-built AI system should be able to give better guidance, more consistently, at effectively zero marginal cost, and be available in your pocket whenever you need it.
+AI also does a number of things better by default. It is available **24/7**, it does not lose patience, it does not 
+forget context, and it is completely **judgement-free**. You can ask basic questions, ask the same question five times, 
+change your goals halfway through, or need help at 11pm, and none of that is an issue. For many people, that already 
+makes it a safer space and more useful than a traditional coach.
 
-That is the long-term aim of this project: to help build a fitness assistant that is **free, better, and always available**. Something more useful than a coach you have to book, pay monthly for, and wait to hear back from. Something that can eventually give ordinary people access to a level of support that would previously have been unavailable at any price.
+Realistically, I do think AI should replace most online human fitness coaches. Not because good coaches have no value,
+but because for the vast majority of people the current model is expensive, inconsistent, hard to access, and often far 
+less personalised than it claims to be. A genuinely well-built AI system should be able to give better guidance, more 
+consistently, at effectively zero marginal cost, and be available in your pocket whenever you need it.
+
+If that is not fully true yet, I think we are very close to it.
+
+That is the long-term aim of this project: to help build a fitness assistant that is **free, better, and 
+always available**. Something more useful than a coach you have to book, pay monthly for, and wait to hear back from. 
+Something that gives ordinary people access to a level of support that even the richest people alive have never really had.
 
 
+### A more practical reason this project exists
 
-### Another (less philiosophical) reason why this project existst
 This project was also an experiment in using **AI agents to build software**.
 
 A very large proportion of the codebase — close to **99%** — was written by AI. The goal was to explore how far AI-assisted development could go when building a very specific app for a real personal use case.
