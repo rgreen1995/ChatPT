@@ -455,8 +455,16 @@ with st.sidebar:
             st.session_state.page = "consultation"
             st.session_state.sidebar_state = "collapsed"
             st.rerun()
-        if st.button("📋 My Plans", use_container_width=True):
+        if st.button("📋 My Workout Plans", use_container_width=True):
             st.session_state.page = "plans"
+            st.session_state.sidebar_state = "collapsed"
+            st.rerun()
+        if st.button("🥗 Nutrition Consultation", use_container_width=True):
+            st.session_state.page = "nutrition_consultation"
+            st.session_state.sidebar_state = "collapsed"
+            st.rerun()
+        if st.button("🥗 My Nutrition Plans", use_container_width=True):
+            st.session_state.page = "nutrition_plans"
             st.session_state.sidebar_state = "collapsed"
             st.rerun()
         if st.button("📚 Exercise Library", use_container_width=True):
@@ -817,27 +825,39 @@ elif st.session_state.page == "home":
     </div>
     """, unsafe_allow_html=True)
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
 
     with col1:
-        if st.button("💬 New\nConsultation", use_container_width=True, type="primary", key="home_new_consult"):
+        if st.button("💬 Training\nConsultation", use_container_width=True, type="primary", key="home_new_consult"):
             st.session_state.page = "consultation"
             st.session_state.sidebar_state = "collapsed"
             st.rerun()
 
     with col2:
-        if st.button("📋 My\nPlans", use_container_width=True, key="home_plans"):
+        if st.button("📋 Workout\nPlans", use_container_width=True, key="home_plans"):
             st.session_state.page = "plans"
             st.session_state.sidebar_state = "collapsed"
             st.rerun()
 
     with col3:
+        if st.button("🥗 Nutrition\nConsultation", use_container_width=True, key="home_nutrition_consult"):
+            st.session_state.page = "nutrition_consultation"
+            st.session_state.sidebar_state = "collapsed"
+            st.rerun()
+
+    with col4:
+        if st.button("🥗 Nutrition\nPlans", use_container_width=True, key="home_nutrition_plans"):
+            st.session_state.page = "nutrition_plans"
+            st.session_state.sidebar_state = "collapsed"
+            st.rerun()
+
+    with col5:
         if st.button("📚 Exercise\nLibrary", use_container_width=True, key="home_exercises"):
             st.session_state.page = "exercises"
             st.session_state.sidebar_state = "collapsed"
             st.rerun()
 
-    with col4:
+    with col6:
         if st.button("📊 Track\nProgress", use_container_width=True, key="home_progress"):
             st.session_state.page = "progress"
             st.session_state.sidebar_state = "collapsed"
@@ -969,3 +989,13 @@ elif st.session_state.page == "progress":
     # Import progress page
     from chat_pt import progress_page
     progress_page.render()
+
+elif st.session_state.page == "nutrition_consultation":
+    # Import nutrition consultation page
+    from chat_pt import nutrition_consultation_page
+    nutrition_consultation_page.render()
+
+elif st.session_state.page == "nutrition_plans":
+    # Import nutrition plans page
+    from chat_pt import nutrition_plans_page
+    nutrition_plans_page.render()

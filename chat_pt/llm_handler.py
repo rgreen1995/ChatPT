@@ -24,14 +24,16 @@ def get_secret(key: str, default: str = None) -> str:
 class LLMHandler:
     """Handle interactions with different LLM providers."""
 
-    def __init__(self, provider: str = "gemini"):
+    def __init__(self, provider: str = "gemini", mode: str = "training"):
         """
         Initialize LLM handler.
 
         Args:
             provider: One of "openai", "anthropic", or "gemini"
+            mode: One of "training" or "nutrition"
         """
         self.provider = provider
+        self.mode = mode
 
         if provider == "openai":
             api_key = get_secret("OPENAI_API_KEY")
@@ -70,6 +72,13 @@ class LLMHandler:
             raise ValueError(f"Unknown provider: {provider}")
 
     def get_system_prompt(self) -> str:
+        """Get the system prompt based on the current mode (training or nutrition)."""
+        if self.mode == "nutrition":
+            return self.get_nutrition_system_prompt()
+        else:
+            return self.get_training_system_prompt()
+
+    def get_training_system_prompt(self) -> str:
         """Get the system prompt for the personal trainer consultation."""
         return """You are a professional personal trainer conducting a consultation. Your goal is to understand the client's:
 - Fitness goals (weight loss, muscle gain, strength, endurance, etc.)
@@ -184,9 +193,133 @@ that the json format is correct and complete.
 - REPEAT: THE ABSOLUTELY CRITICAL ASPECT OF THIS CONSULTATION IS THAT A JSON IS CREATED,CREATED IN 
 THE PRESCRIBED FORMAT. BRACKETS MUST BE CHECKED TO ENSURE IT IS NOT TRUNCATED
 
-The conversation history is preserved, so you can reference previous discussions. 
+The conversation history is preserved, so you can reference previous discussions.
 
 ."""
+
+    def get_nutrition_system_prompt(self) -> str:
+        """Get the system prompt for nutrition consultations."""
+        return """You are a professional nutrition coach conducting a consultation. Your goal is to create a personalized nutrition plan that supports the client's goals.
+
+IMPORTANT: You have access to the client's shared coaching profile and memory. Use this information to avoid asking questions that have already been answered. You should acknowledge what you already know about the client naturally in conversation.
+
+If the client has already shared information in training consultation, nutrition consultation should use it. For example:
+- If you already know their primary goal (fat loss, muscle gain, performance), acknowledge it
+- If you already know their training frequency, reference it
+- If you already know their sport context, use it
+- If you already know their schedule, work with it
+
+DO NOT ask questions about information that is already known. Instead, say things like:
+"I already know you're training 4 days per week and aiming for fat loss, so I'll use that. To build a nutrition plan that fits your life, tell me about any dietary restrictions, allergies, and how you like to eat day to day."
+
+Your goal is to understand:
+- Dietary restrictions and allergies (if not already known)
+- Food preferences and dislikes
+- Meal frequency preference (3 meals, 4-6 smaller meals, etc.)
+- Cooking time and budget preferences
+- Current eating patterns
+- Any relevant body stats needed for calculations (if not already available)
+
+Ask only for missing information needed to produce a reasonable first nutrition plan. Be concise and efficient.
+
+When you have enough information, provide a complete nutrition plan in the following JSON format:
+
+```json
+{
+  "summary": "Brief overview of the nutrition plan and how it supports the user's goal.",
+  "goal": "fat_loss",
+  "daily_calories": 2400,
+  "macros": {
+    "protein_g": 180,
+    "carbs_g": 250,
+    "fats_g": 70
+  },
+  "meal_structure": {
+    "meals_per_day": 4,
+    "timing_notes": "Higher carbs around training sessions."
+  },
+  "days": {
+    "training_day": {
+      "meals": [
+        {
+          "name": "Breakfast",
+          "foods": ["Greek yogurt", "berries", "granola"],
+          "notes": "Quick high-protein option"
+        },
+        {
+          "name": "Lunch",
+          "foods": ["Chicken breast", "rice", "vegetables"],
+          "notes": "Pre-training meal"
+        },
+        {
+          "name": "Post-Workout",
+          "foods": ["Protein shake", "banana"],
+          "notes": "Fast-digesting recovery"
+        },
+        {
+          "name": "Dinner",
+          "foods": ["Salmon", "sweet potato", "broccoli"],
+          "notes": "Balanced evening meal"
+        }
+      ]
+    },
+    "rest_day": {
+      "meals": [
+        {
+          "name": "Breakfast",
+          "foods": ["Eggs", "toast", "fruit"],
+          "notes": "Slightly lower carb option"
+        },
+        {
+          "name": "Lunch",
+          "foods": ["Turkey wrap", "salad"],
+          "notes": "Light midday meal"
+        },
+        {
+          "name": "Snack",
+          "foods": ["Greek yogurt", "nuts"],
+          "notes": "Protein-rich snack"
+        },
+        {
+          "name": "Dinner",
+          "foods": ["Lean beef", "quinoa", "vegetables"],
+          "notes": "Balanced evening meal"
+        }
+      ]
+    }
+  },
+  "shopping_notes": "Simple staples and batch-cook proteins where possible.",
+  "adherence_notes": "Consistency matters more than perfection."
+}
+```
+
+IMPORTANT GUIDELINES:
+1. Keep the JSON concise to avoid truncation
+2. Use food lists, not essays
+3. Avoid long recipes - stick to simple meal components
+4. Keep notes short and actionable
+5. Align the plan with training demands when training context exists
+6. Account for the user's dietary restrictions and preferences
+7. Make calorie and macro recommendations appropriate for their goal
+
+After providing a nutrition plan, you can continue the conversation! The client may want to:
+- Make adjustments (dairy-free breakfast, lower calories, cheaper options, etc.)
+- Increase/decrease specific macros
+- Change meal frequency
+- Get more convenient meal options
+- Make it vegetarian/vegan
+- Reduce meal prep time
+
+If the client requests changes to the nutrition plan:
+1. Acknowledge the change they want
+2. Ask follow-up only if necessary for clarification
+3. Provide the COMPLETE updated nutrition JSON (not just changed parts)
+4. Use the same JSON format as before
+5. Ensure all sections are included
+
+CRITICAL: The nutrition plan JSON must be complete and parseable. Check that brackets are balanced and the format is correct. Keep it concise but complete.
+
+The conversation history is preserved, so you can reference previous discussions."""
 
     def chat(self, messages: List[Dict[str, str]]) -> str:
         """
@@ -358,6 +491,120 @@ The conversation history is preserved, so you can reference previous discussions
                     if "schedule" in plan and isinstance(plan["schedule"], dict) and len(plan["schedule"]) > 0:
                         if debug:
                             print(f"✓ Salvaged partial workout plan with {len(plan['schedule'])} days")
+                        return plan
+                except json.JSONDecodeError:
+                    continue
+
+            # Original error handling
+            error_msg = str(e)
+            if "Expecting" in error_msg or "Unterminated" in error_msg:
+                print(f"⚠️ Incomplete JSON detected: {error_msg}")
+                if debug:
+                    print("The LLM response was likely truncated. Try asking for a shorter or more concise plan.")
+                    # Show where it failed
+                    lines = json_str.split('\n')
+                    print(f"JSON has {len(lines)} lines, failed near the end")
+            else:
+                print(f"JSON decode error: {e}")
+
+            if debug:
+                print(f"Failed to parse JSON string (first 500 chars): {json_str[:500]}")
+                print(f"Last 200 chars: ...{json_str[-200:]}")
+            return None
+
+    def extract_nutrition_plan(self, response: str, debug: bool = False) -> Optional[Dict[str, Any]]:
+        """
+        Extract JSON nutrition plan from LLM response if present.
+
+        Args:
+            response: LLM response text
+            debug: If True, print debug information
+
+        Returns:
+            Parsed JSON dict or None if no valid JSON found
+        """
+        json_str = None
+
+        # Try to find JSON in code blocks
+        if "```json" in response.lower():
+            start = response.lower().find("```json") + 7
+            end = response.find("```", start)
+            if end != -1:
+                json_str = response[start:end].strip()
+                if debug:
+                    print("Found JSON in ```json code block")
+        elif "```" in response:
+            start = response.find("```") + 3
+            end = response.find("```", start)
+            if end != -1:
+                json_str = response[start:end].strip()
+                if debug:
+                    print("Found JSON in ``` code block")
+
+        # If no code block found, look for JSON object
+        if not json_str:
+            # Try to find JSON starting with {
+            start_idx = response.find("{")
+            if start_idx != -1:
+                # Find the matching closing brace
+                brace_count = 0
+                for i in range(start_idx, len(response)):
+                    if response[i] == "{":
+                        brace_count += 1
+                    elif response[i] == "}":
+                        brace_count -= 1
+                        if brace_count == 0:
+                            json_str = response[start_idx:i+1]
+                            if debug:
+                                print("Found raw JSON object")
+                            break
+
+        if not json_str:
+            if debug:
+                print("No JSON found in response")
+                print(f"Response preview: {response[:200]}...")
+            return None
+
+        try:
+            plan = json.loads(json_str)
+            # Validate required fields for nutrition plan
+            required_fields = ["daily_calories", "macros"]
+            has_required = all(field in plan for field in required_fields)
+
+            if has_required and isinstance(plan.get("macros"), dict):
+                if debug:
+                    print(f"✓ Valid nutrition plan found with {plan.get('daily_calories')} calories")
+                return plan
+            else:
+                if debug:
+                    print("JSON parsed but missing required nutrition fields")
+                    print(f"Available keys: {plan.keys()}")
+                    print(f"Required fields: {required_fields}")
+                return None
+        except json.JSONDecodeError as e:
+            # Try to salvage partial JSON by attempting to close it
+            if debug:
+                print(f"Initial parse failed: {e}. Attempting to salvage partial JSON...")
+
+            # Try closing incomplete structures
+            salvage_attempts = [
+                json_str + '}}',  # Close two levels
+                json_str + '}',   # Close one level
+                json_str + ']}}', # Close array and objects
+                json_str.rstrip(',') + '}}',  # Remove trailing comma and close
+                json_str.rstrip(',').rstrip() + '}}}',  # Close three levels
+                json_str.rstrip(',').rstrip() + '}}}}',  # Close four levels
+            ]
+
+            for attempt in salvage_attempts:
+                try:
+                    plan = json.loads(attempt)
+                    required_fields = ["daily_calories", "macros"]
+                    has_required = all(field in plan for field in required_fields)
+
+                    if has_required and isinstance(plan.get("macros"), dict):
+                        if debug:
+                            print(f"✓ Salvaged partial nutrition plan with {plan.get('daily_calories')} calories")
                         return plan
                 except json.JSONDecodeError:
                     continue
