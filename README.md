@@ -25,7 +25,21 @@ ChatPT helps users:
 The app aims to make plan creation feel conversational rather than form-heavy.
 
 ## Why this project exists
+I originally found myself using AI chatbots to generate training programmes, then manually transferring those programmes into apps like Strong for logging and in-workout features. After doing that enough times, it became obvious that this middle step shouldn’t exist. If AI can write the programme, it should also be able to deliver it, track it, adapt it, and support you while you actually train.
 
+Cost is the other major reason this project exists. Good coaching and nutrition advice is expensive — often **£30 to £200+ a month**, and sometimes far more. That pricing makes sense in the old model, where access to useful knowledge and personal attention was limited. It makes far less sense now that a large amount of that knowledge is already available through high-end AI systems.
+
+AI also does a number of things which are objectively better by default. It is available **24/7**, it does not lose patience, it does not forget context, and it is completely **judgement-free**. You can ask basic questions, ask the same question five times, change your goals halfway through, or need help at 11pm, and none of that is an issue. For many people, that already makes it a safer space and more useful than a traditional coach.
+
+Realistically with the current models I do think AI should replace most online human fitness coaches. If this is not currently true then it will definitely be true within a year or two.
+
+Not because good coaches have no value, but because for the vast majority of people the current model is expensive, inconsistent, hard to access, and often not nearly as personalised as it claims to be. A genuinely well-built AI system should be able to give better guidance, more consistently, at effectively zero marginal cost, and be available in your pocket whenever you need it.
+
+That is the long-term aim of this project: to help build a fitness assistant that is **free, better, and always available**. Something more useful than a coach you have to book, pay monthly for, and wait to hear back from. Something that can eventually give ordinary people access to a level of support that would previously have been unavailable at any price.
+
+
+
+### Another (less philiosophical) reason why this project existst
 This project was also an experiment in using **AI agents to build software**.
 
 A very large proportion of the codebase — close to **99%** — was written by AI. The goal was to explore how far AI-assisted development could go when building a very specific app for a real personal use case.
