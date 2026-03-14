@@ -16,7 +16,7 @@ st.set_page_config(
     layout="centered",  # Better for mobile
     initial_sidebar_state="collapsed",  # Collapsed by default on mobile
     menu_items={
-        'About': "ChatPT - Your AI-Powered Personal Trainer"
+        'About': "ChatPT - Your AI-Powered Personal Trainer and Nutritionist"
     }
 )
 
