@@ -6,7 +6,7 @@ It is designed first and foremost as a **personal tool** — something highly sp
 
 It was also an experiment in using **AI agents to build software**. ~ 95% of the codebase was written by AI. (including this README)
 
-It is **not intended for commercialisation** and will remain **open source**.
+It is **not intended for commercialisation** and will remain **open source** (Other than in the unlikely event someone offers me a **lot** of money).
 
 
 ## What the app does
