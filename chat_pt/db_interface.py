@@ -173,3 +173,23 @@ def get_users() -> List[Dict[str, Any]]:
     else:
         # For Supabase, you'd implement this if needed
         return []
+
+
+def log_missing_exercise_request(exercise_name: str, user_id: Any = None):
+    """Log a request for an exercise that's not in the library."""
+    db = get_db()
+    if db == 'sqlite':
+        sqlite_db.log_missing_exercise_request(exercise_name, user_id)
+    else:
+        # For Supabase, you'd implement this if needed
+        pass
+
+
+def get_missing_exercise_requests(min_requests: int = 1, limit: int = 50) -> List[Dict[str, Any]]:
+    """Get missing exercise requests sorted by request count."""
+    db = get_db()
+    if db == 'sqlite':
+        return sqlite_db.get_missing_exercise_requests(min_requests, limit)
+    else:
+        # For Supabase, you'd implement this if needed
+        return []

@@ -44,12 +44,6 @@ def render_rest_timer(rest_seconds, exercise_key):
                 </div>
                 <div style="color: rgba(255,255,255,0.9); font-size: 1.1rem;">Rest Period</div>
             </div>
-
-            <script>
-            setTimeout(function() {{
-                window.parent.location.reload();
-            }}, 1000);
-            </script>
             """
             st.markdown(timer_html, unsafe_allow_html=True)
 
@@ -141,6 +135,24 @@ def sort_workout_days(schedule_dict):
 
 def render():
     """Render the workout plans page."""
+
+    # Check if any timers are running and add auto-refresh
+    has_active_timer = False
+    for key in st.session_state.keys():
+        if (key.startswith('timer_running_') or key.startswith('session_timer_')) and st.session_state.get(key, False):
+            has_active_timer = True
+            break
+
+    # Add auto-refresh script if any timer is active
+    if has_active_timer:
+        st.markdown("""
+        <script>
+        setTimeout(function() {
+            window.parent.location.reload();
+        }, 1000);
+        </script>
+        """, unsafe_allow_html=True)
+
     st.markdown("""
     <div style="text-align: center; padding: 1rem 0 2rem 0;">
         <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">📋 My Workout Plans</h1>
@@ -235,60 +247,25 @@ def render():
         st.error("Error loading workout plan.")
         return
 
-    # Exercise swap dialog
+    # Exercise swap dialog - streamlined quick action
     if st.session_state.get('show_swap_dialog'):
         exercise_to_swap = st.session_state.get('swap_exercise')
         swap_day = st.session_state.get('swap_day')
 
         st.markdown(f"""
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 10px; color: white; margin: 1rem 0;">
-            <h3 style="margin: 0 0 0.5rem 0; color: white;">🔄 Request Exercise Swap</h3>
-            <p style="margin: 0; opacity: 0.9;">Swap: <strong>{exercise_to_swap}</strong> on {swap_day}</p>
+            <h3 style="margin: 0 0 0.5rem 0; color: white;">🔄 Swap Exercise</h3>
+            <p style="margin: 0; opacity: 0.9;">Replace <strong>{exercise_to_swap}</strong> on {swap_day}</p>
         </div>
         """, unsafe_allow_html=True)
 
+        # Quick swap buttons - single click to AI
+        st.markdown("**Quick swap options:**")
         col1, col2 = st.columns(2)
 
         with col1:
-            st.markdown("**Why do you need to swap?**")
-            swap_reason = st.radio(
-                "Reason",
-                ["Equipment not available", "Injury/discomfort", "Prefer different exercise", "Other"],
-                key="swap_reason",
-                label_visibility="collapsed"
-            )
-
-        with col2:
-            st.markdown("**Type of change:**")
-            change_type = st.radio(
-                "Change type",
-                ["Just for today (temporary)", "Update my plan (permanent)"],
-                key="change_type",
-                label_visibility="collapsed"
-            )
-
-        additional_info = st.text_area(
-            "Additional details (optional)",
-            placeholder="E.g., 'knee pain', 'only have dumbbells', 'prefer bodyweight'...",
-            key="swap_additional_info"
-        )
-
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("✅ Request Swap from AI", type="primary", use_container_width=True):
-                # Build the swap request message
-                is_permanent = "permanent" in change_type.lower()
-                request_text = f"I need to swap '{exercise_to_swap}' on {swap_day}. "
-                request_text += f"Reason: {swap_reason}. "
-                if additional_info:
-                    request_text += f"Details: {additional_info}. "
-
-                if is_permanent:
-                    request_text += "Please UPDATE MY PLAN permanently with a suitable alternative exercise and provide the complete updated plan in JSON format."
-                else:
-                    request_text += "This is just for today's workout. Please suggest 2-3 alternative exercises I can do instead."
-
-                # Load the consultation and navigate to chat with pre-filled message
+            if st.button("🚀 Similar Exercise (Quick)", type="primary", use_container_width=True, help="AI suggests similar alternative"):
+                request_text = f"I need to swap '{exercise_to_swap}' on {swap_day}. Please suggest 2-3 similar alternative exercises I can do instead, and update my plan if I choose one."
                 st.session_state.consultation_id = consultation_id
                 st.session_state.messages = get_conversation_history(consultation_id)
                 st.session_state.workout_plan = workout_plan
@@ -298,9 +275,64 @@ def render():
                 st.rerun()
 
         with col2:
-            if st.button("❌ Cancel", use_container_width=True):
+            if st.button("🏋️ Equipment Issue", use_container_width=True, help="Don't have the equipment"):
+                request_text = f"I don't have the equipment for '{exercise_to_swap}' on {swap_day}. Please suggest alternatives I can do with minimal/different equipment and update my plan."
+                st.session_state.consultation_id = consultation_id
+                st.session_state.messages = get_conversation_history(consultation_id)
+                st.session_state.workout_plan = workout_plan
+                st.session_state.prefilled_message = request_text
                 st.session_state.show_swap_dialog = False
+                st.session_state.page = "consultation"
                 st.rerun()
+
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🤕 Injury/Discomfort", use_container_width=True, help="Exercise causes pain"):
+                request_text = f"'{exercise_to_swap}' on {swap_day} is causing discomfort. Please suggest safer alternative exercises that work the same muscles without aggravating the issue."
+                st.session_state.consultation_id = consultation_id
+                st.session_state.messages = get_conversation_history(consultation_id)
+                st.session_state.workout_plan = workout_plan
+                st.session_state.prefilled_message = request_text
+                st.session_state.show_swap_dialog = False
+                st.session_state.page = "consultation"
+                st.rerun()
+
+        with col2:
+            if st.button("✏️ Custom Request", use_container_width=True, help="Specify your own reason"):
+                # Show expanded form
+                st.session_state.show_custom_swap = True
+                st.rerun()
+
+        # Show custom form if requested
+        if st.session_state.get('show_custom_swap'):
+            st.markdown("---")
+            custom_reason = st.text_area(
+                "Tell us why you need to swap:",
+                placeholder="E.g., 'I prefer dumbbells over barbells', 'This exercise is too advanced'...",
+                key="custom_swap_reason"
+            )
+
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("✅ Submit Custom Request", type="primary", use_container_width=True):
+                    if custom_reason:
+                        request_text = f"I need to swap '{exercise_to_swap}' on {swap_day}. Reason: {custom_reason}. Please suggest suitable alternatives and update my plan."
+                        st.session_state.consultation_id = consultation_id
+                        st.session_state.messages = get_conversation_history(consultation_id)
+                        st.session_state.workout_plan = workout_plan
+                        st.session_state.prefilled_message = request_text
+                        st.session_state.show_swap_dialog = False
+                        st.session_state.show_custom_swap = False
+                        st.session_state.page = "consultation"
+                        st.rerun()
+                    else:
+                        st.error("Please provide a reason")
+
+        st.markdown("---")
+        if st.button("❌ Cancel", use_container_width=True):
+            st.session_state.show_swap_dialog = False
+            st.session_state.show_custom_swap = False
+            st.rerun()
 
         st.markdown("---")
 
@@ -413,9 +445,13 @@ def render():
                 col1, col2, col3 = st.columns([2, 2, 2])
                 with col1:
                     if not st.session_state[session_timer_key]:
-                        if st.button("▶️ Start Workout", key=f"start_session_{day_name}", use_container_width=True, type="primary"):
+                        if st.button("▶️ Start & Log Workout", key=f"start_session_{day_name}", use_container_width=True, type="primary"):
+                            # Start timer and navigate to progress page
                             st.session_state[session_timer_key] = True
                             st.session_state[session_start_key] = time.time()
+                            st.session_state.page = "progress"
+                            st.session_state.selected_day = day_name
+                            st.session_state.selected_consultation = consultation_id
                             st.rerun()
                     else:
                         if st.button("⏹️ End Workout", key=f"end_session_{day_name}", use_container_width=True):
@@ -436,11 +472,6 @@ def render():
                             <div style="font-size: 1.5rem; font-weight: bold;">⏱️ {mins:02d}:{secs:02d}</div>
                             <div style="font-size: 0.8rem; opacity: 0.9;">Workout Duration</div>
                         </div>
-                        <script>
-                        setTimeout(function() {{
-                            window.parent.location.reload();
-                        }}, 1000);
-                        </script>
                         """, unsafe_allow_html=True)
 
                 st.markdown("<br>", unsafe_allow_html=True)
@@ -547,6 +578,7 @@ def render():
                                 with btn_col3:
                                     if st.button("ℹ️", key=f"{exercise_key}_info", help="Exercise info", use_container_width=True):
                                         st.session_state.viewing_exercise = exercise_name
+                                        st.session_state.came_from_plans = True
                                         st.session_state.page = "exercises"
                                         st.rerun()
 

@@ -427,4 +427,84 @@ EXERCISE_LIBRARY = [
         "instructions": "1. Lie under bar, grab with overhand grip\n2. Keep body straight\n3. Pull chest to bar\n4. Squeeze shoulder blades\n5. Lower with control",
         "form_cues": "• Body stays rigid\n• Pull elbows back\n• Lower bar = harder\n• Great progression exercise"
     },
+
+    # ADDITIONAL COMMON EXERCISES
+
+    # CHEST ISOLATION
+    {
+        "name": "Cable Fly",
+        "category": "Chest",
+        "primary_muscles": "Pectoralis Major",
+        "secondary_muscles": "Anterior Deltoids",
+        "equipment": "Cable Machine",
+        "difficulty": "Beginner",
+        "youtube_url": "https://www.youtube.com/watch?v=Iwe6AmxVf7o",
+        "instructions": "1. Set cables to chest height\n2. Stand in center with slight forward lean\n3. Grab handles with arms extended\n4. Bring hands together in arc motion\n5. Squeeze chest, return with control",
+        "form_cues": "• Maintain slight elbow bend\n• Think 'hugging a tree'\n• Control eccentric phase\n• Focus on chest squeeze"
+    },
+
+    # TRICEPS
+    {
+        "name": "Tricep Pushdown",
+        "category": "Arms",
+        "primary_muscles": "Triceps",
+        "secondary_muscles": "None",
+        "equipment": "Cable Machine, Rope or Bar",
+        "difficulty": "Beginner",
+        "youtube_url": "https://www.youtube.com/watch?v=2-LAMcpzODU",
+        "instructions": "1. Attach rope or bar to high pulley\n2. Stand facing cable, elbows at sides\n3. Push down until arms fully extended\n4. Squeeze triceps at bottom\n5. Return with control",
+        "form_cues": "• Keep elbows locked at sides\n• Don't lean forward\n• Full extension at bottom\n• Controlled tempo"
+    },
+
+    # LEGS - HAMSTRINGS
+    {
+        "name": "Hamstring Curl",
+        "category": "Legs",
+        "primary_muscles": "Hamstrings",
+        "secondary_muscles": "Calves",
+        "equipment": "Leg Curl Machine",
+        "difficulty": "Beginner",
+        "youtube_url": "https://www.youtube.com/watch?v=1Tq3QdYUuHs",
+        "instructions": "1. Adjust machine, lie face down\n2. Position ankles under pad\n3. Curl legs toward glutes\n4. Squeeze hamstrings at top\n5. Lower with control",
+        "form_cues": "• Keep hips down\n• Full range of motion\n• Don't hyperextend knees\n• Control the negative"
+    },
+
+    # LEGS - QUADRICEPS
+    {
+        "name": "Leg Extension",
+        "category": "Legs",
+        "primary_muscles": "Quadriceps",
+        "secondary_muscles": "None",
+        "equipment": "Leg Extension Machine",
+        "difficulty": "Beginner",
+        "youtube_url": "https://www.youtube.com/watch?v=YyvSfEjZruE",
+        "instructions": "1. Sit in machine, adjust shin pad\n2. Position pad above ankles\n3. Extend legs until straight\n4. Squeeze quads at top\n5. Lower with control",
+        "form_cues": "• Back against pad\n• Full extension (don't lock)\n• Control descent\n• Great for quad isolation"
+    },
+
+    # SHOULDERS
+    {
+        "name": "Dumbbell Shoulder Press",
+        "category": "Shoulders",
+        "primary_muscles": "Deltoids",
+        "secondary_muscles": "Triceps, Upper Chest",
+        "equipment": "Dumbbells, Bench",
+        "difficulty": "Beginner",
+        "youtube_url": "https://www.youtube.com/watch?v=qEwKCR5JCog",
+        "instructions": "1. Sit on bench with back support\n2. Hold dumbbells at shoulder height\n3. Press overhead until arms extended\n4. Lower with control to shoulders\n5. Keep core engaged",
+        "form_cues": "• Press straight up\n• Don't arch back excessively\n• Elbows slightly forward\n• Controlled descent"
+    },
+
+    # BACK - DUMBBELL VARIATION
+    {
+        "name": "Bent Over Dumbbell Row",
+        "category": "Back",
+        "primary_muscles": "Lats, Upper Back",
+        "secondary_muscles": "Biceps, Core",
+        "equipment": "Dumbbells",
+        "difficulty": "Beginner",
+        "youtube_url": "https://www.youtube.com/watch?v=roCP6wCXPqo",
+        "instructions": "1. Hinge at hips, slight knee bend\n2. Hold dumbbells with neutral grip\n3. Pull dumbbells to hips\n4. Squeeze shoulder blades\n5. Lower with control",
+        "form_cues": "• Keep back flat\n• Pull elbows back, not up\n• Torso near parallel to floor\n• Don't round lower back"
+    },
 ]

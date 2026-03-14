@@ -3,11 +3,34 @@ import re
 
 def render_exercise_detail(exercise_name: str, exercises_data: list):
     """Render detailed exercise information with video embed."""
+    from chat_pt.db_interface import log_missing_exercise_request
+
     # Find the exercise in the data
     exercise = next((ex for ex in exercises_data if ex["name"].lower() == exercise_name.lower()), None)
 
     if not exercise:
-        st.error(f"Exercise '{exercise_name}' not found in library")
+        # Log this missing exercise request
+        user_id = st.session_state.get('user_id')
+        log_missing_exercise_request(exercise_name, user_id)
+
+        # Show friendly message to user
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                    padding: 2rem; border-radius: 15px; text-align: center; color: white; margin: 2rem 0;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🔍</div>
+            <h2 style="color: white; margin-bottom: 1rem;">Exercise Not Found</h2>
+            <p style="font-size: 1.1rem; margin-bottom: 1rem;">
+                We don't have detailed information for <strong>"{exercise_name}"</strong> in our library yet.
+            </p>
+            <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 10px; margin-top: 1.5rem;">
+                <p style="margin: 0; font-size: 0.95rem;">
+                    ✅ We've noted your interest! We'll prioritize adding this exercise to our library soon.
+                </p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.info(f"💡 **In the meantime:** You can search online for '{exercise_name}' form tutorials on YouTube or ask your AI trainer for alternative exercises.")
         return
 
     # Header
@@ -71,12 +94,24 @@ def render_exercise_detail(exercise_name: str, exercises_data: list):
         if exercise.get('secondary_muscles'):
             st.write(f"**Secondary:** {exercise['secondary_muscles']}")
 
-    # Back button
+    # Back button - goes back to where user came from
     st.markdown("---")
-    if st.button("← Back to Plans", use_container_width=True):
-        if 'viewing_exercise' in st.session_state:
-            del st.session_state.viewing_exercise
-        st.rerun()
+    # Check if user came from plans page
+    came_from_plans = st.session_state.get('came_from_plans', False)
+
+    if came_from_plans:
+        if st.button("← Back to Plans", use_container_width=True):
+            if 'viewing_exercise' in st.session_state:
+                del st.session_state.viewing_exercise
+            if 'came_from_plans' in st.session_state:
+                del st.session_state.came_from_plans
+            st.session_state.page = "plans"
+            st.rerun()
+    else:
+        if st.button("← Back to Exercise Library", use_container_width=True):
+            if 'viewing_exercise' in st.session_state:
+                del st.session_state.viewing_exercise
+            st.rerun()
 
 
 def extract_youtube_id(url: str) -> str:

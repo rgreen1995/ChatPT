@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import time
 from datetime import datetime
 from chat_pt.db_interface import (
     get_user_consultations,
@@ -148,10 +149,9 @@ def render():
 
 def render_log_workout(consultation_id: int, workout_plan: dict):
     """Render the workout logging interface."""
-    st.subheader("Log Your Workout")
 
+    # Check if timer is running from plans page
     schedule = workout_plan.get("schedule", {})
-
     if not schedule:
         st.warning("No workout schedule found.")
         return
@@ -180,84 +180,222 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
         return
 
     st.markdown(f"### {day_data.get('focus', 'Workout')}")
+
+    # Check if any timers are running (session or rest timers)
+    session_timer_key = f"session_timer_{selected_day}"
+    session_start_key = f"session_start_{selected_day}"
+    has_active_timer = st.session_state.get(session_timer_key, False)
+
+    # Check for active rest timers
+    if not has_active_timer:
+        for key in st.session_state.keys():
+            if key.startswith('timer_running_') and st.session_state.get(key, False):
+                has_active_timer = True
+                break
+
+    # Add auto-refresh script if any timer is active
+    if has_active_timer:
+        st.markdown("""
+        <script>
+        setTimeout(function() {
+            window.parent.location.reload();
+        }, 1000);
+        </script>
+        """, unsafe_allow_html=True)
+
+    # Display workout timer if running
+    if st.session_state.get(session_timer_key) and st.session_state.get(session_start_key):
+        elapsed = int(time.time() - st.session_state[session_start_key])
+        mins = elapsed // 60
+        secs = elapsed % 60
+
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                        padding: 1rem; border-radius: 10px; text-align: center; color: white; margin-bottom: 1rem;">
+                <div style="font-size: 2rem; font-weight: bold;">⏱️ {mins:02d}:{secs:02d}</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">Workout in Progress</div>
+            </div>
+            """, unsafe_allow_html=True)
+
     st.markdown("---")
 
-    # Create form for logging
-    with st.form("workout_log_form"):
-        logged_exercises = []
+    # Initialize exercise logging state
+    if 'exercise_logs' not in st.session_state:
+        st.session_state.exercise_logs = {}
 
-        for idx, exercise in enumerate(exercises):
-            st.markdown(f"#### {idx + 1}. {exercise['name']}")
+    # Create grid-style workout log (similar to Strong app)
+    for idx, exercise in enumerate(exercises):
+        exercise_key = f"{selected_day}_{idx}_{exercise['name']}"
+        rest_seconds = exercise.get('rest_seconds', 60)
 
-            col1, col2, col3, col4 = st.columns([2, 1, 1, 2])
+        # Exercise header
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    padding: 0.75rem 1rem; border-radius: 8px; color: white; margin: 1rem 0 0.5rem 0;">
+            <strong>{idx + 1}. {exercise['name']}</strong>
+            <span style="opacity: 0.9; margin-left: 1rem; font-size: 0.9rem;">
+                {exercise.get('sets')} × {exercise.get('reps')} | Rest: {rest_seconds}s
+            </span>
+        </div>
+        """, unsafe_allow_html=True)
 
-            with col1:
-                st.caption(f"Prescribed: {exercise.get('sets')} sets × {exercise.get('reps')} reps")
-                if exercise.get('notes'):
-                    st.caption(f"💡 {exercise['notes']}")
+        if exercise.get('notes'):
+            st.caption(f"💡 {exercise['notes']}")
 
-            with col2:
-                sets = st.number_input(
-                    "Sets",
-                    min_value=1,
-                    max_value=20,
-                    value=int(exercise.get('sets', 3)) if isinstance(exercise.get('sets'), (int, float)) else 3,
-                    key=f"sets_{idx}"
-                )
+        # Grid layout for sets with weight input
+        # Parse sets - handle ranges like "3-4" by taking the lower bound
+        sets_value = exercise.get('sets', 3)
+        if isinstance(sets_value, str):
+            if '-' in sets_value:
+                try:
+                    num_sets = int(sets_value.split('-')[0])
+                except:
+                    num_sets = 3
+            else:
+                try:
+                    num_sets = int(sets_value)
+                except:
+                    num_sets = 3
+        else:
+            num_sets = int(sets_value) if isinstance(sets_value, (int, float)) else 3
 
-            with col3:
+        # Header row
+        col_headers = st.columns([1, 2, 2, 2, 1.5])
+        col_headers[0].markdown("**Set**")
+        col_headers[1].markdown("**Reps**")
+        col_headers[2].markdown("**Weight**")
+        col_headers[3].markdown("**Notes**")
+        col_headers[4].markdown("**Timer**")
+
+        # Initialize logs for this exercise
+        if exercise_key not in st.session_state.exercise_logs:
+            # Parse reps - handle ranges like "8-10" by taking the midpoint
+            reps_value = exercise.get('reps', 10)
+            if isinstance(reps_value, str):
+                # Handle range like "8-10"
+                if '-' in reps_value:
+                    try:
+                        parts = reps_value.split('-')
+                        default_reps = int((int(parts[0]) + int(parts[1])) / 2)
+                    except:
+                        default_reps = 10
+                else:
+                    try:
+                        default_reps = int(reps_value)
+                    except:
+                        default_reps = 10
+            else:
+                default_reps = int(reps_value) if isinstance(reps_value, (int, float)) else 10
+
+            st.session_state.exercise_logs[exercise_key] = {
+                'sets': [{'reps': default_reps, 'weight': 0.0, 'notes': '', 'completed': False}
+                         for _ in range(num_sets)]
+            }
+
+        # Display each set
+        for set_idx in range(num_sets):
+            cols = st.columns([1, 2, 2, 2, 1.5])
+
+            with cols[0]:
+                st.markdown(f"**{set_idx + 1}**")
+
+            with cols[1]:
                 reps = st.number_input(
                     "Reps",
                     min_value=1,
                     max_value=100,
-                    value=10,
-                    key=f"reps_{idx}"
+                    value=st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['reps'],
+                    key=f"reps_{exercise_key}_{set_idx}",
+                    label_visibility="collapsed"
                 )
+                st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['reps'] = reps
 
-            with col4:
+            with cols[2]:
                 weight = st.number_input(
-                    "Weight (lbs/kg)",
+                    "Weight",
                     min_value=0.0,
                     max_value=1000.0,
-                    step=5.0,
-                    value=0.0,
-                    key=f"weight_{idx}"
+                    step=2.5,
+                    value=st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['weight'],
+                    key=f"weight_{exercise_key}_{set_idx}",
+                    label_visibility="collapsed"
                 )
+                st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['weight'] = weight
 
-            notes = st.text_input(
-                "Notes (optional)",
-                key=f"notes_{idx}",
-                placeholder="How did it feel? Any issues?"
-            )
+            with cols[3]:
+                notes = st.text_input(
+                    "Notes",
+                    value=st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['notes'],
+                    key=f"notes_{exercise_key}_{set_idx}",
+                    placeholder="Feel, RPE, etc.",
+                    label_visibility="collapsed"
+                )
+                st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['notes'] = notes
 
-            logged_exercises.append({
-                "name": exercise["name"],
-                "sets": sets,
-                "reps": reps,
-                "weight": weight,
-                "notes": notes
-            })
+            with cols[4]:
+                timer_key = f"timer_{exercise_key}_{set_idx}"
+                timer_running_key = f"timer_running_{timer_key}"
+                timer_end_key = f"timer_end_{timer_key}"
 
-            st.markdown("---")
+                if timer_running_key not in st.session_state:
+                    st.session_state[timer_running_key] = False
 
-        submitted = st.form_submit_button("💾 Save Workout", type="primary", use_container_width=True)
+                if not st.session_state[timer_running_key]:
+                    if st.button("⏱️", key=f"start_{timer_key}", help=f"Start {rest_seconds}s rest", use_container_width=True):
+                        st.session_state[timer_running_key] = True
+                        st.session_state[timer_end_key] = time.time() + rest_seconds
+                        st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['completed'] = True
+                        st.rerun()
+                else:
+                    remaining = max(0, int(st.session_state[timer_end_key] - time.time()))
+                    if remaining > 0:
+                        st.markdown(f"""
+                        <div style="text-align: center; font-weight: bold; color: #667eea;">
+                            {remaining}s
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.session_state[timer_running_key] = False
+                        st.markdown("✅")
 
-        if submitted:
+        st.markdown("<br>", unsafe_allow_html=True)
+
+    # Save workout button
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("💾 Save Workout", type="primary", use_container_width=True, key="save_workout"):
             # Save all exercises
-            for exercise_data in logged_exercises:
-                save_exercise_progress(
-                    user_id=st.session_state.user_id,
-                    consultation_id=consultation_id,
-                    exercise_name=exercise_data["name"],
-                    day=selected_day,
-                    sets=exercise_data["sets"],
-                    reps=exercise_data["reps"],
-                    weight=exercise_data["weight"],
-                    notes=exercise_data["notes"]
-                )
+            for exercise in exercises:
+                exercise_key = f"{selected_day}_{exercises.index(exercise)}_{exercise['name']}"
+                if exercise_key in st.session_state.exercise_logs:
+                    logs = st.session_state.exercise_logs[exercise_key]['sets']
+                    for set_log in logs:
+                        save_exercise_progress(
+                            user_id=st.session_state.user_id,
+                            consultation_id=consultation_id,
+                            exercise_name=exercise["name"],
+                            day=selected_day,
+                            sets=1,  # Each set logged individually
+                            reps=set_log['reps'],
+                            weight=set_log['weight'],
+                            notes=set_log['notes']
+                        )
+
+            # Stop timer
+            if st.session_state.get(session_timer_key):
+                st.session_state[session_timer_key] = False
+                elapsed = int(time.time() - st.session_state[session_start_key])
+                st.session_state[session_start_key] = None
+
+            # Clear logs
+            st.session_state.exercise_logs = {}
 
             st.success("✅ Workout logged successfully!")
             st.balloons()
+            time.sleep(1)
+            st.rerun()
 
 
 def render_view_progress(workout_plan: dict):

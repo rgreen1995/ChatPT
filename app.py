@@ -63,15 +63,25 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!stored) return null;
 
         const authData = JSON.parse(stored);
-        const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+        const ninetyDays = 90 * 24 * 60 * 60 * 1000;
 
-        // Check if token is still valid (30 days)
-        if (Date.now() - authData.timestamp > thirtyDays) {
+        // Check if token is still valid (90 days for fitness app - don't want users logged out during workouts)
+        if (Date.now() - authData.timestamp > ninetyDays) {
             localStorage.removeItem('chatpt_auth');
             return null;
         }
 
         return authData;
+    };
+
+    // Refresh auth timestamp to keep session alive during workouts
+    window.refreshAuthToken = function() {
+        const stored = localStorage.getItem('chatpt_auth');
+        if (stored) {
+            const authData = JSON.parse(stored);
+            authData.timestamp = Date.now(); // Update timestamp to extend session
+            localStorage.setItem('chatpt_auth', JSON.stringify(authData));
+        }
     };
 });
 </script>
@@ -180,10 +190,32 @@ if "llm_provider" not in st.session_state:
 if "auth_checked" not in st.session_state:
     st.session_state.auth_checked = False
 
-# Check for stored auth on first load
-if not st.session_state.auth_checked and st.session_state.user_id is None:
-    st.session_state.auth_checked = True
-    # Inject component to check localStorage
+# Add session heartbeat to keep auth alive and restore if lost
+# This is crucial for preventing logout during workouts or brief disconnections
+if st.session_state.user_id is not None:
+    st.markdown("""
+    <script>
+    // Refresh auth token every 5 minutes to keep session alive
+    setInterval(function() {
+        if (window.refreshAuthToken) {
+            window.refreshAuthToken();
+        }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    // Also refresh on any page interaction (click, touch, scroll)
+    ['click', 'touchstart', 'scroll', 'keypress'].forEach(function(event) {
+        document.addEventListener(event, function() {
+            if (window.refreshAuthToken) {
+                window.refreshAuthToken();
+            }
+        }, { once: false, passive: true });
+    });
+    </script>
+    """, unsafe_allow_html=True)
+
+# Check for stored auth on first load OR if session was lost (crucial for workout continuity)
+if st.session_state.user_id is None:
+    # Always check localStorage if not logged in - handles reconnection scenarios
     check_auth_html = """
     <script>
     const authData = window.getAuthToken ? window.getAuthToken() : null;
@@ -215,11 +247,14 @@ if not st.session_state.auth_checked and st.session_state.user_id is None:
                 st.session_state.user_id = int(user_id)
                 st.session_state.user_name = user_name
                 st.session_state.user_email = user_email
+                st.session_state.auth_checked = True
                 # Clear query params
                 st.query_params.clear()
                 st.rerun()
     except Exception:
         pass
+
+    st.session_state.auth_checked = True
 
 # Sidebar navigation
 with st.sidebar:
@@ -542,81 +577,166 @@ if st.session_state.user_id is None:
 
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            # Toggle between login and signup
-            tab1, tab2 = st.tabs(["Sign Up", "Login"])
+            # Toggle between login and signup - order based on auth_mode
+            if st.session_state.auth_mode == 'login':
+                tab1, tab2 = st.tabs(["Login", "Sign Up"])
 
-            with tab1:
-                # Signup form
-                with st.form("main_signup_form"):
-                    st.markdown("**Create your free account:**")
-                    name = st.text_input("Name")
-                    email = st.text_input("Email")
-                    password = st.text_input("Password", type="password")
-                    password_confirm = st.text_input("Confirm Password", type="password")
-                    submitted = st.form_submit_button("Create Account", use_container_width=True, type="primary")
+                with tab1:
+                    # Login form
+                    with st.form("main_login_form"):
+                        st.markdown("**Login to your account:**")
+                        email = st.text_input("Email")
+                        password = st.text_input("Password", type="password")
+                        submitted = st.form_submit_button("Login", use_container_width=True, type="primary")
 
-                    if submitted:
-                        # Validation
-                        if not name or not email or not password:
-                            st.error("Please fill in all fields")
-                        elif password != password_confirm:
-                            st.error("Passwords don't match")
-                        elif len(password) < 6:
-                            st.error("Password must be at least 6 characters")
-                        elif user_exists(email):
-                            st.error("An account with this email already exists")
-                        else:
-                            # Create user
-                            try:
-                                user_id = create_user(name, email, password, auth_provider='email')
-                                st.session_state.user_id = user_id
-                                st.session_state.user_name = name
-                                st.session_state.user_email = email
-                                st.session_state.signup_email_status = None
-
-                                # Send welcome email (non-blocking)
-                                try:
-                                    from chat_pt.email_service import send_welcome_email, is_email_configured
-
-                                    if is_email_configured():
-                                        email_sent = send_welcome_email(email, name)
-                                        if email_sent:
-                                            st.session_state.signup_email_status = "success"
-                                        else:
-                                            st.session_state.signup_email_status = "failed"
-                                    else:
-                                        st.session_state.signup_email_status = "not_configured"
-
-                                except Exception as email_error:
-                                    st.session_state.signup_email_status = f"error: {str(email_error)}"
-
-                                st.session_state.show_auth_in_main = False
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Error creating account: {str(e)}")
-
-            with tab2:
-                # Login form
-                with st.form("main_login_form"):
-                    st.markdown("**Login to your account:**")
-                    email = st.text_input("Email")
-                    password = st.text_input("Password", type="password")
-                    submitted = st.form_submit_button("Login", use_container_width=True, type="primary")
-
-                    if submitted:
-                        if not email or not password:
-                            st.error("Please enter both email and password")
-                        else:
-                            user = authenticate_user(email, password)
-                            if user:
-                                st.session_state.user_id = user["id"]
-                                st.session_state.user_name = user["name"]
-                                st.session_state.user_email = user["email"]
-                                st.session_state.show_auth_in_main = False
-                                st.success(f"Welcome back, {user['name']}!")
-                                st.rerun()
+                        if submitted:
+                            if not email or not password:
+                                st.error("Please enter both email and password")
                             else:
-                                st.error("Invalid email or password")
+                                user = authenticate_user(email, password)
+                                if user:
+                                    st.session_state.user_id = user["id"]
+                                    st.session_state.user_name = user["name"]
+                                    st.session_state.user_email = user["email"]
+                                    st.session_state.show_auth_in_main = False
+                                    st.success(f"Welcome back, {user['name']}!")
+                                    st.rerun()
+                                else:
+                                    st.error("Invalid email or password")
+
+                with tab2:
+                    # Signup form
+                    with st.form("main_signup_form_alt"):
+                        st.markdown("**Create your free account:**")
+                        name = st.text_input("Name")
+                        email = st.text_input("Email")
+                        password = st.text_input("Password", type="password")
+                        password_confirm = st.text_input("Confirm Password", type="password")
+                        submitted = st.form_submit_button("Create Account", use_container_width=True, type="primary")
+
+                        if submitted:
+                            # Validation
+                            if not name or not email or not password:
+                                st.error("Please fill in all fields")
+                            elif password != password_confirm:
+                                st.error("Passwords don't match")
+                            elif len(password) < 6:
+                                st.error("Password must be at least 6 characters")
+                            elif user_exists(email):
+                                st.error("An account with this email already exists")
+                            else:
+                                # Create user
+                                try:
+                                    user_id = create_user(name, email, password, auth_provider='email')
+                                    st.session_state.user_id = user_id
+                                    st.session_state.user_name = name
+                                    st.session_state.user_email = email
+                                    st.session_state.signup_email_status = None
+
+                                    # Store auth in localStorage
+                                    st.components.v1.html(f"""
+                                    <script>
+                                    if (window.storeAuthToken) {{
+                                        window.storeAuthToken({user_id}, '{name}', '{email}');
+                                    }}
+                                    </script>
+                                    """, height=0)
+
+                                    # Send welcome email (non-blocking)
+                                    try:
+                                        from chat_pt.email_service import send_welcome_email, is_email_configured
+
+                                        if is_email_configured():
+                                            email_sent = send_welcome_email(email, name)
+                                            if email_sent:
+                                                st.session_state.signup_email_status = "success"
+                                            else:
+                                                st.session_state.signup_email_status = "failed"
+                                        else:
+                                            st.session_state.signup_email_status = "not_configured"
+
+                                    except Exception as email_error:
+                                        st.session_state.signup_email_status = f"error: {str(email_error)}"
+
+                                    st.session_state.show_auth_in_main = False
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Error creating account: {str(e)}")
+            else:
+                tab1, tab2 = st.tabs(["Sign Up", "Login"])
+
+                with tab1:
+                    # Signup form
+                    with st.form("main_signup_form"):
+                        st.markdown("**Create your free account:**")
+                        name = st.text_input("Name")
+                        email = st.text_input("Email")
+                        password = st.text_input("Password", type="password")
+                        password_confirm = st.text_input("Confirm Password", type="password")
+                        submitted = st.form_submit_button("Create Account", use_container_width=True, type="primary")
+
+                        if submitted:
+                            # Validation
+                            if not name or not email or not password:
+                                st.error("Please fill in all fields")
+                            elif password != password_confirm:
+                                st.error("Passwords don't match")
+                            elif len(password) < 6:
+                                st.error("Password must be at least 6 characters")
+                            elif user_exists(email):
+                                st.error("An account with this email already exists")
+                            else:
+                                # Create user
+                                try:
+                                    user_id = create_user(name, email, password, auth_provider='email')
+                                    st.session_state.user_id = user_id
+                                    st.session_state.user_name = name
+                                    st.session_state.user_email = email
+                                    st.session_state.signup_email_status = None
+
+                                    # Send welcome email (non-blocking)
+                                    try:
+                                        from chat_pt.email_service import send_welcome_email, is_email_configured
+
+                                        if is_email_configured():
+                                            email_sent = send_welcome_email(email, name)
+                                            if email_sent:
+                                                st.session_state.signup_email_status = "success"
+                                            else:
+                                                st.session_state.signup_email_status = "failed"
+                                        else:
+                                            st.session_state.signup_email_status = "not_configured"
+
+                                    except Exception as email_error:
+                                        st.session_state.signup_email_status = f"error: {str(email_error)}"
+
+                                    st.session_state.show_auth_in_main = False
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Error creating account: {str(e)}")
+
+                with tab2:
+                    # Login form
+                    with st.form("main_login_form_alt"):
+                        st.markdown("**Login to your account:**")
+                        email = st.text_input("Email")
+                        password = st.text_input("Password", type="password")
+                        submitted = st.form_submit_button("Login", use_container_width=True, type="primary")
+
+                        if submitted:
+                            if not email or not password:
+                                st.error("Please enter both email and password")
+                            else:
+                                user = authenticate_user(email, password)
+                                if user:
+                                    st.session_state.user_id = user["id"]
+                                    st.session_state.user_name = user["name"]
+                                    st.session_state.user_email = user["email"]
+                                    st.session_state.show_auth_in_main = False
+                                    st.success(f"Welcome back, {user['name']}!")
+                                    st.rerun()
+                                else:
+                                    st.error("Invalid email or password")
 
             if st.button("← Back to Home", key="back_to_home"):
                 st.session_state.show_auth_in_main = False

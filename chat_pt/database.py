@@ -114,6 +114,24 @@ def init_db():
         )
     """)
 
+    # Missing exercise requests table - track exercises not in library
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS missing_exercise_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            exercise_name TEXT NOT NULL,
+            user_id INTEGER,
+            requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            request_count INTEGER DEFAULT 1,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    """)
+
+    # Create index for faster lookups
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_missing_exercise_name
+        ON missing_exercise_requests(exercise_name)
+    """)
+
     conn.commit()
     conn.close()
 
@@ -325,3 +343,59 @@ def get_or_create_user_by_email(email: str, name: str, auth_provider: str = 'goo
 
     conn.close()
     return user_id
+
+
+def log_missing_exercise_request(exercise_name: str, user_id: int = None):
+    """Log a request for an exercise that's not in the library."""
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+
+    # Check if this exercise has been requested before (by any user)
+    cursor.execute(
+        "SELECT id, request_count FROM missing_exercise_requests WHERE LOWER(exercise_name) = LOWER(?) LIMIT 1",
+        (exercise_name,)
+    )
+    existing = cursor.fetchone()
+
+    if existing:
+        # Increment the request count
+        cursor.execute(
+            "UPDATE missing_exercise_requests SET request_count = request_count + 1, requested_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (existing[0],)
+        )
+    else:
+        # Create new entry
+        cursor.execute(
+            "INSERT INTO missing_exercise_requests (exercise_name, user_id) VALUES (?, ?)",
+            (exercise_name, user_id)
+        )
+
+    conn.commit()
+    conn.close()
+
+def get_missing_exercise_requests(min_requests: int = 1, limit: int = 50) -> List[Dict[str, Any]]:
+    """Get missing exercise requests sorted by request count."""
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """SELECT exercise_name, request_count, MAX(requested_at) as last_requested
+        FROM missing_exercise_requests
+        WHERE request_count >= ?
+        GROUP BY LOWER(exercise_name)
+        ORDER BY request_count DESC, last_requested DESC
+        LIMIT ?""",
+        (min_requests, limit)
+    )
+
+    requests = [
+        {
+            "exercise_name": row[0],
+            "request_count": row[1],
+            "last_requested": row[2]
+        }
+        for row in cursor.fetchall()
+    ]
+
+    conn.close()
+    return requests
