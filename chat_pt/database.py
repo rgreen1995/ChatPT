@@ -63,9 +63,19 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             completed BOOLEAN DEFAULT FALSE,
             workout_plan TEXT,
+            consultation_type TEXT DEFAULT 'training',
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
     """)
+
+    # Migration: Add consultation_type column if it doesn't exist
+    try:
+        cursor.execute("SELECT consultation_type FROM consultations LIMIT 1")
+    except sqlite3.OperationalError:
+        cursor.execute("ALTER TABLE consultations ADD COLUMN consultation_type TEXT DEFAULT 'training'")
+        # Update all existing consultations to be 'training' type
+        cursor.execute("UPDATE consultations SET consultation_type = 'training' WHERE consultation_type IS NULL")
+        conn.commit()
 
     # Conversation history table
     cursor.execute("""
@@ -130,6 +140,64 @@ def init_db():
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_missing_exercise_name
         ON missing_exercise_requests(exercise_name)
+    """)
+
+    # User coaching profile table - shared across training and nutrition
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_coaching_profile (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER UNIQUE NOT NULL,
+            profile_json TEXT NOT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    """)
+
+    # User coaching memory table - shared coaching memory summary
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_coaching_memory (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER UNIQUE NOT NULL,
+            memory_json TEXT NOT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    """)
+
+    # Nutrition plans table - separate storage for nutrition plans
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS nutrition_plans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            consultation_id INTEGER NOT NULL,
+            plan_json TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            is_active BOOLEAN DEFAULT TRUE,
+            FOREIGN KEY (user_id) REFERENCES users (id),
+            FOREIGN KEY (consultation_id) REFERENCES consultations (id)
+        )
+    """)
+
+    # Create indexes for faster lookups
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_consultation_type
+        ON consultations(consultation_type)
+    """)
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_user_consultations
+        ON consultations(user_id, created_at)
+    """)
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_nutrition_plans_user
+        ON nutrition_plans(user_id, created_at)
+    """)
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_nutrition_plans_consultation
+        ON nutrition_plans(consultation_id)
     """)
 
     conn.commit()
@@ -204,11 +272,14 @@ def get_users() -> List[Dict[str, Any]]:
     conn.close()
     return users
 
-def create_consultation(user_id: int) -> int:
+def create_consultation(user_id: int, consultation_type: str = 'training') -> int:
     """Create a new consultation for a user."""
     conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO consultations (user_id) VALUES (?)", (user_id,))
+    cursor.execute(
+        "INSERT INTO consultations (user_id, consultation_type) VALUES (?, ?)",
+        (user_id, consultation_type)
+    )
     consultation_id = cursor.lastrowid
     conn.commit()
     conn.close()
@@ -399,3 +470,177 @@ def get_missing_exercise_requests(min_requests: int = 1, limit: int = 50) -> Lis
 
     conn.close()
     return requests
+
+
+# ============================================================================
+# Nutrition Consultation Functions
+# ============================================================================
+
+def get_coaching_profile(user_id: int) -> Optional[Dict[str, Any]]:
+    """Get user's coaching profile (shared across training and nutrition)."""
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT profile_json FROM user_coaching_profile WHERE user_id = ?",
+        (user_id,)
+    )
+    result = cursor.fetchone()
+    conn.close()
+    if result and result[0]:
+        return json.loads(result[0])
+    return None
+
+
+def save_coaching_profile(user_id: int, profile: Dict[str, Any]):
+    """Save/update user's coaching profile."""
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+
+    profile_json = json.dumps(profile)
+
+    # Try to update existing profile first
+    cursor.execute(
+        """UPDATE user_coaching_profile
+        SET profile_json = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE user_id = ?""",
+        (profile_json, user_id)
+    )
+
+    # If no rows were updated, insert a new profile
+    if cursor.rowcount == 0:
+        cursor.execute(
+            "INSERT INTO user_coaching_profile (user_id, profile_json) VALUES (?, ?)",
+            (user_id, profile_json)
+        )
+
+    conn.commit()
+    conn.close()
+
+
+def get_coaching_memory(user_id: int) -> Optional[Dict[str, Any]]:
+    """Get user's coaching memory summary."""
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT memory_json FROM user_coaching_memory WHERE user_id = ?",
+        (user_id,)
+    )
+    result = cursor.fetchone()
+    conn.close()
+    if result and result[0]:
+        return json.loads(result[0])
+    return None
+
+
+def save_coaching_memory(user_id: int, memory: Dict[str, Any]):
+    """Save/update user's coaching memory summary."""
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+
+    memory_json = json.dumps(memory)
+
+    # Try to update existing memory first
+    cursor.execute(
+        """UPDATE user_coaching_memory
+        SET memory_json = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE user_id = ?""",
+        (memory_json, user_id)
+    )
+
+    # If no rows were updated, insert new memory
+    if cursor.rowcount == 0:
+        cursor.execute(
+            "INSERT INTO user_coaching_memory (user_id, memory_json) VALUES (?, ?)",
+            (user_id, memory_json)
+        )
+
+    conn.commit()
+    conn.close()
+
+
+def save_nutrition_plan(user_id: int, consultation_id: int, plan: Dict[str, Any]):
+    """Save nutrition plan for a consultation."""
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+
+    plan_json = json.dumps(plan)
+
+    # Check if a plan already exists for this consultation
+    cursor.execute(
+        "SELECT id FROM nutrition_plans WHERE consultation_id = ?",
+        (consultation_id,)
+    )
+    existing = cursor.fetchone()
+
+    if existing:
+        # Update existing plan
+        cursor.execute(
+            """UPDATE nutrition_plans
+            SET plan_json = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE consultation_id = ?""",
+            (plan_json, consultation_id)
+        )
+    else:
+        # Deactivate all previous plans for this user
+        cursor.execute(
+            "UPDATE nutrition_plans SET is_active = FALSE WHERE user_id = ?",
+            (user_id,)
+        )
+
+        # Insert new plan
+        cursor.execute(
+            """INSERT INTO nutrition_plans
+            (user_id, consultation_id, plan_json, is_active)
+            VALUES (?, ?, ?, TRUE)""",
+            (user_id, consultation_id, plan_json)
+        )
+
+    conn.commit()
+    conn.close()
+
+
+def get_nutrition_plan(consultation_id: int) -> Optional[Dict[str, Any]]:
+    """Get nutrition plan by consultation ID."""
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT plan_json FROM nutrition_plans WHERE consultation_id = ?",
+        (consultation_id,)
+    )
+    result = cursor.fetchone()
+    conn.close()
+    if result and result[0]:
+        return json.loads(result[0])
+    return None
+
+
+def get_latest_nutrition_plan(user_id: int) -> Optional[Dict[str, Any]]:
+    """Get user's latest active nutrition plan."""
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+    cursor.execute(
+        """SELECT plan_json FROM nutrition_plans
+        WHERE user_id = ? AND is_active = TRUE
+        ORDER BY updated_at DESC LIMIT 1""",
+        (user_id,)
+    )
+    result = cursor.fetchone()
+    conn.close()
+    if result and result[0]:
+        return json.loads(result[0])
+    return None
+
+
+def get_consultation_type(consultation_id: int) -> str:
+    """Get the type of a consultation (training or nutrition)."""
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT consultation_type FROM consultations WHERE id = ?",
+        (consultation_id,)
+    )
+    result = cursor.fetchone()
+    conn.close()
+    if result:
+        return result[0] if result[0] else 'training'
+    return 'training'  # Default to training if not found
