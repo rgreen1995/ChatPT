@@ -46,15 +46,54 @@ def render():
 
     # Initialize consultation if not exists
     if "nutrition_consultation_id" not in st.session_state:
-        st.session_state.nutrition_consultation_id = create_consultation(
-            st.session_state.user_id,
-            consultation_type='nutrition'
-        )
-        st.session_state.messages = []
-        st.session_state.nutrition_plan = None
+        try:
+            st.session_state.nutrition_consultation_id = create_consultation(
+                st.session_state.user_id,
+                consultation_type='nutrition'
+            )
+            st.session_state.messages = []
+            st.session_state.nutrition_plan = None
 
-        # Build shared context for this user
-        context = build_consultation_context(st.session_state.user_id, 'nutrition')
+            # Build shared context for this user
+            context = build_consultation_context(st.session_state.user_id, 'nutrition')
+        except Exception as e:
+            # Check if this is a missing consultation_type column error
+            error_str = str(e).lower()
+            is_migration_error = (
+                'consultation_type' in error_str or
+                'pgrst204' in error_str or
+                'schema cache' in error_str or
+                'column' in error_str and 'consultations' in error_str
+            )
+
+            if is_migration_error:
+                st.error("""
+                ### Database Migration Required
+
+                The nutrition consultation feature requires a database migration that hasn't been run yet.
+
+                **You have two options:**
+
+                1. **Run the SQL migration in Supabase** (recommended for production)
+                   - Execute the migration SQL in your Supabase SQL Editor
+                   - See `migrations/README_NUTRITION_MIGRATION.md` for detailed instructions
+
+                2. **Use SQLite locally** (for development/testing)
+                   - Switch to SQLite mode in the app settings
+                   - SQLite will work without additional migration steps
+
+                **Quick Fix:** Check `migrations/README_NUTRITION_MIGRATION.md` for step-by-step migration instructions.
+                """)
+
+                with st.expander("🔍 Show Technical Error Details"):
+                    import traceback
+                    st.code(traceback.format_exc())
+
+                # Return early to prevent further errors
+                return
+            else:
+                # Re-raise if it's a different type of error
+                raise
 
         # Create context-aware initial message
         context_prefix = build_context_prefix(context)
@@ -77,13 +116,19 @@ def render():
 
             st.markdown("<br>", unsafe_allow_html=True)
 
-        # Add initial assistant message
+        # Add initial assistant message with context prepended
+        initial_content = "Hi! I'm your AI nutrition coach. I'm excited to help you create a personalized nutrition plan that supports your goals! Let's build a plan that fits your lifestyle and helps you succeed. What are your main nutrition goals right now?"
+
+        # Prepend context if available so LLM knows what it already knows
+        if context_prefix:
+            initial_content = context_prefix + initial_content
+
         initial_message = {
             "role": "assistant",
-            "content": "Hi! I'm your AI nutrition coach. I'm excited to help you create a personalized nutrition plan that supports your goals! Let's build a plan that fits your lifestyle and helps you succeed. What are your main nutrition goals right now?"
+            "content": initial_content
         }
         st.session_state.messages.append(initial_message)
-        save_message(st.session_state.nutrition_consultation_id, "assistant", initial_message["content"])
+        save_message(st.session_state.nutrition_consultation_id, "assistant", initial_content)
 
     # Load conversation history if resuming
     if not st.session_state.messages:
@@ -96,10 +141,22 @@ def render():
 
     # Check if nutrition plan was generated - show notification but allow conversation to continue
     if st.session_state.nutrition_plan:
-        st.markdown("""
+        # Build preview details
+        nutrition_plan = st.session_state.nutrition_plan
+        calories = nutrition_plan.get('daily_calories', '?')
+        macros = nutrition_plan.get('macros', {})
+        protein = macros.get('protein_g', '?')
+        carbs = macros.get('carbs_g', '?')
+        fats = macros.get('fats_g', '?')
+        meals_per_day = nutrition_plan.get('meal_structure', {}).get('meals_per_day', '?')
+
+        preview_text = f"{calories} cal/day | P: {protein}g, C: {carbs}g, F: {fats}g | {meals_per_day} meals/day"
+
+        st.markdown(f"""
         <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 1.5rem; border-radius: 10px; text-align: center; color: white; margin: 1rem 0;">
             <div style="font-size: 2rem; margin-bottom: 0.5rem;">✅</div>
             <h3 style="margin: 0.5rem 0; color: white;">Your Nutrition Plan is Ready!</h3>
+            <p style="margin: 0.5rem 0; opacity: 0.9; font-size: 1.1rem;">{preview_text}</p>
             <p style="margin: 0; opacity: 0.9;">View your personalized plan or continue chatting to refine it</p>
         </div>
         """, unsafe_allow_html=True)

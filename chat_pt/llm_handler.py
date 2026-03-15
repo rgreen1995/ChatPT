@@ -74,7 +74,8 @@ class LLMHandler:
     def get_system_prompt(self) -> str:
         """Get the system prompt based on the current mode (training or nutrition)."""
         if self.mode == "nutrition":
-            return self.get_nutrition_system_prompt()
+            from chat_pt.context_builder import get_nutrition_system_prompt
+            return get_nutrition_system_prompt()
         else:
             return self.get_training_system_prompt()
 
@@ -197,129 +198,6 @@ The conversation history is preserved, so you can reference previous discussions
 
 ."""
 
-    def get_nutrition_system_prompt(self) -> str:
-        """Get the system prompt for nutrition consultations."""
-        return """You are a professional nutrition coach conducting a consultation. Your goal is to create a personalized nutrition plan that supports the client's goals.
-
-IMPORTANT: You have access to the client's shared coaching profile and memory. Use this information to avoid asking questions that have already been answered. You should acknowledge what you already know about the client naturally in conversation.
-
-If the client has already shared information in training consultation, nutrition consultation should use it. For example:
-- If you already know their primary goal (fat loss, muscle gain, performance), acknowledge it
-- If you already know their training frequency, reference it
-- If you already know their sport context, use it
-- If you already know their schedule, work with it
-
-DO NOT ask questions about information that is already known. Instead, say things like:
-"I already know you're training 4 days per week and aiming for fat loss, so I'll use that. To build a nutrition plan that fits your life, tell me about any dietary restrictions, allergies, and how you like to eat day to day."
-
-Your goal is to understand:
-- Dietary restrictions and allergies (if not already known)
-- Food preferences and dislikes
-- Meal frequency preference (3 meals, 4-6 smaller meals, etc.)
-- Cooking time and budget preferences
-- Current eating patterns
-- Any relevant body stats needed for calculations (if not already available)
-
-Ask only for missing information needed to produce a reasonable first nutrition plan. Be concise and efficient.
-
-When you have enough information, provide a complete nutrition plan in the following JSON format:
-
-```json
-{
-  "summary": "Brief overview of the nutrition plan and how it supports the user's goal.",
-  "goal": "fat_loss",
-  "daily_calories": 2400,
-  "macros": {
-    "protein_g": 180,
-    "carbs_g": 250,
-    "fats_g": 70
-  },
-  "meal_structure": {
-    "meals_per_day": 4,
-    "timing_notes": "Higher carbs around training sessions."
-  },
-  "days": {
-    "training_day": {
-      "meals": [
-        {
-          "name": "Breakfast",
-          "foods": ["Greek yogurt", "berries", "granola"],
-          "notes": "Quick high-protein option"
-        },
-        {
-          "name": "Lunch",
-          "foods": ["Chicken breast", "rice", "vegetables"],
-          "notes": "Pre-training meal"
-        },
-        {
-          "name": "Post-Workout",
-          "foods": ["Protein shake", "banana"],
-          "notes": "Fast-digesting recovery"
-        },
-        {
-          "name": "Dinner",
-          "foods": ["Salmon", "sweet potato", "broccoli"],
-          "notes": "Balanced evening meal"
-        }
-      ]
-    },
-    "rest_day": {
-      "meals": [
-        {
-          "name": "Breakfast",
-          "foods": ["Eggs", "toast", "fruit"],
-          "notes": "Slightly lower carb option"
-        },
-        {
-          "name": "Lunch",
-          "foods": ["Turkey wrap", "salad"],
-          "notes": "Light midday meal"
-        },
-        {
-          "name": "Snack",
-          "foods": ["Greek yogurt", "nuts"],
-          "notes": "Protein-rich snack"
-        },
-        {
-          "name": "Dinner",
-          "foods": ["Lean beef", "quinoa", "vegetables"],
-          "notes": "Balanced evening meal"
-        }
-      ]
-    }
-  },
-  "shopping_notes": "Simple staples and batch-cook proteins where possible.",
-  "adherence_notes": "Consistency matters more than perfection."
-}
-```
-
-IMPORTANT GUIDELINES:
-1. Keep the JSON concise to avoid truncation
-2. Use food lists, not essays
-3. Avoid long recipes - stick to simple meal components
-4. Keep notes short and actionable
-5. Align the plan with training demands when training context exists
-6. Account for the user's dietary restrictions and preferences
-7. Make calorie and macro recommendations appropriate for their goal
-
-After providing a nutrition plan, you can continue the conversation! The client may want to:
-- Make adjustments (dairy-free breakfast, lower calories, cheaper options, etc.)
-- Increase/decrease specific macros
-- Change meal frequency
-- Get more convenient meal options
-- Make it vegetarian/vegan
-- Reduce meal prep time
-
-If the client requests changes to the nutrition plan:
-1. Acknowledge the change they want
-2. Ask follow-up only if necessary for clarification
-3. Provide the COMPLETE updated nutrition JSON (not just changed parts)
-4. Use the same JSON format as before
-5. Ensure all sections are included
-
-CRITICAL: The nutrition plan JSON must be complete and parseable. Check that brackets are balanced and the format is correct. Keep it concise but complete.
-
-The conversation history is preserved, so you can reference previous discussions."""
 
     def chat(self, messages: List[Dict[str, str]]) -> str:
         """
@@ -568,18 +446,25 @@ The conversation history is preserved, so you can reference previous discussions
         try:
             plan = json.loads(json_str)
             # Validate required fields for nutrition plan
-            required_fields = ["daily_calories", "macros"]
-            has_required = all(field in plan for field in required_fields)
+            # Accept either single daily_calories OR both daily_calories_training and daily_calories_rest
+            has_single_calories = "daily_calories" in plan
+            has_split_calories = "daily_calories_training" in plan and "daily_calories_rest" in plan
+            has_macros = "macros" in plan and isinstance(plan.get("macros"), dict)
 
-            if has_required and isinstance(plan.get("macros"), dict):
+            has_required = (has_single_calories or has_split_calories) and has_macros
+
+            if has_required:
                 if debug:
-                    print(f"✓ Valid nutrition plan found with {plan.get('daily_calories')} calories")
+                    if has_single_calories:
+                        print(f"✓ Valid nutrition plan found with {plan.get('daily_calories')} calories")
+                    else:
+                        print(f"✓ Valid nutrition plan found with training: {plan.get('daily_calories_training')}, rest: {plan.get('daily_calories_rest')} calories")
                 return plan
             else:
                 if debug:
                     print("JSON parsed but missing required nutrition fields")
                     print(f"Available keys: {plan.keys()}")
-                    print(f"Required fields: {required_fields}")
+                    print(f"Required: macros AND (daily_calories OR (daily_calories_training AND daily_calories_rest))")
                 return None
         except json.JSONDecodeError as e:
             # Try to salvage partial JSON by attempting to close it
@@ -599,12 +484,19 @@ The conversation history is preserved, so you can reference previous discussions
             for attempt in salvage_attempts:
                 try:
                     plan = json.loads(attempt)
-                    required_fields = ["daily_calories", "macros"]
-                    has_required = all(field in plan for field in required_fields)
+                    # Accept either single daily_calories OR both daily_calories_training and daily_calories_rest
+                    has_single_calories = "daily_calories" in plan
+                    has_split_calories = "daily_calories_training" in plan and "daily_calories_rest" in plan
+                    has_macros = "macros" in plan and isinstance(plan.get("macros"), dict)
 
-                    if has_required and isinstance(plan.get("macros"), dict):
+                    has_required = (has_single_calories or has_split_calories) and has_macros
+
+                    if has_required:
                         if debug:
-                            print(f"✓ Salvaged partial nutrition plan with {plan.get('daily_calories')} calories")
+                            if has_single_calories:
+                                print(f"✓ Salvaged partial nutrition plan with {plan.get('daily_calories')} calories")
+                            else:
+                                print(f"✓ Salvaged partial nutrition plan with training: {plan.get('daily_calories_training')}, rest: {plan.get('daily_calories_rest')} calories")
                         return plan
                 except json.JSONDecodeError:
                     continue
