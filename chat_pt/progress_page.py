@@ -181,43 +181,37 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
 
     st.markdown(f"### {day_data.get('focus', 'Workout')}")
 
-    # Check if any timers are running (session or rest timers)
     session_timer_key = f"session_timer_{selected_day}"
     session_start_key = f"session_start_{selected_day}"
-    has_active_timer = st.session_state.get(session_timer_key, False)
-
-    # Check for active rest timers
-    if not has_active_timer:
-        for key in st.session_state.keys():
-            if key.startswith('timer_running_') and st.session_state.get(key, False):
-                has_active_timer = True
-                break
-
-    # Add auto-refresh script if any timer is active
-    if has_active_timer:
-        st.markdown("""
-        <script>
-        setTimeout(function() {
-            window.parent.location.reload();
-        }, 1000);
-        </script>
-        """, unsafe_allow_html=True)
 
     # Display workout timer if running
     if st.session_state.get(session_timer_key) and st.session_state.get(session_start_key):
-        elapsed = int(time.time() - st.session_state[session_start_key])
-        mins = elapsed // 60
-        secs = elapsed % 60
-
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            st.markdown(f"""
+            timer_dom_id = f"progress_workout_timer_{selected_day}".replace(" ", "_").replace("-", "_")
+            st.components.v1.html(f"""
             <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                         padding: 1rem; border-radius: 10px; text-align: center; color: white; margin-bottom: 1rem;">
-                <div style="font-size: 2rem; font-weight: bold;">⏱️ {mins:02d}:{secs:02d}</div>
+                <div id="{timer_dom_id}" style="font-size: 2rem; font-weight: bold;">⏱️ 00:00</div>
                 <div style="font-size: 0.9rem; opacity: 0.9;">Workout in Progress</div>
             </div>
-            """, unsafe_allow_html=True)
+            <script>
+            const startTime = {st.session_state[session_start_key]};
+            const timerEl = document.getElementById("{timer_dom_id}");
+
+            const pad = (num) => String(num).padStart(2, '0');
+            const updateTimer = () => {{
+                if (!timerEl || !startTime) return;
+                const elapsed = Math.max(0, Math.floor(Date.now() / 1000 - startTime));
+                const mins = Math.floor(elapsed / 60);
+                const secs = elapsed % 60;
+                timerEl.textContent = `⏱️ ${{pad(mins)}}:${{pad(secs)}}`;
+            }};
+
+            updateTimer();
+            window.setInterval(updateTimer, 1000);
+            </script>
+            """, height=110)
 
     st.markdown("---")
 
@@ -261,13 +255,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
         else:
             num_sets = int(sets_value) if isinstance(sets_value, (int, float)) else 3
 
-        # Header row
-        col_headers = st.columns([1, 2, 2, 2, 1.5])
-        col_headers[0].markdown("**Set**")
-        col_headers[1].markdown("**Reps**")
-        col_headers[2].markdown("**Weight**")
-        col_headers[3].markdown("**Notes**")
-        col_headers[4].markdown("**Timer**")
+        st.markdown("**Log each set:**")
 
         # Initialize logs for this exercise
         if exercise_key not in st.session_state.exercise_logs:
@@ -294,25 +282,30 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
                          for _ in range(num_sets)]
             }
 
-        # Display each set
+        # Display each set in a mobile-friendly stacked layout
         for set_idx in range(num_sets):
-            cols = st.columns([1, 2, 2, 2, 1.5])
+            timer_key = f"timer_{exercise_key}_{set_idx}"
+            timer_running_key = f"timer_running_{timer_key}"
+            timer_end_key = f"timer_end_{timer_key}"
 
-            with cols[0]:
-                st.markdown(f"**{set_idx + 1}**")
+            if timer_running_key not in st.session_state:
+                st.session_state[timer_running_key] = False
 
-            with cols[1]:
+            st.markdown(f"**Set {set_idx + 1}**")
+
+            input_cols = st.columns(2)
+            with input_cols[0]:
                 reps = st.number_input(
                     "Reps",
                     min_value=1,
                     max_value=100,
                     value=st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['reps'],
                     key=f"reps_{exercise_key}_{set_idx}",
-                    label_visibility="collapsed"
+                    label_visibility="visible"
                 )
                 st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['reps'] = reps
 
-            with cols[2]:
+            with input_cols[1]:
                 weight = st.number_input(
                     "Weight",
                     min_value=0.0,
@@ -320,45 +313,67 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
                     step=2.5,
                     value=st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['weight'],
                     key=f"weight_{exercise_key}_{set_idx}",
-                    label_visibility="collapsed"
+                    label_visibility="visible"
                 )
                 st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['weight'] = weight
 
-            with cols[3]:
-                notes = st.text_input(
-                    "Notes",
-                    value=st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['notes'],
-                    key=f"notes_{exercise_key}_{set_idx}",
-                    placeholder="Feel, RPE, etc.",
-                    label_visibility="collapsed"
-                )
-                st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['notes'] = notes
+            notes = st.text_input(
+                "Notes",
+                value=st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['notes'],
+                key=f"notes_{exercise_key}_{set_idx}",
+                placeholder="Feel, RPE, etc.",
+                label_visibility="visible"
+            )
+            st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['notes'] = notes
 
-            with cols[4]:
-                timer_key = f"timer_{exercise_key}_{set_idx}"
-                timer_running_key = f"timer_running_{timer_key}"
-                timer_end_key = f"timer_end_{timer_key}"
-
-                if timer_running_key not in st.session_state:
-                    st.session_state[timer_running_key] = False
-
+            timer_col1, timer_col2 = st.columns([1, 1])
+            with timer_col1:
                 if not st.session_state[timer_running_key]:
-                    if st.button("⏱️", key=f"start_{timer_key}", help=f"Start {rest_seconds}s rest", use_container_width=True):
+                    if st.button("⏱️ Start Rest", key=f"start_{timer_key}", help=f"Start {rest_seconds}s rest", use_container_width=True):
                         st.session_state[timer_running_key] = True
                         st.session_state[timer_end_key] = time.time() + rest_seconds
                         st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['completed'] = True
                         st.rerun()
-                else:
-                    remaining = max(0, int(st.session_state[timer_end_key] - time.time()))
+            with timer_col2:
+                if st.session_state[timer_running_key]:
+                    timer_end = st.session_state.get(timer_end_key)
+                    remaining = max(0, int(timer_end - time.time())) if timer_end else 0
                     if remaining > 0:
-                        st.markdown(f"""
-                        <div style="text-align: center; font-weight: bold; color: #667eea;">
-                            {remaining}s
+                        timer_dom_id = f"rest_timer_{exercise_key}_{set_idx}".replace(" ", "_").replace("-", "_")
+                        st.components.v1.html(f"""
+                        <div style="text-align: center; font-weight: bold; color: #667eea; padding-top: 0.6rem;">
+                            <span id="{timer_dom_id}">{remaining}s remaining</span>
                         </div>
-                        """, unsafe_allow_html=True)
+                        <script>
+                        const timerId = "{timer_dom_id}";
+                        const timerEl = document.getElementById(timerId);
+                        const endTime = {int(timer_end)};
+
+                        window.__chatptTimerCompletionSent = window.__chatptTimerCompletionSent || {{}};
+
+                        const updateTimer = () => {{
+                            if (!timerEl || !endTime) return;
+                            const now = Math.floor(Date.now() / 1000);
+                            const secsRemaining = Math.max(0, endTime - now);
+                            timerEl.textContent = `${{secsRemaining}}s remaining`;
+
+                            if (secsRemaining <= 0 && !window.__chatptTimerCompletionSent[timerId]) {{
+                                window.__chatptTimerCompletionSent[timerId] = true;
+                                window.setTimeout(() => {{
+                                    window.parent.postMessage({{ isStreamlitMessage: true, type: "streamlit:rerunScript" }}, "*");
+                                }}, 250);
+                            }}
+                        }};
+
+                        updateTimer();
+                        window.setInterval(updateTimer, 1000);
+                        </script>
+                        """, height=48)
                     else:
                         st.session_state[timer_running_key] = False
-                        st.markdown("✅")
+                        st.markdown("✅ Rest done")
+
+            st.markdown("<div style='margin-bottom: 0.75rem;'></div>", unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
 
@@ -396,7 +411,6 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
             st.balloons()
             time.sleep(1)
             st.rerun()
-
 
 def render_view_progress(workout_plan: dict):
     """Render the progress viewing interface."""

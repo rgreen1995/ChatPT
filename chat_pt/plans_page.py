@@ -25,27 +25,60 @@ def render_rest_timer(rest_seconds, exercise_key):
         remaining = max(0, int(end_time - current_time))
 
         if remaining > 0:
-            # Display countdown timer
+            # Display countdown timer (client-side updates to avoid page flashing)
             mins = remaining // 60
             secs = remaining % 60
-
-            # Timer display with progress bar
             progress = 1 - (remaining / rest_seconds)
+            timer_dom_id = f"rest_timer_{exercise_key}".replace(" ", "_").replace("-", "_")
+            timer_value_id = f"{timer_dom_id}_value"
+            timer_bar_id = f"{timer_dom_id}_bar"
 
-            timer_html = f"""
+            st.components.v1.html(f"""
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                         padding: 1.5rem; border-radius: 10px; text-align: center;
                         margin: 1rem 0; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                <div style="color: white; font-size: 3rem; font-weight: bold; margin-bottom: 0.5rem;">
+                <div id="{timer_value_id}" style="color: white; font-size: 3rem; font-weight: bold; margin-bottom: 0.5rem;">
                     {mins:02d}:{secs:02d}
                 </div>
                 <div style="background: rgba(255,255,255,0.3); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 1rem;">
-                    <div style="background: white; height: 100%; width: {progress * 100}%; transition: width 0.3s ease;"></div>
+                    <div id="{timer_bar_id}" style="background: white; height: 100%; width: {progress * 100}%; transition: width 0.3s ease;"></div>
                 </div>
                 <div style="color: rgba(255,255,255,0.9); font-size: 1.1rem;">Rest Period</div>
             </div>
-            """
-            st.markdown(timer_html, unsafe_allow_html=True)
+            <script>
+            const timerId = "{timer_dom_id}";
+            const valueEl = document.getElementById("{timer_value_id}");
+            const barEl = document.getElementById("{timer_bar_id}");
+            const endTime = {int(end_time)};
+            const totalSeconds = {int(rest_seconds)};
+
+            window.__chatptTimerCompletionSent = window.__chatptTimerCompletionSent || {{}};
+
+            const pad = (num) => String(num).padStart(2, '0');
+            const updateTimer = () => {{
+                if (!valueEl || !barEl || !endTime || !totalSeconds) return;
+
+                const now = Math.floor(Date.now() / 1000);
+                const secsRemaining = Math.max(0, endTime - now);
+                const mins = Math.floor(secsRemaining / 60);
+                const secs = secsRemaining % 60;
+                const progressPct = Math.min(100, Math.max(0, (1 - (secsRemaining / totalSeconds)) * 100));
+
+                valueEl.textContent = `${{pad(mins)}}:${{pad(secs)}}`;
+                barEl.style.width = `${{progressPct}}%`;
+
+                if (secsRemaining <= 0 && !window.__chatptTimerCompletionSent[timerId]) {{
+                    window.__chatptTimerCompletionSent[timerId] = true;
+                    window.setTimeout(() => {{
+                        window.parent.postMessage({{ isStreamlitMessage: true, type: "streamlit:rerunScript" }}, "*");
+                    }}, 250);
+                }}
+            }};
+
+            updateTimer();
+            window.setInterval(updateTimer, 1000);
+            </script>
+            """, height=170)
 
             col1, col2 = st.columns(2)
             with col1:
@@ -87,9 +120,6 @@ def render_rest_timer(rest_seconds, exercise_key):
             }}
             </style>
             """, unsafe_allow_html=True)
-
-            time.sleep(2)
-            st.rerun()
 
     return st.session_state[timer_running_key]
 
@@ -135,23 +165,6 @@ def sort_workout_days(schedule_dict):
 
 def render():
     """Render the workout plans page."""
-
-    # Check if any timers are running and add auto-refresh
-    has_active_timer = False
-    for key in st.session_state.keys():
-        if (key.startswith('timer_running_') or key.startswith('session_timer_')) and st.session_state.get(key, False):
-            has_active_timer = True
-            break
-
-    # Add auto-refresh script if any timer is active
-    if has_active_timer:
-        st.markdown("""
-        <script>
-        setTimeout(function() {
-            window.parent.location.reload();
-        }, 1000);
-        </script>
-        """, unsafe_allow_html=True)
 
     st.markdown("""
     <div style="text-align: center; padding: 1rem 0 2rem 0;">
@@ -463,16 +476,30 @@ def render():
 
                 with col2:
                     if st.session_state[session_timer_key]:
-                        elapsed = int(time.time() - st.session_state[session_start_key])
-                        mins = elapsed // 60
-                        secs = elapsed % 60
-                        st.markdown(f"""
+                        timer_dom_id = f"workout_timer_{day_name}".replace(" ", "_").replace("-", "_")
+                        st.components.v1.html(f"""
                         <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                                     padding: 0.75rem; border-radius: 8px; text-align: center; color: white;">
-                            <div style="font-size: 1.5rem; font-weight: bold;">⏱️ {mins:02d}:{secs:02d}</div>
+                            <div id="{timer_dom_id}" style="font-size: 1.5rem; font-weight: bold;">⏱️ 00:00</div>
                             <div style="font-size: 0.8rem; opacity: 0.9;">Workout Duration</div>
                         </div>
-                        """, unsafe_allow_html=True)
+                        <script>
+                        const startTime = {st.session_state[session_start_key]};
+                        const timerEl = document.getElementById("{timer_dom_id}");
+
+                        const pad = (num) => String(num).padStart(2, '0');
+                        const updateTimer = () => {{
+                            if (!timerEl || !startTime) return;
+                            const elapsed = Math.max(0, Math.floor(Date.now() / 1000 - startTime));
+                            const mins = Math.floor(elapsed / 60);
+                            const secs = elapsed % 60;
+                            timerEl.textContent = `⏱️ ${{pad(mins)}}:${{pad(secs)}}`;
+                        }};
+
+                        updateTimer();
+                        window.setInterval(updateTimer, 1000);
+                        </script>
+                        """, height=95)
 
                 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -638,3 +665,4 @@ def render():
         if st.button("🏠 Home", use_container_width=True):
             st.session_state.page = "home"
             st.rerun()
+
