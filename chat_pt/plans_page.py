@@ -454,52 +454,23 @@ def render():
                 if session_start_key not in st.session_state:
                     st.session_state[session_start_key] = None
 
-                # Display session timer controls
-                col1, col2, col3 = st.columns([2, 2, 2])
-                with col1:
-                    if not st.session_state[session_timer_key]:
-                        if st.button("▶️ Start & Log Workout", key=f"start_session_{day_name}", use_container_width=True, type="primary"):
-                            # Start timer and navigate to progress page
-                            st.session_state[session_timer_key] = True
-                            st.session_state[session_start_key] = time.time()
-                            st.session_state.page = "progress"
-                            st.session_state.selected_day = day_name
-                            st.session_state.selected_consultation = consultation_id
-                            st.rerun()
-                    else:
-                        if st.button("⏹️ End Workout", key=f"end_session_{day_name}", use_container_width=True):
-                            st.session_state[session_timer_key] = False
-                            elapsed = int(time.time() - st.session_state[session_start_key])
-                            st.session_state[session_start_key] = None
-                            st.success(f"✅ Workout complete! Duration: {elapsed // 60}m {elapsed % 60}s")
-                            st.rerun()
-
-                with col2:
-                    if st.session_state[session_timer_key]:
-                        timer_dom_id = f"workout_timer_{day_name}".replace(" ", "_").replace("-", "_")
-                        st.components.v1.html(f"""
-                        <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-                                    padding: 0.75rem; border-radius: 8px; text-align: center; color: white;">
-                            <div id="{timer_dom_id}" style="font-size: 1.5rem; font-weight: bold;">⏱️ 00:00</div>
-                            <div style="font-size: 0.8rem; opacity: 0.9;">Workout Duration</div>
-                        </div>
-                        <script>
-                        const startTime = {st.session_state[session_start_key]};
-                        const timerEl = document.getElementById("{timer_dom_id}");
-
-                        const pad = (num) => String(num).padStart(2, '0');
-                        const updateTimer = () => {{
-                            if (!timerEl || !startTime) return;
-                            const elapsed = Math.max(0, Math.floor(Date.now() / 1000 - startTime));
-                            const mins = Math.floor(elapsed / 60);
-                            const secs = elapsed % 60;
-                            timerEl.textContent = `⏱️ ${{pad(mins)}}:${{pad(secs)}}`;
-                        }};
-
-                        updateTimer();
-                        window.setInterval(updateTimer, 1000);
-                        </script>
-                        """, height=95)
+                # Display workout controls (timer shown on progress page during active workout)
+                if not st.session_state[session_timer_key]:
+                    if st.button("▶️ Start & Log Workout", key=f"start_session_{day_name}", use_container_width=True, type="primary"):
+                        # Start timer and navigate to progress page
+                        st.session_state[session_timer_key] = True
+                        st.session_state[session_start_key] = time.time()
+                        st.session_state.page = "progress"
+                        st.session_state.selected_day = day_name
+                        st.session_state.selected_consultation = consultation_id
+                        st.rerun()
+                else:
+                    if st.button("⏹️ End Workout", key=f"end_session_{day_name}", use_container_width=True):
+                        st.session_state[session_timer_key] = False
+                        elapsed = int(time.time() - st.session_state[session_start_key])
+                        st.session_state[session_start_key] = None
+                        st.success(f"✅ Workout complete! Duration: {elapsed // 60}m {elapsed % 60}s")
+                        st.rerun()
 
                 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -587,30 +558,21 @@ def render():
                                 st.caption(f"Rest: **{rest}s**")
 
                             with col4:
-                                # Action buttons in a row
-                                btn_col1, btn_col2, btn_col3 = st.columns(3)
+                                # Action buttons in a row (no timers on day schedule page)
+                                btn_col1, btn_col2 = st.columns(2)
                                 with btn_col1:
-                                    if st.button("⏱️", key=f"{exercise_key}_timer", help="Start rest timer", use_container_width=True):
-                                        st.session_state[f"timer_running_{exercise_key}"] = True
-                                        st.session_state[f"timer_start_{exercise_key}"] = time.time()
-                                        st.session_state[f"timer_end_{exercise_key}"] = time.time() + rest
-                                        st.rerun()
-                                with btn_col2:
                                     if st.button("🔄", key=f"{exercise_key}_swap", help="Swap exercise", use_container_width=True):
                                         st.session_state.swap_exercise = exercise_name
                                         st.session_state.swap_day = day_name
                                         st.session_state.swap_consultation_id = consultation_id
                                         st.session_state.show_swap_dialog = True
                                         st.rerun()
-                                with btn_col3:
+                                with btn_col2:
                                     if st.button("ℹ️", key=f"{exercise_key}_info", help="Exercise info", use_container_width=True):
                                         st.session_state.viewing_exercise = exercise_name
                                         st.session_state.came_from_plans = True
                                         st.session_state.page = "exercises"
                                         st.rerun()
-
-                            # Show timer if active for this exercise
-                            timer_running = render_rest_timer(rest, exercise_key)
 
                         # Add separator after each exercise group
                         st.markdown("---")
