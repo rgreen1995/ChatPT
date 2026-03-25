@@ -5,7 +5,7 @@
 
 ChatPT is an AI-powered fitness app for building, delivering, and adapting personalised training and nutrition plans.
 
-It started as a personal tool, but the ambition is much bigger: to help build a **affordable, genuinely personalised, always-available fitness assistant** that is good enough to replace most online coaching.
+It started as a personal tool, but the ambition is much bigger: to help build an **affordable, genuinely personalised, always-available fitness assistant** that is good enough to replace most online coaching.
 
 This project is also an experiment in AI-built software. Close to **99% of the codebase** was written by AI — including most of this README.
 
