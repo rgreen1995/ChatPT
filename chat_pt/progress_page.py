@@ -79,6 +79,45 @@ def render():
                 border-radius: 10px;
                 margin-bottom: 10px;
             }
+            
+            /* Hide number input spinners on mobile to save space */
+            .stNumberInput div[data-baseweb="input"] > div:last-child {
+                display: none !important;
+            }
+            
+            /* Force columns to stay on one line for the set grid */
+            [data-testid="column"] {
+                flex: 1 1 0% !important;
+                min-width: 0 !important;
+                padding: 0 2px !important;
+            }
+            
+            /* Remove extra padding from main container on mobile */
+            .main .block-container {
+                padding-left: 0.5rem !important;
+                padding-right: 0.5rem !important;
+            }
+        }
+        
+        .compact-header {
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #888;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        
+        .set-circle {
+            width: 28px;
+            height: 28px;
+            background-color: #eee;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin: 0 auto;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -420,7 +459,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
             st.session_state.exercise_logs[exercise_key]['exercise_notes'] = ''
 
         # Table header for sets (Strong app style)
-        hcol1, hcol2, hcol3, hcol4 = st.columns([0.5, 1.2, 1.0, 1.1])
+        hcol1, hcol2, hcol3, hcol4 = st.columns([0.4, 1.3, 1.0, 1.1])
         with hcol1: st.markdown('<div class="compact-header">SET</div>', unsafe_allow_html=True)
         with hcol2: st.markdown('<div class="compact-header">KG</div>', unsafe_allow_html=True)
         with hcol3: st.markdown('<div class="compact-header">REPS</div>', unsafe_allow_html=True)
@@ -435,93 +474,91 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
             if timer_running_key not in st.session_state:
                 st.session_state[timer_running_key] = False
 
-            # Use a container for the set to allow for mobile styling
-            with st.container():
-                # Single row for all set details
-                col1, col2, col3, col4 = st.columns([0.5, 1.2, 1.0, 1.1])
-                
-                with col1:
-                    st.markdown(f'<div class="set-circle">{set_idx + 1}</div>', unsafe_allow_html=True)
-                
-                with col2:
-                    weight = st.number_input(
-                        "Weight",
-                        min_value=0.0,
-                        max_value=1000.0,
-                        step=2.5,
-                        value=st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['weight'],
-                        key=f"weight_{exercise_key}_{set_idx}",
-                        label_visibility="collapsed"
-                    )
-                    st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['weight'] = weight
+            # Single row for all set details
+            col1, col2, col3, col4 = st.columns([0.4, 1.3, 1.0, 1.1])
+            
+            with col1:
+                st.markdown(f'<div class="set-circle">{set_idx + 1}</div>', unsafe_allow_html=True)
+            
+            with col2:
+                weight = st.number_input(
+                    "Weight",
+                    min_value=0.0,
+                    max_value=1000.0,
+                    step=2.5,
+                    value=st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['weight'],
+                    key=f"weight_{exercise_key}_{set_idx}",
+                    label_visibility="collapsed"
+                )
+                st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['weight'] = weight
 
-                with col3:
-                    reps = st.number_input(
-                        "Reps",
-                        min_value=1,
-                        max_value=100,
-                        value=st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['reps'],
-                        key=f"reps_{exercise_key}_{set_idx}",
-                        label_visibility="collapsed"
-                    )
-                    st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['reps'] = reps
+            with col3:
+                reps = st.number_input(
+                    "Reps",
+                    min_value=1,
+                    max_value=100,
+                    value=st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['reps'],
+                    key=f"reps_{exercise_key}_{set_idx}",
+                    label_visibility="collapsed"
+                )
+                st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['reps'] = reps
 
-                with col4:
-                    if st.session_state[timer_running_key]:
-                        timer_end = st.session_state.get(timer_end_key)
-                        remaining = max(0, int(timer_end - time.time())) if timer_end else 0
-                        if remaining > 0:
-                            timer_dom_id = f"rest_timer_{exercise_key}_{set_idx}".replace(" ", "_").replace("-", "_")
-                            st.components.v1.html(f"""
-                            <div style="text-align: center; font-weight: bold; color: #667eea; padding-top: 5px;">
-                                <span id="{timer_dom_id}">{remaining}s</span>
-                            </div>
-                            <script>
-                            const timerId = "{timer_dom_id}";
-                            const timerEl = document.getElementById(timerId);
-                            const endTime = {int(timer_end)};
-                            window.__chatptTimerCompletionSent = window.__chatptTimerCompletionSent || {{}};
-                            window.__chatptTimerIntervals = window.__chatptTimerIntervals || {{}};
-                            const clearTimerInterval = () => {{
-                                if (window.__chatptTimerIntervals[timerId]) {{
-                                    window.clearInterval(window.__chatptTimerIntervals[timerId]);
-                                    delete window.__chatptTimerIntervals[timerId];
-                                }}
-                            }};
-                            const updateTimer = () => {{
-                                if (!timerEl || !endTime) {{
-                                    clearTimerInterval();
-                                    return;
-                                }}
-                                const now = Math.floor(Date.now() / 1000);
-                                const secsRemaining = Math.max(0, endTime - now);
-                                timerEl.textContent = `${{secsRemaining}}s`;
-                                if (secsRemaining <= 0 && !window.__chatptTimerCompletionSent[timerId]) {{
-                                    window.__chatptTimerCompletionSent[timerId] = true;
-                                    clearTimerInterval();
-                                    window.setTimeout(() => {{
-                                        window.parent.postMessage({{ isStreamlitMessage: true, type: "streamlit:rerunScript" }}, "*");
-                                    }}, 250);
-                                }}
-                            }};
-                            clearTimerInterval();
-                            updateTimer();
-                            window.__chatptTimerIntervals[timerId] = window.setInterval(updateTimer, 1000);
-                            </script>
-                            """, height=35)
-                        else:
-                            st.session_state[timer_running_key] = False
-                            st.rerun()
-                    elif st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['completed']:
-                        if st.button("✅", key=f"done_{timer_key}", use_container_width=True, help="Set Completed - Click to Reset"):
-                            st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['completed'] = False
-                            st.rerun()
+            with col4:
+                if st.session_state[timer_running_key]:
+                    timer_end = st.session_state.get(timer_end_key)
+                    remaining = max(0, int(timer_end - time.time())) if timer_end else 0
+                    if remaining > 0:
+                        timer_dom_id = f"rest_timer_{exercise_key}_{set_idx}".replace(" ", "_").replace("-", "_")
+                        st.components.v1.html(f"""
+                        <div style="text-align: center; font-weight: bold; color: #667eea; padding-top: 5px;">
+                            <span id="{timer_dom_id}">{remaining}s</span>
+                        </div>
+                        <script>
+                        const timerId = "{timer_dom_id}";
+                        const timerEl = document.getElementById(timerId);
+                        const endTime = {int(timer_end)};
+                        window.__chatptTimerCompletionSent = window.__chatptTimerCompletionSent || {{}};
+                        window.__chatptTimerIntervals = window.__chatptTimerIntervals || {{}};
+                        const clearTimerInterval = () => {{
+                            if (window.__chatptTimerIntervals[timerId]) {{
+                                window.clearInterval(window.__chatptTimerIntervals[timerId]);
+                                delete window.__chatptTimerIntervals[timerId];
+                            }}
+                        }};
+                        const updateTimer = () => {{
+                            if (!timerEl || !endTime) {{
+                                clearTimerInterval();
+                                return;
+                            }}
+                            const now = Math.floor(Date.now() / 1000);
+                            const secsRemaining = Math.max(0, endTime - now);
+                            timerEl.textContent = `${{secsRemaining}}s`;
+                            if (secsRemaining <= 0 && !window.__chatptTimerCompletionSent[timerId]) {{
+                                window.__chatptTimerCompletionSent[timerId] = true;
+                                clearTimerInterval();
+                                window.setTimeout(() => {{
+                                    window.parent.postMessage({{ isStreamlitMessage: true, type: "streamlit:rerunScript" }}, "*");
+                                }}, 250);
+                            }}
+                        }};
+                        clearTimerInterval();
+                        updateTimer();
+                        window.__chatptTimerIntervals[timerId] = window.setInterval(updateTimer, 1000);
+                        </script>
+                        """, height=35)
                     else:
-                        if st.button("⏱️", key=f"start_{timer_key}", use_container_width=True, help="Start Rest Timer"):
-                            st.session_state[timer_running_key] = True
-                            st.session_state[timer_end_key] = time.time() + rest_seconds
-                            st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['completed'] = True
-                            st.rerun()
+                        st.session_state[timer_running_key] = False
+                        st.rerun()
+                elif st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['completed']:
+                    if st.button("✅", key=f"done_{timer_key}", use_container_width=True, help="Set Completed - Click to Reset"):
+                        st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['completed'] = False
+                        st.rerun()
+                else:
+                    if st.button("⏱️", key=f"start_{timer_key}", use_container_width=True, help="Start Rest Timer"):
+                        st.session_state[timer_running_key] = True
+                        st.session_state[timer_end_key] = time.time() + rest_seconds
+                        st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['completed'] = True
+                        st.rerun()
             
             st.markdown("<hr style='margin: 0.2rem 0; opacity: 0.1;'>", unsafe_allow_html=True)
 
