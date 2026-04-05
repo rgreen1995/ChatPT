@@ -10,6 +10,7 @@ from chat_pt.db_interface import (
     get_exercise_progress,
 )
 
+
 def sort_workout_days(schedule_dict):
     """Sort workout days in a sensible order (days of week or numerical)."""
     days_of_week = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
@@ -49,6 +50,7 @@ def sort_workout_days(schedule_dict):
     sorted_keys = sorted(keys, key=day_sort_key)
     return {k: schedule_dict[k] for k in sorted_keys}
 
+
 def render():
     """Render the progress tracking page."""
     # Combined, optimized CSS for mobile grid (Strong app style)
@@ -60,28 +62,43 @@ def render():
             [data-testid="stHorizontalBlock"] {
                 flex-wrap: nowrap !important;
                 align-items: center !important;
-                gap: 0.2rem !important;
+                gap: 0.15rem !important;
+                overflow: hidden !important;
             }
-            
+
             [data-testid="column"] {
                 min-width: 0px !important;
-                padding: 0 0.1rem !important;
+                max-width: none !important;
+                padding: 0 0.05rem !important;
                 flex-shrink: 1 !important;
+                overflow: hidden !important;
             }
-            
+
             /* Remove extra padding from main container on mobile */
             .main .block-container {
-                padding-left: 0.5rem !important;
-                padding-right: 0.5rem !important;
+                padding-left: 0.4rem !important;
+                padding-right: 0.4rem !important;
                 padding-top: 1rem !important;
+                max-width: 100vw !important;
+                overflow-x: hidden !important;
             }
-            
+
+            /* Prevent horizontal scroll on body */
+            html, body, [data-testid="stAppViewContainer"], .main {
+                overflow-x: hidden !important;
+                max-width: 100vw !important;
+            }
+
             /* Tighten up number inputs for mobile */
             .stNumberInput {
                 width: 100% !important;
                 min-width: 0px !important;
             }
-            
+
+            .stNumberInput > div {
+                min-width: 0px !important;
+            }
+
             .stNumberInput div[data-baseweb="input"] {
                 padding: 0 !important;
                 min-width: 0px !important;
@@ -89,22 +106,30 @@ def render():
                 background-color: #f8f9fa !important;
                 border: 1px solid #dee2e6 !important;
             }
-            
+
             .stNumberInput input {
-                padding: 0.4rem 0.1rem !important;
+                padding: 0.35rem 0.1rem !important;
                 font-size: 0.85rem !important;
                 text-align: center !important;
                 min-width: 0px !important;
                 width: 100% !important;
+                -moz-appearance: textfield !important;
             }
-            
-            /* Hide number input spinners on mobile */
+
+            /* Hide browser native spinners too */
+            .stNumberInput input::-webkit-outer-spin-button,
+            .stNumberInput input::-webkit-inner-spin-button {
+                -webkit-appearance: none !important;
+                margin: 0 !important;
+            }
+
+            /* Hide number input step buttons on mobile */
             .stNumberInput [data-testid="stNumberInputStepDown"], 
             .stNumberInput [data-testid="stNumberInputStepUp"],
             .stNumberInput div[data-baseweb="input"] > div:last-child {
                 display: none !important;
             }
-            
+
             /* Make buttons more compact in the grid */
             .stButton button {
                 width: 100% !important;
@@ -116,19 +141,27 @@ def render():
                 background-color: #e9ecef !important;
                 border: none !important;
             }
-            
+
             .compact-header {
-                font-size: 0.65rem !important;
+                font-size: 0.6rem !important;
                 letter-spacing: 0px !important;
+                white-space: nowrap !important;
             }
-            
+
             .set-circle {
-                width: 24px !important;
-                height: 24px !important;
-                font-size: 0.75rem !important;
+                width: 22px !important;
+                height: 22px !important;
+                font-size: 0.7rem !important;
+            }
+
+            /* Prevent label/caption wrapping */
+            .stNumberInput label, .stSelectbox label {
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
             }
         }
-        
+
         /* General styles (Desktop & Mobile) */
         .compact-header {
             font-size: 0.7rem;
@@ -138,8 +171,9 @@ def render():
             text-align: center;
             letter-spacing: 0.5px;
             margin-bottom: 5px;
+            white-space: nowrap;
         }
-        
+
         .set-circle {
             display: flex;
             align-items: center;
@@ -153,17 +187,17 @@ def render():
             font-size: 0.8rem;
             margin: 0 auto;
         }
-        
+
         /* Reduce vertical spacing between elements */
         .element-container {
             margin-bottom: 0px !important;
         }
-        
+
         div[data-testid="stVerticalBlock"] > div {
             padding-top: 0px !important;
             padding-bottom: 0px !important;
         }
-        
+
         hr {
             margin: 0.3rem 0 !important;
             opacity: 0.1 !important;
@@ -310,7 +344,8 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
     if st.session_state.get(session_timer_key) and st.session_state.get(session_start_key):
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            timer_dom_id = f"progress_workout_timer_{selected_day}".replace(" ", "_").replace("-", "_")
+            timer_dom_id = f"progress_workout_timer_{selected_day}".replace(" ", "_").replace("-",
+                                                                                              "_")
             st.components.v1.html(f"""
             <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                         padding: 1rem; border-radius: 10px; text-align: center; color: white; margin-bottom: 1rem;">
@@ -421,11 +456,15 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
             st.session_state.exercise_logs[exercise_key]['exercise_notes'] = ''
 
         # Table header for sets (Strong app style)
-        hcol1, hcol2, hcol3, hcol4 = st.columns([0.4, 1.4, 1.1, 0.9])
-        with hcol1: st.markdown('<div class="compact-header">SET</div>', unsafe_allow_html=True)
-        with hcol2: st.markdown('<div class="compact-header">KG</div>', unsafe_allow_html=True)
-        with hcol3: st.markdown('<div class="compact-header">REPS</div>', unsafe_allow_html=True)
-        with hcol4: st.markdown('<div class="compact-header">DONE</div>', unsafe_allow_html=True)
+        hcol1, hcol2, hcol3, hcol4 = st.columns([0.3, 1.3, 1.1, 0.6])
+        with hcol1:
+            st.markdown('<div class="compact-header">SET</div>', unsafe_allow_html=True)
+        with hcol2:
+            st.markdown('<div class="compact-header">KG</div>', unsafe_allow_html=True)
+        with hcol3:
+            st.markdown('<div class="compact-header">REPS</div>', unsafe_allow_html=True)
+        with hcol4:
+            st.markdown('<div class="compact-header">✓</div>', unsafe_allow_html=True)
 
         # Display each set in a compact single-row layout
         for set_idx in range(num_sets):
@@ -437,11 +476,11 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
                 st.session_state[timer_running_key] = False
 
             # Single row for all set details
-            col1, col2, col3, col4 = st.columns([0.4, 1.4, 1.1, 0.9])
-            
+            col1, col2, col3, col4 = st.columns([0.3, 1.3, 1.1, 0.6])
+
             with col1:
                 st.markdown(f'<div class="set-circle">{set_idx + 1}</div>', unsafe_allow_html=True)
-            
+
             with col2:
                 weight = st.number_input(
                     "Weight",
@@ -470,7 +509,9 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
                     timer_end = st.session_state.get(timer_end_key)
                     remaining = max(0, int(timer_end - time.time())) if timer_end else 0
                     if remaining > 0:
-                        timer_dom_id = f"rest_timer_{exercise_key}_{set_idx}".replace(" ", "_").replace("-", "_")
+                        timer_dom_id = f"rest_timer_{exercise_key}_{set_idx}".replace(" ",
+                                                                                      "_").replace(
+                            "-", "_")
                         st.components.v1.html(f"""
                         <div style="text-align: center; font-weight: bold; color: #667eea; padding-top: 5px;">
                             <span id="{timer_dom_id}">{remaining}s</span>
@@ -512,16 +553,20 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
                         st.session_state[timer_running_key] = False
                         st.rerun()
                 elif st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['completed']:
-                    if st.button("✅", key=f"done_{timer_key}", use_container_width=True, help="Set Completed - Click to Reset"):
-                        st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['completed'] = False
+                    if st.button("✅", key=f"done_{timer_key}", use_container_width=True,
+                                 help="Set Completed - Click to Reset"):
+                        st.session_state.exercise_logs[exercise_key]['sets'][set_idx][
+                            'completed'] = False
                         st.rerun()
                 else:
-                    if st.button("⏱️", key=f"start_{timer_key}", use_container_width=True, help="Start Rest Timer"):
+                    if st.button("⏱️", key=f"start_{timer_key}", use_container_width=True,
+                                 help="Start Rest Timer"):
                         st.session_state[timer_running_key] = True
                         st.session_state[timer_end_key] = time.time() + rest_seconds
-                        st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['completed'] = True
+                        st.session_state.exercise_logs[exercise_key]['sets'][set_idx][
+                            'completed'] = True
                         st.rerun()
-            
+
             st.markdown("<hr style='margin: 0.2rem 0; opacity: 0.1;'>", unsafe_allow_html=True)
 
         with st.expander("📝 Optional notes for this exercise", expanded=False):
@@ -539,13 +584,15 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
     # Save workout button
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        if st.button("💾 Save Workout", type="primary", use_container_width=True, key="save_workout"):
+        if st.button("💾 Save Workout", type="primary", use_container_width=True,
+                     key="save_workout"):
             # Save all exercises
             for exercise in exercises:
                 exercise_key = f"{selected_day}_{exercises.index(exercise)}_{exercise['name']}"
                 if exercise_key in st.session_state.exercise_logs:
                     logs = st.session_state.exercise_logs[exercise_key]['sets']
-                    exercise_notes = st.session_state.exercise_logs[exercise_key].get('exercise_notes', '')
+                    exercise_notes = st.session_state.exercise_logs[exercise_key].get(
+                        'exercise_notes', '')
                     for set_log in logs:
                         set_notes = set_log.get('notes', '') if isinstance(set_log, dict) else ''
                         save_exercise_progress(
@@ -572,6 +619,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
             st.balloons()
             time.sleep(1)
             st.rerun()
+
 
 def render_view_progress(workout_plan: dict):
     """Render the progress viewing interface."""
