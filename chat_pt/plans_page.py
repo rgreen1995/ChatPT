@@ -53,10 +53,21 @@ def render_rest_timer(rest_seconds, exercise_key):
             const totalSeconds = {int(rest_seconds)};
 
             window.__chatptTimerCompletionSent = window.__chatptTimerCompletionSent || {{}};
+            window.__chatptTimerIntervals = window.__chatptTimerIntervals || {{}};
+
+            const clearTimerInterval = () => {{
+                if (window.__chatptTimerIntervals[timerId]) {{
+                    window.clearInterval(window.__chatptTimerIntervals[timerId]);
+                    delete window.__chatptTimerIntervals[timerId];
+                }}
+            }};
 
             const pad = (num) => String(num).padStart(2, '0');
             const updateTimer = () => {{
-                if (!valueEl || !barEl || !endTime || !totalSeconds) return;
+                if (!valueEl || !barEl || !endTime || !totalSeconds) {{
+                    clearTimerInterval();
+                    return;
+                }}
 
                 const now = Math.floor(Date.now() / 1000);
                 const secsRemaining = Math.max(0, endTime - now);
@@ -69,14 +80,16 @@ def render_rest_timer(rest_seconds, exercise_key):
 
                 if (secsRemaining <= 0 && !window.__chatptTimerCompletionSent[timerId]) {{
                     window.__chatptTimerCompletionSent[timerId] = true;
+                    clearTimerInterval();
                     window.setTimeout(() => {{
                         window.parent.postMessage({{ isStreamlitMessage: true, type: "streamlit:rerunScript" }}, "*");
                     }}, 250);
                 }}
             }};
 
+            clearTimerInterval();
             updateTimer();
-            window.setInterval(updateTimer, 1000);
+            window.__chatptTimerIntervals[timerId] = window.setInterval(updateTimer, 1000);
             </script>
             """, height=170)
 

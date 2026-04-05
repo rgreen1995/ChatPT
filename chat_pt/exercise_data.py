@@ -507,4 +507,116 @@ EXERCISE_LIBRARY = [
         "instructions": "1. Hinge at hips, slight knee bend\n2. Hold dumbbells with neutral grip\n3. Pull dumbbells to hips\n4. Squeeze shoulder blades\n5. Lower with control",
         "form_cues": "• Keep back flat\n• Pull elbows back, not up\n• Torso near parallel to floor\n• Don't round lower back"
     },
+
+    # NEW COMMON EXERCISES
+    {
+        "name": "Seated Cable Row",
+        "category": "Back",
+        "primary_muscles": "Lats, Rhomboids, Mid Traps",
+        "secondary_muscles": "Biceps, Rear Deltoids",
+        "equipment": "Cable Machine",
+        "difficulty": "Beginner",
+        "youtube_url": "https://www.youtube.com/watch?v=GZbfZ033f74",
+        "instructions": "1. Sit at cable row station with feet braced\n2. Grab handle with neutral grip\n3. Keep chest up and pull handle to lower ribs\n4. Squeeze shoulder blades together\n5. Extend arms forward with control",
+        "form_cues": "• Keep torso mostly still\n• Pull elbows back close to body\n• Avoid shrugging shoulders\n• Control both directions"
+    },
+    {
+        "name": "One-Arm Dumbbell Row",
+        "category": "Back",
+        "primary_muscles": "Lats, Rhomboids",
+        "secondary_muscles": "Biceps, Core",
+        "equipment": "Dumbbell, Bench",
+        "difficulty": "Beginner",
+        "youtube_url": "https://www.youtube.com/watch?v=pYcpY20QaE8",
+        "instructions": "1. Place one knee and hand on bench for support\n2. Hold dumbbell in opposite hand\n3. Row dumbbell toward hip\n4. Pause and squeeze back at top\n5. Lower slowly and repeat each side",
+        "form_cues": "• Keep spine neutral\n• Pull toward hip, not shoulder\n• Minimize torso rotation\n• Full stretch at bottom"
+    },
+    {
+        "name": "Incline Dumbbell Press",
+        "category": "Chest",
+        "primary_muscles": "Upper Chest, Triceps",
+        "secondary_muscles": "Anterior Deltoids",
+        "equipment": "Dumbbells, Incline Bench",
+        "difficulty": "Beginner",
+        "youtube_url": "https://www.youtube.com/watch?v=8iPEnn-ltC8",
+        "instructions": "1. Set bench to 30-45 degree incline\n2. Lie back with dumbbells at chest level\n3. Press dumbbells up and slightly inward\n4. Lower until elbows are below bench height\n5. Repeat with controlled tempo",
+        "form_cues": "• Keep wrists stacked over elbows\n• Don't flare elbows too wide\n• Keep shoulder blades retracted\n• Avoid bouncing at bottom"
+    },
+    {
+        "name": "Goblet Squat",
+        "category": "Legs",
+        "primary_muscles": "Quadriceps, Glutes",
+        "secondary_muscles": "Hamstrings, Core",
+        "equipment": "Dumbbell or Kettlebell",
+        "difficulty": "Beginner",
+        "youtube_url": "https://www.youtube.com/watch?v=MeIiIdhvXT4",
+        "instructions": "1. Hold weight at chest with elbows down\n2. Stand with feet shoulder-width apart\n3. Sit hips down and back into squat\n4. Keep chest tall and knees tracking over toes\n5. Drive through mid-foot to stand",
+        "form_cues": "• Keep elbows inside knees\n• Brace core before descent\n• Heels stay grounded\n• Maintain neutral spine"
+    },
+    {
+        "name": "Hip Thrust",
+        "category": "Legs",
+        "primary_muscles": "Glutes",
+        "secondary_muscles": "Hamstrings, Core",
+        "equipment": "Bench, Barbell or Dumbbell",
+        "difficulty": "Intermediate",
+        "youtube_url": "https://www.youtube.com/watch?v=LM8XHLYJoYs",
+        "instructions": "1. Sit on floor with upper back against bench\n2. Roll weight over hips if using load\n3. Drive hips upward until torso is parallel to floor\n4. Squeeze glutes hard at top\n5. Lower hips with control",
+        "form_cues": "• Tuck chin slightly\n• Keep shins near vertical at top\n• Avoid overextending lower back\n• Pause briefly at lockout"
+    },
+    {
+        "name": "Standing Calf Raise",
+        "category": "Legs",
+        "primary_muscles": "Gastrocnemius, Soleus",
+        "secondary_muscles": "None",
+        "equipment": "Bodyweight or Machine",
+        "difficulty": "Beginner",
+        "youtube_url": "https://www.youtube.com/watch?v=-M4-G8p8fmc",
+        "instructions": "1. Stand with balls of feet on edge of platform\n2. Let heels lower for a stretch\n3. Press through toes to raise heels high\n4. Pause at top contraction\n5. Lower slowly and repeat",
+        "form_cues": "• Full range of motion\n• Controlled tempo\n• Don't bounce at bottom\n• Keep knees softly bent"
+    },
+    {
+        "name": "Hammer Curl",
+        "category": "Arms",
+        "primary_muscles": "Biceps, Brachialis",
+        "secondary_muscles": "Forearms",
+        "equipment": "Dumbbells",
+        "difficulty": "Beginner",
+        "youtube_url": "https://www.youtube.com/watch?v=zC3nLlEvin4",
+        "instructions": "1. Stand holding dumbbells at sides with neutral grip\n2. Keep elbows tucked at your sides\n3. Curl dumbbells up toward shoulders\n4. Squeeze at top without swinging\n5. Lower under control",
+        "form_cues": "• Palms face each other throughout\n• Avoid shoulder shrugging\n• Keep torso still\n• Control the negative"
+    },
+    {
+        "name": "Skull Crushers",
+        "category": "Arms",
+        "primary_muscles": "Triceps",
+        "secondary_muscles": "Forearms",
+        "equipment": "EZ Bar or Dumbbells, Bench",
+        "difficulty": "Intermediate",
+        "youtube_url": "https://www.youtube.com/watch?v=d_KZxkY_0cM",
+        "instructions": "1. Lie on bench with weight held above chest\n2. Keep upper arms mostly vertical\n3. Bend elbows to lower weight near forehead\n4. Extend elbows to return to start\n5. Repeat with controlled motion",
+        "form_cues": "• Elbows stay in line\n• Move only at elbow joint\n• Don't flare arms excessively\n• Use moderate load"
+    },
+    {
+        "name": "Rear Delt Fly",
+        "category": "Shoulders",
+        "primary_muscles": "Rear Deltoids",
+        "secondary_muscles": "Rhomboids, Mid Traps",
+        "equipment": "Dumbbells or Reverse Pec Deck",
+        "difficulty": "Beginner",
+        "youtube_url": "https://www.youtube.com/watch?v=EA7u4Q_8HQ0",
+        "instructions": "1. Hinge forward with dumbbells hanging below shoulders\n2. Keep slight bend in elbows\n3. Raise arms out wide until shoulder height\n4. Squeeze shoulder blades gently\n5. Lower with control",
+        "form_cues": "• Lead with elbows\n• Avoid swinging torso\n• Keep neck neutral\n• Light weight, strict form"
+    },
+    {
+        "name": "Hanging Leg Raise",
+        "category": "Core",
+        "primary_muscles": "Lower Abs, Hip Flexors",
+        "secondary_muscles": "Obliques, Grip",
+        "equipment": "Pull-up Bar or Captain's Chair",
+        "difficulty": "Intermediate",
+        "youtube_url": "https://www.youtube.com/watch?v=Pr1ieGZ5atk",
+        "instructions": "1. Hang from bar with active shoulders\n2. Brace core and raise legs forward\n3. Lift until thighs reach at least hip height\n4. Pause briefly at top\n5. Lower legs without swinging",
+        "form_cues": "• Avoid momentum\n• Posterior pelvic tilt at top\n• Keep ribcage down\n• Control descent fully"
+    },
 ]

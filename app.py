@@ -223,6 +223,14 @@ def clear_auth_from_local_storage():
     """, height=0)
 
 
+def _query_param_scalar(query_params, key, default=None):
+    """Return query param as scalar string for compatibility across Streamlit versions."""
+    value = query_params.get(key, default)
+    if isinstance(value, list):
+        return value[0] if value else default
+    return value
+
+
 if st.session_state.get("scroll_to_top"):
     st.components.v1.html("""
     <script>
@@ -236,30 +244,52 @@ if st.session_state.get("scroll_to_top"):
 # Add session heartbeat to keep auth alive and restore if lost
 # This is crucial for preventing logout during workouts or brief disconnections
 if st.session_state.user_id is not None:
-    st.components.v1.html("""
+    current_auth_data = {
+        "userId": st.session_state.user_id,
+        "userName": st.session_state.user_name,
+        "userEmail": st.session_state.user_email or ""
+    }
+    st.components.v1.html(f"""
     <script>
-    const parentWindow = window.parent;
+    const rootWindow = (() => {{
+        try {{
+            return (window.parent && window.parent !== window) ? window.parent : window;
+        }} catch (e) {{
+            return window;
+        }}
+    }})();
 
-    const refreshAuth = function() {
-        try {
-            const stored = parentWindow.localStorage.getItem('chatpt_auth');
-            if (!stored) return;
-            const authData = JSON.parse(stored);
+    const sessionAuthData = {json.dumps(current_auth_data)};
+
+    const refreshAuth = function() {{
+        try {{
+            const stored = rootWindow.localStorage.getItem('chatpt_auth');
+            const authData = stored ? JSON.parse(stored) : {{ ...sessionAuthData }};
+
+            authData.userId = authData.userId || sessionAuthData.userId;
+            authData.userName = authData.userName || sessionAuthData.userName;
+            authData.userEmail = authData.userEmail || sessionAuthData.userEmail;
             authData.timestamp = Date.now();
-            parentWindow.localStorage.setItem('chatpt_auth', JSON.stringify(authData));
-        } catch (e) {}
-    };
+            rootWindow.localStorage.setItem('chatpt_auth', JSON.stringify(authData));
+        }} catch (e) {{}}
+    }};
 
-    if (!parentWindow.__chatptHeartbeatInterval) {
-        parentWindow.__chatptHeartbeatInterval = parentWindow.setInterval(refreshAuth, 5 * 60 * 1000);
-    }
+    if (!rootWindow.__chatptHeartbeatInterval) {{
+        rootWindow.__chatptHeartbeatInterval = rootWindow.setInterval(refreshAuth, 5 * 60 * 1000);
+    }}
 
-    if (!parentWindow.__chatptHeartbeatBound) {
-        ['click', 'touchstart', 'scroll', 'keypress'].forEach(function(eventName) {
-            parentWindow.document.addEventListener(eventName, refreshAuth, { passive: true });
-        });
-        parentWindow.__chatptHeartbeatBound = true;
-    }
+    if (!rootWindow.__chatptHeartbeatBound) {{
+        ['click', 'touchstart', 'scroll', 'keypress'].forEach(function(eventName) {{
+            rootWindow.document.addEventListener(eventName, refreshAuth, {{ passive: true }});
+        }});
+        rootWindow.addEventListener('focus', refreshAuth);
+        rootWindow.document.addEventListener('visibilitychange', () => {{
+            if (!rootWindow.document.hidden) {{
+                refreshAuth();
+            }}
+        }});
+        rootWindow.__chatptHeartbeatBound = true;
+    }}
 
     refreshAuth();
     </script>
@@ -271,22 +301,23 @@ if st.session_state.user_id is None:
     check_auth_html = """
     <script>
     try {
-        const stored = window.parent.localStorage.getItem('chatpt_auth');
+        const rootWindow = (window.parent && window.parent !== window) ? window.parent : window;
+        const stored = rootWindow.localStorage.getItem('chatpt_auth');
         if (stored) {
             const authData = JSON.parse(stored);
             const ninetyDays = 90 * 24 * 60 * 60 * 1000;
 
             if (Date.now() - authData.timestamp > ninetyDays) {
-                window.parent.localStorage.removeItem('chatpt_auth');
+                rootWindow.localStorage.removeItem('chatpt_auth');
             } else {
-                const urlParams = new URLSearchParams(window.parent.location.search);
+                const urlParams = new URLSearchParams(rootWindow.location.search);
                 if (!urlParams.has('auto_login')) {
-                    const url = new URL(window.parent.location);
+                    const url = new URL(rootWindow.location);
                     url.searchParams.set('auto_login', '1');
                     url.searchParams.set('user_id', authData.userId);
                     url.searchParams.set('user_name', authData.userName);
                     url.searchParams.set('user_email', authData.userEmail || '');
-                    window.parent.location.href = url.toString();
+                    rootWindow.location.href = url.toString();
                 }
             }
         }
@@ -298,10 +329,10 @@ if st.session_state.user_id is None:
     # Check query params for auto-login
     try:
         query_params = st.query_params
-        if query_params.get('auto_login') == '1':
-            user_id = query_params.get('user_id')
-            user_name = query_params.get('user_name')
-            user_email = query_params.get('user_email', '')
+        if _query_param_scalar(query_params, 'auto_login') == '1':
+            user_id = _query_param_scalar(query_params, 'user_id')
+            user_name = _query_param_scalar(query_params, 'user_name')
+            user_email = _query_param_scalar(query_params, 'user_email', '')
 
             if user_id and user_name:
                 st.session_state.user_id = int(user_id)
