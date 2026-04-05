@@ -186,12 +186,49 @@ if "user_email" not in st.session_state:
     st.session_state.user_email = None
 if "page" not in st.session_state:
     st.session_state.page = "home"
+if "history" not in st.session_state:
+    st.session_state.history = []
+if "current_page" not in st.session_state:
+    st.session_state.current_page = "home"
+
+# Auto-track history when page changes
+if st.session_state.page != st.session_state.current_page:
+    # If we are not currently going back, add the previous page to history
+    if not st.session_state.get('going_back', False):
+        st.session_state.history.append(st.session_state.current_page)
+        # Cap history at 20 pages
+        if len(st.session_state.history) > 20:
+            st.session_state.history.pop(0)
+    st.session_state.current_page = st.session_state.page
+    st.session_state.going_back = False
 if "llm_provider" not in st.session_state:
     st.session_state.llm_provider = "anthropic"
 if "auth_checked" not in st.session_state:
     st.session_state.auth_checked = False
 if "scroll_to_top" not in st.session_state:
     st.session_state.scroll_to_top = False
+if "going_back" not in st.session_state:
+    st.session_state.going_back = False
+
+
+def navigate_to(page):
+    """Navigate to a new page and update history."""
+    if st.session_state.page != page:
+        st.session_state.page = page
+        st.session_state.sidebar_state = "collapsed"
+        st.rerun()
+
+
+def go_back():
+    """Go back to the previous page in history."""
+    if st.session_state.history:
+        prev_page = st.session_state.history.pop()
+        st.session_state.going_back = True
+        st.session_state.page = prev_page
+        st.rerun()
+    else:
+        st.session_state.page = "home"
+        st.rerun()
 
 
 def persist_auth_to_local_storage(user_id: int, user_name: str, user_email: str):
@@ -522,25 +559,15 @@ with st.sidebar:
         # Navigation
         st.subheader("Navigation")
         if st.button("🏠 Home", use_container_width=True):
-            st.session_state.page = "home"
-            st.session_state.sidebar_state = "collapsed"
-            st.rerun()
+            navigate_to("home")
         if st.button("💬 New Consultation", use_container_width=True):
-            st.session_state.page = "consultation"
-            st.session_state.sidebar_state = "collapsed"
-            st.rerun()
+            navigate_to("consultation")
         if st.button("📋 My Plans", use_container_width=True):
-            st.session_state.page = "plans"
-            st.session_state.sidebar_state = "collapsed"
-            st.rerun()
+            navigate_to("plans")
         if st.button("📚 Exercise Library", use_container_width=True):
-            st.session_state.page = "exercises"
-            st.session_state.sidebar_state = "collapsed"
-            st.rerun()
+            navigate_to("exercises")
         if st.button("📊 Progress Tracking", use_container_width=True):
-            st.session_state.page = "progress"
-            st.session_state.sidebar_state = "collapsed"
-            st.rerun()
+            navigate_to("progress")
 
 # Main content area
 if st.session_state.user_id is None:
@@ -875,171 +902,178 @@ if st.session_state.user_id is None:
 
     st.markdown("<br><br>", unsafe_allow_html=True)
 
-elif st.session_state.page == "home":
-    # Hero welcome section
-    st.markdown(f"""
-    <div style="text-align: center; padding: 2rem 0 1rem 0;">
-        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Welcome back, {st.session_state.user_name}! 💪</h1>
-        <p style="font-size: 1.1rem; color: #666;">Let's crush your fitness goals today</p>
-    </div>
-    """, unsafe_allow_html=True)
+else:
+    # User IS logged in
+    # Show a back button for sub-pages to help navigation
+    if st.session_state.page != "home":
+        col_back, _ = st.columns([1, 3])
+        with col_back:
+            if st.button("← Back", key="top_back_btn", use_container_width=True):
+                # Handle nested navigation for exercise library
+                if st.session_state.page == "exercises" and st.session_state.get('viewing_exercise'):
+                    del st.session_state.viewing_exercise
+                    st.rerun()
+                else:
+                    go_back()
+        st.markdown("---")
 
-    # Quick Actions - Featured CTAs
-    st.markdown("""
-    <div style="margin: 2rem 0 1rem 0;">
-        <h3 style="margin-bottom: 1rem;">🚀 Quick Actions</h3>
-    </div>
-    """, unsafe_allow_html=True)
-
-    col1, col2, col3, col4 = st.columns(4)
-
-    with col1:
-        if st.button("💬 New\nConsultation", use_container_width=True, type="primary", key="home_new_consult"):
-            st.session_state.page = "consultation"
-            st.session_state.sidebar_state = "collapsed"
-            st.rerun()
-
-    with col2:
-        if st.button("📋 My\nPlans", use_container_width=True, key="home_plans"):
-            st.session_state.page = "plans"
-            st.session_state.sidebar_state = "collapsed"
-            st.rerun()
-
-    with col3:
-        if st.button("📚 Exercise\nLibrary", use_container_width=True, key="home_exercises"):
-            st.session_state.page = "exercises"
-            st.session_state.sidebar_state = "collapsed"
-            st.rerun()
-
-    with col4:
-        if st.button("📊 Track\nProgress", use_container_width=True, key="home_progress"):
-            st.session_state.page = "progress"
-            st.session_state.sidebar_state = "collapsed"
-            st.rerun()
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # Stats Dashboard
-    consultations = get_user_consultations(st.session_state.user_id)
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.markdown("""
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 10px; text-align: center; color: white;">
-            <div style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem;">{}</div>
-            <div style="font-size: 0.9rem; opacity: 0.9;">Total Consultations</div>
-        </div>
-        """.format(len(consultations)), unsafe_allow_html=True)
-
-    with col2:
-        completed = sum(1 for c in consultations if c["completed"])
-        st.markdown("""
-        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 1.5rem; border-radius: 10px; text-align: center; color: white;">
-            <div style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem;">{}</div>
-            <div style="font-size: 0.9rem; opacity: 0.9;">Completed Plans</div>
-        </div>
-        """.format(completed), unsafe_allow_html=True)
-
-    with col3:
-        st.markdown("""
-        <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 1.5rem; border-radius: 10px; text-align: center; color: white;">
-            <div style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem;">🎯</div>
-            <div style="font-size: 0.9rem; opacity: 0.9;">Stay Consistent</div>
+    if st.session_state.page == "home":
+        # Hero welcome section
+        st.markdown(f"""
+        <div style="text-align: center; padding: 2rem 0 1rem 0;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Welcome back, {st.session_state.user_name}! 💪</h1>
+            <p style="font-size: 1.1rem; color: #666;">Let's crush your fitness goals today</p>
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("<br><br>", unsafe_allow_html=True)
-
-    # Recent Activity
-    if consultations:
+        # Quick Actions - Featured CTAs
         st.markdown("""
         <div style="margin: 2rem 0 1rem 0;">
-            <h3>📋 Your Recent Consultations</h3>
+            <h3 style="margin-bottom: 1rem;">🚀 Quick Actions</h3>
         </div>
         """, unsafe_allow_html=True)
 
-        for i, consultation in enumerate(consultations[:3]):  # Show last 3
-            status_color = "#28a745" if consultation["completed"] else "#ffc107"
-            status_text = "✅ Completed" if consultation["completed"] else "⏳ In Progress"
+        col1, col2, col3, col4 = st.columns(4)
 
-            st.markdown(f"""
-            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; border-left: 4px solid {status_color};">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <strong>Consultation #{i+1}</strong>
-                        <span style="margin-left: 1rem; color: {status_color}; font-size: 0.9rem;">{status_text}</span>
-                    </div>
-                </div>
+        with col1:
+            if st.button("💬 New\nConsultation", use_container_width=True, type="primary", key="home_new_consult"):
+                navigate_to("consultation")
+
+        with col2:
+            if st.button("📋 My\nPlans", use_container_width=True, key="home_plans"):
+                navigate_to("plans")
+
+        with col3:
+            if st.button("📚 Exercise\nLibrary", use_container_width=True, key="home_exercises"):
+                navigate_to("exercises")
+
+        with col4:
+            if st.button("📊 Track\nProgress", use_container_width=True, key="home_progress"):
+                navigate_to("progress")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # Stats Dashboard
+        consultations = get_user_consultations(st.session_state.user_id)
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.markdown("""
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 10px; text-align: center; color: white;">
+                <div style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem;">{}</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">Total Consultations</div>
+            </div>
+            """.format(len(consultations)), unsafe_allow_html=True)
+
+        with col2:
+            completed = sum(1 for c in consultations if c["completed"])
+            st.markdown("""
+            <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 1.5rem; border-radius: 10px; text-align: center; color: white;">
+                <div style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem;">{}</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">Completed Plans</div>
+            </div>
+            """.format(completed), unsafe_allow_html=True)
+
+        with col3:
+            st.markdown("""
+            <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 1.5rem; border-radius: 10px; text-align: center; color: white;">
+                <div style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem;">🎯</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">Stay Consistent</div>
             </div>
             """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-        <div style="background: #f8f9fa; padding: 2rem; border-radius: 10px; text-align: center; margin: 2rem 0;">
-            <div style="font-size: 3rem; margin-bottom: 1rem;">🏋️</div>
-            <h3 style="margin-bottom: 0.5rem;">Ready to start your fitness journey?</h3>
-            <p style="color: #666; margin-bottom: 1.5rem;">Create your first personalized workout plan by starting a consultation with our AI trainer.</p>
-        </div>
-        """, unsafe_allow_html=True)
 
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col2:
-            if st.button("🚀 Start Your First Consultation", use_container_width=True, type="primary", key="home_first_consult"):
-                st.session_state.page = "consultation"
-                st.session_state.sidebar_state = "collapsed"
-                st.rerun()
+        st.markdown("<br><br>", unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
+        # Recent Activity
+        if consultations:
+            st.markdown("""
+            <div style="margin: 2rem 0 1rem 0;">
+                <h3>📋 Your Recent Consultations</h3>
+            </div>
+            """, unsafe_allow_html=True)
 
-    # Install as App Section
-    with st.expander("📱 Install ChatPT as an App on Your Phone"):
-        st.markdown("""
-        ### iPhone (Safari)
-        1. Open ChatPT in **Safari** browser
-        2. Tap the **Share** button (square with arrow pointing up) at the bottom
-        3. Scroll down and tap **"Add to Home Screen"**
-        4. Customize the name if you want, then tap **"Add"**
-        5. ChatPT will now appear as an app icon on your home screen!
+            for i, consultation in enumerate(consultations[:3]):  # Show last 3
+                status_color = "#28a745" if consultation["completed"] else "#ffc107"
+                status_text = "✅ Completed" if consultation["completed"] else "⏳ In Progress"
 
-        ### Android (Chrome)
-        1. Open ChatPT in **Chrome** browser
-        2. Tap the **three dots** menu (⋮) in the top right
-        3. Tap **"Add to Home screen"** or **"Install app"**
-        4. Customize the name if you want, then tap **"Add"**
-        5. ChatPT will now appear as an app icon on your home screen!
+                st.markdown(f"""
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; border-left: 4px solid {status_color};">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>Consultation #{i+1}</strong>
+                            <span style="margin-left: 1rem; color: {status_color}; font-size: 0.9rem;">{status_text}</span>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div style="background: #f8f9fa; padding: 2rem; border-radius: 10px; text-align: center; margin: 2rem 0;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🏋️</div>
+                <h3 style="margin-bottom: 0.5rem;">Ready to start your fitness journey?</h3>
+                <p style="color: #666; margin-bottom: 1.5rem;">Create your first personalized workout plan by starting a consultation with our AI trainer.</p>
+            </div>
+            """, unsafe_allow_html=True)
 
-        **Benefits of installing as an app:**
-        - 🚀 Faster access from your home screen
-        - 📱 Full-screen experience without browser UI
-        - 💾 Works offline (for previously loaded pages)
-        - 🔔 Better notifications support
-        """)
+            col1, col2, col3 = st.columns([1, 1, 1])
+            with col2:
+                if st.button("🚀 Start Your First Consultation", use_container_width=True, type="primary", key="home_first_consult"):
+                    navigate_to("consultation")
 
-elif st.session_state.page == "consultation":
-    # Import consultation page
-    from chat_pt import consultation_page
-    consultation_page.render()
+        st.markdown("<br>", unsafe_allow_html=True)
 
-elif st.session_state.page == "plans":
-    # Import plans page
-    from chat_pt import plans_page
-    plans_page.render()
+        # Install as App Section
+        with st.expander("📱 Install ChatPT as an App on Your Phone"):
+            st.markdown("""
+            ### iPhone (Safari)
+            1. Open ChatPT in **Safari** browser
+            2. Tap the **Share** button (square with arrow pointing up) at the bottom
+            3. Scroll down and tap **"Add to Home Screen"**
+            4. Customize the name if you want, then tap **"Add"**
+            5. ChatPT will now appear as an app icon on your home screen!
 
-elif st.session_state.page == "exercises":
-    # Import exercise library page
-    from chat_pt import exercise_library_page
-    from chat_pt.exercise_data import EXERCISE_LIBRARY
+            ### Android (Chrome)
+            1. Open ChatPT in **Chrome** browser
+            2. Tap the **three dots** menu (⋮) in the top right
+            3. Tap **"Add to Home screen"** or **"Install app"**
+            4. Customize the name if you want, then tap **"Add"**
+            5. ChatPT will now appear as an app icon on your home screen!
 
-    # Check if viewing a specific exercise
-    if st.session_state.get('viewing_exercise'):
-        exercise_library_page.render_exercise_detail(
-            st.session_state.viewing_exercise,
-            EXERCISE_LIBRARY
-        )
-    else:
-        exercise_library_page.render()
+            **Benefits of installing as an app:**
+            - 🚀 Faster access from your home screen
+            - 📱 Full-screen experience without browser UI
+            - 💾 Works offline (for previously loaded pages)
+            - 🔔 Better notifications support
+            """)
 
-elif st.session_state.page == "progress":
-    # Import progress page
-    from chat_pt import progress_page
-    progress_page.render()
+        st.markdown("<br>", unsafe_allow_html=True)
+
+    if st.session_state.page == "consultation":
+        # Import consultation page
+        from chat_pt import consultation_page
+        consultation_page.render()
+
+    if st.session_state.page == "plans":
+        # Import plans page
+        from chat_pt import plans_page
+        plans_page.render()
+
+    if st.session_state.page == "exercises":
+        # Import exercise library page
+        from chat_pt import exercise_library_page
+        from chat_pt.exercise_data import EXERCISE_LIBRARY
+
+        # Check if viewing a specific exercise
+        if st.session_state.get('viewing_exercise'):
+            exercise_library_page.render_exercise_detail(
+                st.session_state.viewing_exercise,
+                EXERCISE_LIBRARY
+            )
+        else:
+            exercise_library_page.render()
+
+    if st.session_state.page == "progress":
+        # Import progress page
+        from chat_pt import progress_page
+        progress_page.render()
