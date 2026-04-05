@@ -330,7 +330,14 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
         if 'exercise_notes' not in st.session_state.exercise_logs[exercise_key]:
             st.session_state.exercise_logs[exercise_key]['exercise_notes'] = ''
 
-        # Display each set in a responsive layout
+        # Table header for sets
+        hcol1, hcol2, hcol3, hcol4 = st.columns([0.4, 1.3, 1, 1.2])
+        with hcol1: st.caption("**Set**")
+        with hcol2: st.caption("**Weight**")
+        with hcol3: st.caption("**Reps**")
+        with hcol4: st.caption("**Rest**")
+
+        # Display each set in a compact single-row layout
         for set_idx in range(num_sets):
             timer_key = f"timer_{exercise_key}_{set_idx}"
             timer_running_key = f"timer_running_{timer_key}"
@@ -341,16 +348,38 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
 
             # Use a container for the set to allow for mobile styling
             with st.container():
-                # On desktop, this will be a single row. On mobile, Streamlit handles wrapping better if we don't force it.
-                # However, for true mobile optimization, let's use columns that wrap naturally or stack intentionally.
+                # Single row for all set details
+                col1, col2, col3, col4 = st.columns([0.4, 1.3, 1, 1.2])
                 
-                # Header for the set (Set number and Timer button)
-                col1, col2 = st.columns([1, 1])
                 with col1:
-                    st.markdown(f"**Set {set_idx + 1}**")
+                    st.markdown(f"<div style='padding-top: 0.5rem;'><strong>{set_idx + 1}</strong></div>", unsafe_allow_html=True)
+                
                 with col2:
+                    weight = st.number_input(
+                        "Weight",
+                        min_value=0.0,
+                        max_value=1000.0,
+                        step=2.5,
+                        value=st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['weight'],
+                        key=f"weight_{exercise_key}_{set_idx}",
+                        label_visibility="collapsed"
+                    )
+                    st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['weight'] = weight
+
+                with col3:
+                    reps = st.number_input(
+                        "Reps",
+                        min_value=1,
+                        max_value=100,
+                        value=st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['reps'],
+                        key=f"reps_{exercise_key}_{set_idx}",
+                        label_visibility="collapsed"
+                    )
+                    st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['reps'] = reps
+
+                with col4:
                     if not st.session_state[timer_running_key]:
-                        if st.button("⏱️ Start Rest", key=f"start_{timer_key}", use_container_width=True):
+                        if st.button("⏱️", key=f"start_{timer_key}", use_container_width=True, help="Start Rest Timer"):
                             st.session_state[timer_running_key] = True
                             st.session_state[timer_end_key] = time.time() + rest_seconds
                             st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['completed'] = True
@@ -361,7 +390,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
                         if remaining > 0:
                             timer_dom_id = f"rest_timer_{exercise_key}_{set_idx}".replace(" ", "_").replace("-", "_")
                             st.components.v1.html(f"""
-                            <div style="text-align: right; font-weight: bold; color: #667eea;">
+                            <div style="text-align: center; font-weight: bold; color: #667eea; padding-top: 5px;">
                                 <span id="{timer_dom_id}">{remaining}s</span>
                             </div>
                             <script>
@@ -396,37 +425,12 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
                             updateTimer();
                             window.__chatptTimerIntervals[timerId] = window.setInterval(updateTimer, 1000);
                             </script>
-                            """, height=30)
+                            """, height=35)
                         else:
                             st.session_state[timer_running_key] = False
-                            st.markdown("<div style='text-align: right; color: green;'>✅ Done</div>", unsafe_allow_html=True)
-
-                # Input fields for reps and weight
-                col_reps, col_weight = st.columns(2)
-                with col_reps:
-                    reps = st.number_input(
-                        "Reps",
-                        min_value=1,
-                        max_value=100,
-                        value=st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['reps'],
-                        key=f"reps_{exercise_key}_{set_idx}",
-                        help="Number of repetitions"
-                    )
-                    st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['reps'] = reps
-
-                with col_weight:
-                    weight = st.number_input(
-                        "Weight (kg/lbs)",
-                        min_value=0.0,
-                        max_value=1000.0,
-                        step=2.5,
-                        value=st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['weight'],
-                        key=f"weight_{exercise_key}_{set_idx}",
-                        help="Weight used for this set"
-                    )
-                    st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['weight'] = weight
+                            st.markdown("<div style='text-align: center; color: green; padding-top: 5px;'>✅</div>", unsafe_allow_html=True)
             
-            st.markdown("<hr style='margin: 0.5rem 0; opacity: 0.2;'>", unsafe_allow_html=True)
+            st.markdown("<hr style='margin: 0.2rem 0; opacity: 0.1;'>", unsafe_allow_html=True)
 
         with st.expander("📝 Optional notes for this exercise", expanded=False):
             exercise_notes = st.text_area(
