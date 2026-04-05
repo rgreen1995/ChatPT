@@ -213,6 +213,95 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
 
     st.markdown(f"### {day_data.get('focus', 'Workout')}")
 
+    # Inject custom CSS for a compact, non-wrapping grid (Strong app style)
+    st.markdown("""
+        <style>
+        /* Force single row for set inputs on mobile */
+        [data-testid="stHorizontalBlock"] {
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            gap: 0.1rem !important;
+        }
+        [data-testid="column"] {
+            min-width: 0px !important;
+            padding: 0 0.1rem !important;
+            flex-shrink: 1 !important;
+        }
+        /* Tighten up number inputs */
+        .stNumberInput div[data-baseweb="input"] {
+            padding: 0 !important;
+            border-radius: 4px !important;
+            background-color: #f8f9fa !important;
+            border: 1px solid #dee2e6 !important;
+        }
+        .stNumberInput input {
+            padding: 0.4rem 0.1rem !important;
+            font-size: 0.95rem !important;
+            text-align: center !important;
+        }
+        /* Hide +/- buttons on mobile */
+        @media (max-width: 640px) {
+            .stNumberInput [data-testid="stNumberInputStepDown"], 
+            .stNumberInput [data-testid="stNumberInputStepUp"] {
+                display: none !important;
+            }
+            .stNumberInput input {
+                font-size: 0.85rem !important;
+            }
+        }
+        /* Compact buttons for the timer/completed state */
+        .stButton button {
+            width: 100% !important;
+            padding: 0 !important;
+            min-height: 2.2rem !important;
+            height: 2.2rem !important;
+            font-size: 0.9rem !important;
+            border-radius: 6px !important;
+            background-color: #e9ecef !important;
+            border: none !important;
+            transition: all 0.2s;
+        }
+        .stButton button:active {
+            transform: scale(0.95);
+        }
+        /* Style for the 'Set' number */
+        .set-circle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            background-color: #dee2e6;
+            color: #495057;
+            border-radius: 50%;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin: 0 auto;
+        }
+        /* Table header styling */
+        .compact-header {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #adb5bd;
+            font-weight: bold;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+        /* Reduce vertical spacing between set rows */
+        .element-container {
+            margin-bottom: 0px !important;
+        }
+        div[data-testid="stVerticalBlock"] > div {
+            padding-top: 0px !important;
+            padding-bottom: 0px !important;
+        }
+        hr {
+            margin: 0.3rem 0 !important;
+            opacity: 0.1 !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
     session_timer_key = f"session_timer_{selected_day}"
     session_start_key = f"session_start_{selected_day}"
 
@@ -330,12 +419,12 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
         if 'exercise_notes' not in st.session_state.exercise_logs[exercise_key]:
             st.session_state.exercise_logs[exercise_key]['exercise_notes'] = ''
 
-        # Table header for sets
-        hcol1, hcol2, hcol3, hcol4 = st.columns([0.4, 1.3, 1, 1.2])
-        with hcol1: st.caption("**Set**")
-        with hcol2: st.caption("**Weight**")
-        with hcol3: st.caption("**Reps**")
-        with hcol4: st.caption("**Rest**")
+        # Table header for sets (Strong app style)
+        hcol1, hcol2, hcol3, hcol4 = st.columns([0.5, 1.2, 1.0, 1.1])
+        with hcol1: st.markdown('<div class="compact-header">SET</div>', unsafe_allow_html=True)
+        with hcol2: st.markdown('<div class="compact-header">KG</div>', unsafe_allow_html=True)
+        with hcol3: st.markdown('<div class="compact-header">REPS</div>', unsafe_allow_html=True)
+        with hcol4: st.markdown('<div class="compact-header">DONE</div>', unsafe_allow_html=True)
 
         # Display each set in a compact single-row layout
         for set_idx in range(num_sets):
@@ -349,10 +438,10 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
             # Use a container for the set to allow for mobile styling
             with st.container():
                 # Single row for all set details
-                col1, col2, col3, col4 = st.columns([0.4, 1.3, 1, 1.2])
+                col1, col2, col3, col4 = st.columns([0.5, 1.2, 1.0, 1.1])
                 
                 with col1:
-                    st.markdown(f"<div style='padding-top: 0.5rem;'><strong>{set_idx + 1}</strong></div>", unsafe_allow_html=True)
+                    st.markdown(f'<div class="set-circle">{set_idx + 1}</div>', unsafe_allow_html=True)
                 
                 with col2:
                     weight = st.number_input(
@@ -378,13 +467,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
                     st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['reps'] = reps
 
                 with col4:
-                    if not st.session_state[timer_running_key]:
-                        if st.button("⏱️", key=f"start_{timer_key}", use_container_width=True, help="Start Rest Timer"):
-                            st.session_state[timer_running_key] = True
-                            st.session_state[timer_end_key] = time.time() + rest_seconds
-                            st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['completed'] = True
-                            st.rerun()
-                    else:
+                    if st.session_state[timer_running_key]:
                         timer_end = st.session_state.get(timer_end_key)
                         remaining = max(0, int(timer_end - time.time())) if timer_end else 0
                         if remaining > 0:
@@ -428,7 +511,17 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
                             """, height=35)
                         else:
                             st.session_state[timer_running_key] = False
-                            st.markdown("<div style='text-align: center; color: green; padding-top: 5px;'>✅</div>", unsafe_allow_html=True)
+                            st.rerun()
+                    elif st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['completed']:
+                        if st.button("✅", key=f"done_{timer_key}", use_container_width=True, help="Set Completed - Click to Reset"):
+                            st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['completed'] = False
+                            st.rerun()
+                    else:
+                        if st.button("⏱️", key=f"start_{timer_key}", use_container_width=True, help="Start Rest Timer"):
+                            st.session_state[timer_running_key] = True
+                            st.session_state[timer_end_key] = time.time() + rest_seconds
+                            st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['completed'] = True
+                            st.rerun()
             
             st.markdown("<hr style='margin: 0.2rem 0; opacity: 0.1;'>", unsafe_allow_html=True)
 
