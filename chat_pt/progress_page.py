@@ -63,6 +63,7 @@ def render():
             flex-direction: row !important;
             flex-wrap: nowrap !important;
             align-items: center !important;
+            justify-content: center !important;
             gap: 0.25rem !important;
         }
 
@@ -78,6 +79,7 @@ def render():
         @media (max-width: 640px) {
             [data-testid="stHorizontalBlock"] {
                 gap: 0.1rem !important;
+                justify-content: center !important;
                 overflow: hidden !important;
             }
 
@@ -106,7 +108,9 @@ def render():
             /* Compact number inputs — only 2-3 digit values */
             .stNumberInput {
                 width: 100% !important;
+                max-width: 75px !important;
                 min-width: 0px !important;
+                margin: 0 auto !important;
             }
 
             .stNumberInput > div {
@@ -128,6 +132,7 @@ def render():
                 font-size: 0.85rem !important;
                 text-align: center !important;
                 min-width: 0px !important;
+                min-height: 0px !important;
                 width: 100% !important;
                 height: 2rem !important;
                 box-sizing: border-box !important;
@@ -153,6 +158,7 @@ def render():
                 width: 100% !important;
                 padding: 0 !important;
                 min-height: 2rem !important;
+                min-width: 0px !important;
                 height: 2rem !important;
                 font-size: 0.85rem !important;
                 border-radius: 6px !important;
@@ -161,7 +167,7 @@ def render():
             }
 
             .compact-header {
-                font-size: 0.55rem !important;
+                font-size: 0.65rem !important;
                 letter-spacing: 0px !important;
                 white-space: nowrap !important;
             }
@@ -189,14 +195,14 @@ def render():
 
             .stNumberInput input {
                 font-size: 0.8rem !important;
+                height: 1.8rem !important;
+                min-height: 0px !important;
+                min-width: 0px !important;
             }
 
             .stNumberInput div[data-baseweb="input"] {
                 height: 1.8rem !important;
-            }
-
-            .stNumberInput input {
-                height: 1.8rem !important;
+                min-height: 0px !important;
             }
 
             .compact-header {
@@ -212,6 +218,7 @@ def render():
             .stButton button {
                 min-height: 1.8rem !important;
                 height: 1.8rem !important;
+                min-width: 0px !important;
                 font-size: 0.75rem !important;
             }
         }
@@ -510,7 +517,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
             st.session_state.exercise_logs[exercise_key]['exercise_notes'] = ''
 
         # Table header for sets (Strong app style)
-        hcol1, hcol2, hcol3, hcol4 = st.columns([0.3, 1, 1, 0.6])
+        hcol1, hcol2, hcol3, hcol4 = st.columns([0.4, 1, 1, 0.8])
         with hcol1:
             st.markdown('<div class="compact-header">SET</div>', unsafe_allow_html=True)
         with hcol2:
@@ -530,7 +537,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
                 st.session_state[timer_running_key] = False
 
             # Single row for all set details
-            col1, col2, col3, col4 = st.columns([0.3, 1, 1, 0.6])
+            col1, col2, col3, col4 = st.columns([0.4, 1, 1, 0.8])
 
             with col1:
                 st.markdown(f'<div class="set-circle">{set_idx + 1}</div>', unsafe_allow_html=True)
