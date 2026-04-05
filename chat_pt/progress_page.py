@@ -51,6 +51,46 @@ def sort_workout_days(schedule_dict):
 
 def render():
     """Render the progress tracking page."""
+    # Custom CSS for mobile grid responsiveness
+    st.markdown("""
+        <style>
+        /* Modern, compact workout grid */
+        @media (max-width: 640px) {
+            /* Force columns to stay side-by-side on mobile */
+            div[data-testid="stHorizontalBlock"] {
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+                gap: 0.5rem !important;
+                align-items: center !important;
+            }
+            
+            /* Make columns take up proper space */
+            div[data-testid="column"] {
+                min-width: 0px !important;
+                flex: 1 1 auto !important;
+            }
+            
+            /* Adjust input padding for mobile */
+            .stNumberInput input {
+                padding: 0.25rem 0.5rem !important;
+            }
+            
+            /* Make buttons more compact in the grid */
+            div[data-testid="stHorizontalBlock"] .stButton button {
+                padding: 0.25rem 0.5rem !important;
+                min-height: 32px !important;
+                font-size: 0.8rem !important;
+            }
+            
+            /* Ensure captions/headers don't wrap weirdly */
+            .stCaption {
+                font-size: 0.7rem !important;
+                white-space: nowrap !important;
+            }
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
     st.markdown("""
     <div style="text-align: center; padding: 1rem 0 2rem 0;">
         <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">📊 Progress Tracking</h1>
@@ -269,8 +309,6 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
         else:
             num_sets = int(sets_value) if isinstance(sets_value, (int, float)) else 3
 
-        st.markdown("**Log sets (Set • Reps • Weight • Rest):**")
-
         # Initialize logs for this exercise
         if exercise_key not in st.session_state.exercise_logs:
             # Parse reps - handle ranges like "8-10" by taking the midpoint
@@ -300,7 +338,8 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
         if 'exercise_notes' not in st.session_state.exercise_logs[exercise_key]:
             st.session_state.exercise_logs[exercise_key]['exercise_notes'] = ''
 
-        header_cols = st.columns([0.7, 1.1, 1.1, 1.6])
+        # Compact grid layout for sets
+        header_cols = st.columns([0.5, 1.1, 1.1, 1.5])
         with header_cols[0]:
             st.caption("Set")
         with header_cols[1]:
@@ -308,7 +347,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
         with header_cols[2]:
             st.caption("Weight")
         with header_cols[3]:
-            st.caption("Rest")
+            st.caption("Rest/Timer")
 
         # Display each set in a compact single-row layout
         for set_idx in range(num_sets):
@@ -319,7 +358,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
             if timer_running_key not in st.session_state:
                 st.session_state[timer_running_key] = False
 
-            row_cols = st.columns([0.7, 1.1, 1.1, 1.6])
+            row_cols = st.columns([0.5, 1.1, 1.1, 1.5])
             with row_cols[0]:
                 st.markdown(f"**{set_idx + 1}**")
 
@@ -415,9 +454,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
             )
             st.session_state.exercise_logs[exercise_key]['exercise_notes'] = exercise_notes
 
-        st.markdown("<div style='margin-bottom: 0.75rem;'></div>", unsafe_allow_html=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-bottom: 0.25rem;'></div>", unsafe_allow_html=True)
 
     # Save workout button
     col1, col2, col3 = st.columns([1, 2, 1])
