@@ -51,73 +51,122 @@ def sort_workout_days(schedule_dict):
 
 def render():
     """Render the progress tracking page."""
-    # Custom CSS for mobile grid responsiveness
+    # Combined, optimized CSS for mobile grid (Strong app style)
     st.markdown("""
         <style>
-        /* Modern, compact workout grid */
+        /* Modern, compact workout grid - Mobile Optimizations */
         @media (max-width: 640px) {
-            /* Adjust input padding for mobile */
-            .stNumberInput input {
-                padding: 0.25rem 0.5rem !important;
+            /* Force single row for set inputs and headers */
+            [data-testid="stHorizontalBlock"] {
+                flex-wrap: nowrap !important;
+                align-items: center !important;
+                gap: 0.2rem !important;
             }
             
-            /* Make buttons more compact in the grid */
-            .stButton button {
-                padding: 0.25rem 0.5rem !important;
-                min-height: 36px !important;
-            }
-            
-            /* Ensure captions/headers don't wrap weirdly */
-            .stCaption {
-                font-size: 0.75rem !important;
-            }
-
-            /* Container for each set to look like a card on mobile */
-            .set-container {
-                background-color: #f0f2f6;
-                padding: 10px;
-                border-radius: 10px;
-                margin-bottom: 10px;
-            }
-            
-            /* Hide number input spinners on mobile to save space */
-            .stNumberInput div[data-baseweb="input"] > div:last-child {
-                display: none !important;
-            }
-            
-            /* Force columns to stay on one line for the set grid */
             [data-testid="column"] {
-                flex: 1 1 0% !important;
-                min-width: 0 !important;
-                padding: 0 2px !important;
+                min-width: 0px !important;
+                padding: 0 0.1rem !important;
+                flex-shrink: 1 !important;
             }
             
             /* Remove extra padding from main container on mobile */
             .main .block-container {
                 padding-left: 0.5rem !important;
                 padding-right: 0.5rem !important;
+                padding-top: 1rem !important;
+            }
+            
+            /* Tighten up number inputs for mobile */
+            .stNumberInput {
+                width: 100% !important;
+                min-width: 0px !important;
+            }
+            
+            .stNumberInput div[data-baseweb="input"] {
+                padding: 0 !important;
+                min-width: 0px !important;
+                border-radius: 4px !important;
+                background-color: #f8f9fa !important;
+                border: 1px solid #dee2e6 !important;
+            }
+            
+            .stNumberInput input {
+                padding: 0.4rem 0.1rem !important;
+                font-size: 0.85rem !important;
+                text-align: center !important;
+                min-width: 0px !important;
+                width: 100% !important;
+            }
+            
+            /* Hide number input spinners on mobile */
+            .stNumberInput [data-testid="stNumberInputStepDown"], 
+            .stNumberInput [data-testid="stNumberInputStepUp"],
+            .stNumberInput div[data-baseweb="input"] > div:last-child {
+                display: none !important;
+            }
+            
+            /* Make buttons more compact in the grid */
+            .stButton button {
+                width: 100% !important;
+                padding: 0 !important;
+                min-height: 2.2rem !important;
+                height: 2.2rem !important;
+                font-size: 0.85rem !important;
+                border-radius: 6px !important;
+                background-color: #e9ecef !important;
+                border: none !important;
+            }
+            
+            .compact-header {
+                font-size: 0.65rem !important;
+                letter-spacing: 0px !important;
+            }
+            
+            .set-circle {
+                width: 24px !important;
+                height: 24px !important;
+                font-size: 0.75rem !important;
             }
         }
         
+        /* General styles (Desktop & Mobile) */
         .compact-header {
             font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #adb5bd;
             font-weight: bold;
-            color: #888;
             text-align: center;
+            letter-spacing: 0.5px;
             margin-bottom: 5px;
         }
         
         .set-circle {
-            width: 28px;
-            height: 28px;
-            background-color: #eee;
-            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+            width: 28px;
+            height: 28px;
+            background-color: #dee2e6;
+            color: #495057;
+            border-radius: 50%;
             font-weight: bold;
             font-size: 0.8rem;
             margin: 0 auto;
+        }
+        
+        /* Reduce vertical spacing between elements */
+        .element-container {
+            margin-bottom: 0px !important;
+        }
+        
+        div[data-testid="stVerticalBlock"] > div {
+            padding-top: 0px !important;
+            padding-bottom: 0px !important;
+        }
+        
+        hr {
+            margin: 0.3rem 0 !important;
+            opacity: 0.1 !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -252,94 +301,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
 
     st.markdown(f"### {day_data.get('focus', 'Workout')}")
 
-    # Inject custom CSS for a compact, non-wrapping grid (Strong app style)
-    st.markdown("""
-        <style>
-        /* Force single row for set inputs on mobile */
-        [data-testid="stHorizontalBlock"] {
-            flex-wrap: nowrap !important;
-            align-items: center !important;
-            gap: 0.1rem !important;
-        }
-        [data-testid="column"] {
-            min-width: 0px !important;
-            padding: 0 0.1rem !important;
-            flex-shrink: 1 !important;
-        }
-        /* Tighten up number inputs */
-        .stNumberInput div[data-baseweb="input"] {
-            padding: 0 !important;
-            border-radius: 4px !important;
-            background-color: #f8f9fa !important;
-            border: 1px solid #dee2e6 !important;
-        }
-        .stNumberInput input {
-            padding: 0.4rem 0.1rem !important;
-            font-size: 0.95rem !important;
-            text-align: center !important;
-        }
-        /* Hide +/- buttons on mobile */
-        @media (max-width: 640px) {
-            .stNumberInput [data-testid="stNumberInputStepDown"], 
-            .stNumberInput [data-testid="stNumberInputStepUp"] {
-                display: none !important;
-            }
-            .stNumberInput input {
-                font-size: 0.85rem !important;
-            }
-        }
-        /* Compact buttons for the timer/completed state */
-        .stButton button {
-            width: 100% !important;
-            padding: 0 !important;
-            min-height: 2.2rem !important;
-            height: 2.2rem !important;
-            font-size: 0.9rem !important;
-            border-radius: 6px !important;
-            background-color: #e9ecef !important;
-            border: none !important;
-            transition: all 0.2s;
-        }
-        .stButton button:active {
-            transform: scale(0.95);
-        }
-        /* Style for the 'Set' number */
-        .set-circle {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 26px;
-            height: 26px;
-            background-color: #dee2e6;
-            color: #495057;
-            border-radius: 50%;
-            font-size: 0.8rem;
-            font-weight: bold;
-            margin: 0 auto;
-        }
-        /* Table header styling */
-        .compact-header {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            color: #adb5bd;
-            font-weight: bold;
-            text-align: center;
-            letter-spacing: 0.5px;
-        }
-        /* Reduce vertical spacing between set rows */
-        .element-container {
-            margin-bottom: 0px !important;
-        }
-        div[data-testid="stVerticalBlock"] > div {
-            padding-top: 0px !important;
-            padding-bottom: 0px !important;
-        }
-        hr {
-            margin: 0.3rem 0 !important;
-            opacity: 0.1 !important;
-        }
-        </style>
-    """, unsafe_allow_html=True)
+    # Custom styles removed (consolidated at the top of render)
 
     session_timer_key = f"session_timer_{selected_day}"
     session_start_key = f"session_start_{selected_day}"
@@ -459,7 +421,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
             st.session_state.exercise_logs[exercise_key]['exercise_notes'] = ''
 
         # Table header for sets (Strong app style)
-        hcol1, hcol2, hcol3, hcol4 = st.columns([0.4, 1.3, 1.0, 1.1])
+        hcol1, hcol2, hcol3, hcol4 = st.columns([0.4, 1.4, 1.1, 0.9])
         with hcol1: st.markdown('<div class="compact-header">SET</div>', unsafe_allow_html=True)
         with hcol2: st.markdown('<div class="compact-header">KG</div>', unsafe_allow_html=True)
         with hcol3: st.markdown('<div class="compact-header">REPS</div>', unsafe_allow_html=True)
@@ -475,7 +437,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
                 st.session_state[timer_running_key] = False
 
             # Single row for all set details
-            col1, col2, col3, col4 = st.columns([0.4, 1.3, 1.0, 1.1])
+            col1, col2, col3, col4 = st.columns([0.4, 1.4, 1.1, 0.9])
             
             with col1:
                 st.markdown(f'<div class="set-circle">{set_idx + 1}</div>', unsafe_allow_html=True)
