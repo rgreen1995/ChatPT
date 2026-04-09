@@ -575,40 +575,15 @@ def render():
                 exercises = day_data.get("exercises", [])
 
                 if exercises:
+                    from chat_pt.utils import (
+                        get_sorted_sequence_keys,
+                        group_exercises_by_sequence,
+                    )
+
                     # Group exercises by sequence for supersets
-                    # Build groups: {sequence_num: [exercises]}
-                    sequence_groups = {}
-                    exercise_index = 0
-
-                    for exercise in exercises:
-                        sequence = exercise.get("sequence")
-                        if sequence:
-                            # Extract numeric part (e.g., "2A" -> 2, "3B" -> 3)
-                            import re
-
-                            match = re.match(r"(\d+)", str(sequence))
-                            if match:
-                                seq_num = int(match.group(1))
-                            else:
-                                seq_num = None
-                        else:
-                            seq_num = None
-
-                        if seq_num is not None:
-                            if seq_num not in sequence_groups:
-                                sequence_groups[seq_num] = []
-                            sequence_groups[seq_num].append((exercise_index, exercise))
-                        else:
-                            # Standalone exercise
-                            sequence_groups[f"solo_{exercise_index}"] = [(exercise_index, exercise)]
-
-                        exercise_index += 1
-
-                    # Display exercises grouped by sequence
+                    sequence_groups = group_exercises_by_sequence(exercises)
                     display_idx = 1
-                    sorted_keys = sorted(
-                        [k for k in sequence_groups.keys() if isinstance(k, int)]
-                    ) + [k for k in sequence_groups.keys() if isinstance(k, str)]
+                    sorted_keys = get_sorted_sequence_keys(sequence_groups)
 
                     for seq_key in sorted_keys:
                         group = sequence_groups[seq_key]

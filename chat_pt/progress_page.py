@@ -476,24 +476,58 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
     if "exercise_logs" not in st.session_state:
         st.session_state.exercise_logs = {}
 
-    # Create grid-style workout log (similar to Strong app)
-    for idx, exercise in enumerate(exercises):
-        exercise_key = f"{selected_day}_{idx}_{exercise['name']}"
-        rest_seconds = exercise.get("rest_seconds", 60)
+    from chat_pt.utils import get_sorted_sequence_keys, group_exercises_by_sequence
 
-        # Exercise header
-        st.markdown(
-            f"""
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    padding: 0.75rem 1rem; border-radius: 8px; color: white; margin: 1rem 0 0.5rem 0;">
-            <strong>{idx + 1}. {exercise['name']}</strong>
-            <span style="opacity: 0.9; margin-left: 1rem; font-size: 0.9rem;">
-                {exercise.get('sets')} x {exercise.get('reps')} | Rest: {rest_seconds}s
-            </span>
-        </div>
-        """,
-            unsafe_allow_html=True,
-        )
+    # Group exercises by sequence for supersets
+    sequence_groups = group_exercises_by_sequence(exercises)
+    display_idx = 1
+    sorted_keys = get_sorted_sequence_keys(sequence_groups)
+
+    # Create grid-style workout log (similar to Strong app)
+    for seq_key in sorted_keys:
+        group = sequence_groups[seq_key]
+
+        # Check if this is a superset
+        is_superset = len(group) > 1 and isinstance(seq_key, int)
+
+        if is_superset:
+            # Display superset header
+            st.markdown(
+                f"""
+            <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                        padding: 0.5rem 1rem; border-radius: 8px; margin: 1rem 0 0.5rem 0;">
+                <strong style="color: white;">🔗 Superset {seq_key}</strong>
+                <span style="color: rgba(255,255,255,0.9); font-size: 0.9rem; margin-left: 1rem;">
+                    Alternate between exercises
+                </span>
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
+
+        for idx, exercise in group:
+            exercise_key = f"{selected_day}_{idx}_{exercise['name']}"
+            rest_seconds = exercise.get("rest_seconds", 60)
+            sequence = exercise.get("sequence", "")
+
+            # Exercise header
+            if is_superset:
+                header_text = f"{sequence}. {exercise['name']}"
+            else:
+                header_text = f"{display_idx}. {exercise['name']}"
+
+            st.markdown(
+                f"""
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        padding: 0.75rem 1rem; border-radius: 8px; color: white; margin: 1rem 0 0.5rem 0;">
+                <strong>{header_text}</strong>
+                <span style="opacity: 0.9; margin-left: 1rem; font-size: 0.9rem;">
+                    {exercise.get('sets')} x {exercise.get('reps')} | Rest: {rest_seconds}s
+                </span>
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
 
         if exercise.get("notes"):
             st.caption(f"💡 {exercise['notes']}")
@@ -687,6 +721,9 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
             st.session_state.exercise_logs[exercise_key]["exercise_notes"] = exercise_notes
 
         st.markdown("<div style='margin-bottom: 0.25rem;'></div>", unsafe_allow_html=True)
+
+        # Increment display index after processing each group
+        display_idx += 1
 
     # Save workout button
     col1, col2, col3 = st.columns([1, 2, 1])
