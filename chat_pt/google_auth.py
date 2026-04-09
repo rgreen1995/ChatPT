@@ -1,19 +1,23 @@
-import os
 import json
+import os
 import tempfile
+from typing import Optional
+
 import streamlit as st
 from streamlit_google_auth import Authenticate
 
-def get_secret(key: str, default: str = None) -> str:
+
+def get_secret(key: str, default: Optional[str] = None) -> str:
     """Get secret from Streamlit secrets or environment variables."""
     # Try Streamlit secrets first (preferred method)
     try:
-        if hasattr(st, 'secrets') and key in st.secrets:
+        if hasattr(st, "secrets") and key in st.secrets:
             return st.secrets[key]
     except (FileNotFoundError, KeyError):
         pass
     # Fall back to environment variables
     return os.getenv(key, default)
+
 
 def get_redirect_uri():
     """Auto-detect the correct redirect URI based on environment."""
@@ -23,7 +27,7 @@ def get_redirect_uri():
         return explicit_uri
 
     # Auto-detect: Check if running on Streamlit Cloud
-    if os.getenv('STREAMLIT_SHARING_MODE') or os.getenv('STREAMLIT_SERVER_HEADLESS'):
+    if os.getenv("STREAMLIT_SHARING_MODE") or os.getenv("STREAMLIT_SERVER_HEADLESS"):
         # Running on Streamlit Cloud - use production URL
         return "https://chat-pt.streamlit.app"
     else:
@@ -41,7 +45,7 @@ def get_google_authenticator():
     if credentials_path and os.path.exists(credentials_path):
         authenticator = Authenticate(
             secret_credentials_path=credentials_path,
-            cookie_name='chatpt_auth_cookie',
+            cookie_name="chatpt_auth_cookie",
             cookie_key=get_secret("COOKIE_SECRET_KEY", "default_secret_key_change_me"),
             redirect_uri=redirect_uri,
             cookie_expiry_days=30,  # Stay logged in for 30 days
@@ -63,23 +67,24 @@ def get_google_authenticator():
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
             "token_uri": "https://oauth2.googleapis.com/token",
             "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "redirect_uris": [redirect_uri]
+            "redirect_uris": [redirect_uri],
         }
     }
 
     # Write to temporary file
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         json.dump(credentials, f)
         temp_path = f.name
 
     authenticator = Authenticate(
         secret_credentials_path=temp_path,
-        cookie_name='chatpt_auth_cookie',
+        cookie_name="chatpt_auth_cookie",
         cookie_key=get_secret("COOKIE_SECRET_KEY", "default_secret_key_change_me"),
         redirect_uri=redirect_uri,
         cookie_expiry_days=30,  # Stay logged in for 30 days
     )
     return authenticator
+
 
 def is_google_auth_configured():
     """Check if Google OAuth is properly configured."""

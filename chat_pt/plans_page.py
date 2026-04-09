@@ -1,11 +1,16 @@
-import streamlit as st
-import pandas as pd
 import time
-from chat_pt.db_interface import get_user_consultations, get_workout_plan, get_conversation_history
+
+import streamlit as st
+
+from chat_pt.db_interface import (
+    get_conversation_history,
+    get_user_consultations,
+    get_workout_plan,
+)
+
 
 def render_rest_timer(rest_seconds, exercise_key):
     """Render an interactive rest timer for an exercise."""
-    timer_key = f"timer_{exercise_key}"
     timer_running_key = f"timer_running_{exercise_key}"
     timer_start_key = f"timer_start_{exercise_key}"
     timer_end_key = f"timer_end_{exercise_key}"
@@ -25,27 +30,76 @@ def render_rest_timer(rest_seconds, exercise_key):
         remaining = max(0, int(end_time - current_time))
 
         if remaining > 0:
-            # Display countdown timer
+            # Display countdown timer (client-side updates to avoid page flashing)
             mins = remaining // 60
             secs = remaining % 60
-
-            # Timer display with progress bar
             progress = 1 - (remaining / rest_seconds)
+            timer_dom_id = f"rest_timer_{exercise_key}".replace(" ", "_").replace("-", "_")
+            timer_value_id = f"{timer_dom_id}_value"
+            timer_bar_id = f"{timer_dom_id}_bar"
 
-            timer_html = f"""
+            st.components.v1.html(
+                f"""
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                         padding: 1.5rem; border-radius: 10px; text-align: center;
                         margin: 1rem 0; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                <div style="color: white; font-size: 3rem; font-weight: bold; margin-bottom: 0.5rem;">
+                <div id="{timer_value_id}" style="color: white; font-size: 3rem; font-weight: bold; margin-bottom: 0.5rem;">
                     {mins:02d}:{secs:02d}
                 </div>
                 <div style="background: rgba(255,255,255,0.3); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 1rem;">
-                    <div style="background: white; height: 100%; width: {progress * 100}%; transition: width 0.3s ease;"></div>
+                    <div id="{timer_bar_id}" style="background: white; height: 100%; width: {progress * 100}%; transition: width 0.3s ease;"></div>
                 </div>
                 <div style="color: rgba(255,255,255,0.9); font-size: 1.1rem;">Rest Period</div>
             </div>
-            """
-            st.markdown(timer_html, unsafe_allow_html=True)
+            <script>
+            const timerId = "{timer_dom_id}";
+            const valueEl = document.getElementById("{timer_value_id}");
+            const barEl = document.getElementById("{timer_bar_id}");
+            const endTime = {int(end_time)};
+            const totalSeconds = {int(rest_seconds)};
+
+            window.__chatptTimerCompletionSent = window.__chatptTimerCompletionSent || {{}};
+            window.__chatptTimerIntervals = window.__chatptTimerIntervals || {{}};
+
+            const clearTimerInterval = () => {{
+                if (window.__chatptTimerIntervals[timerId]) {{
+                    window.clearInterval(window.__chatptTimerIntervals[timerId]);
+                    delete window.__chatptTimerIntervals[timerId];
+                }}
+            }};
+
+            const pad = (num) => String(num).padStart(2, '0');
+            const updateTimer = () => {{
+                if (!valueEl || !barEl || !endTime || !totalSeconds) {{
+                    clearTimerInterval();
+                    return;
+                }}
+
+                const now = Math.floor(Date.now() / 1000);
+                const secsRemaining = Math.max(0, endTime - now);
+                const mins = Math.floor(secsRemaining / 60);
+                const secs = secsRemaining % 60;
+                const progressPct = Math.min(100, Math.max(0, (1 - (secsRemaining / totalSeconds)) * 100));
+
+                valueEl.textContent = `${{pad(mins)}}:${{pad(secs)}}`;
+                barEl.style.width = `${{progressPct}}%`;
+
+                if (secsRemaining <= 0 && !window.__chatptTimerCompletionSent[timerId]) {{
+                    window.__chatptTimerCompletionSent[timerId] = true;
+                    clearTimerInterval();
+                    window.setTimeout(() => {{
+                        window.parent.postMessage({{ isStreamlitMessage: true, type: "streamlit:rerunScript" }}, "*");
+                    }}, 250);
+                }}
+            }};
+
+            clearTimerInterval();
+            updateTimer();
+            window.__chatptTimerIntervals[timerId] = window.setInterval(updateTimer, 1000);
+            </script>
+            """,
+                height=170,
+            )
 
             col1, col2 = st.columns(2)
             with col1:
@@ -68,7 +122,8 @@ def render_rest_timer(rest_seconds, exercise_key):
             st.session_state[timer_end_key] = None
 
             # Play completion notification
-            st.markdown("""
+            st.markdown(
+                """
             <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                         padding: 1.5rem; border-radius: 10px; text-align: center;
                         margin: 1rem 0; animation: pulse 0.5s ease-in-out;">
@@ -86,17 +141,25 @@ def render_rest_timer(rest_seconds, exercise_key):
                 50% {{ transform: scale(1.05); }}
             }}
             </style>
-            """, unsafe_allow_html=True)
-
-            time.sleep(2)
-            st.rerun()
+            """,
+                unsafe_allow_html=True,
+            )
 
     return st.session_state[timer_running_key]
 
+
 def sort_workout_days(schedule_dict):
     """Sort workout days in a sensible order (days of week or numerical)."""
-    days_of_week = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-    day_abbrev = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+    days_of_week = [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+    ]
+    day_abbrev = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
     keys = list(schedule_dict.keys())
 
@@ -115,15 +178,17 @@ def sort_workout_days(schedule_dict):
                 return (0, idx)
 
         # Check for "Day X" format
-        if 'day' in day_lower:
+        if "day" in day_lower:
             import re
-            match = re.search(r'day\s*(\d+)', day_lower)
+
+            match = re.search(r"day\s*(\d+)", day_lower)
             if match:
                 return (1, int(match.group(1)))
 
         # Check for pure numbers at start
         import re
-        match = re.match(r'^(\d+)', day_name)
+
+        match = re.match(r"^(\d+)", day_name)
         if match:
             return (2, int(match.group(1)))
 
@@ -133,44 +198,33 @@ def sort_workout_days(schedule_dict):
     sorted_keys = sorted(keys, key=day_sort_key)
     return {k: schedule_dict[k] for k in sorted_keys}
 
+
 def render():
     """Render the workout plans page."""
-
-    # Check if any timers are running and add auto-refresh
-    has_active_timer = False
-    for key in st.session_state.keys():
-        if (key.startswith('timer_running_') or key.startswith('session_timer_')) and st.session_state.get(key, False):
-            has_active_timer = True
-            break
-
-    # Add auto-refresh script if any timer is active
-    if has_active_timer:
-        st.markdown("""
-        <script>
-        setTimeout(function() {
-            window.parent.location.reload();
-        }, 1000);
-        </script>
-        """, unsafe_allow_html=True)
-
-    st.markdown("""
+    st.markdown(
+        """
     <div style="text-align: center; padding: 1rem 0 2rem 0;">
         <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">📋 My Workout Plans</h1>
         <p style="font-size: 1.1rem; color: #666;">Your personalized training programs</p>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     # Get user's consultations
     consultations = get_user_consultations(st.session_state.user_id)
 
     if not consultations:
-        st.markdown("""
+        st.markdown(
+            """
         <div style="background: #f8f9fa; padding: 2rem; border-radius: 10px; text-align: center; margin: 2rem 0;">
             <div style="font-size: 3rem; margin-bottom: 1rem;">📋</div>
             <h3 style="margin-bottom: 0.5rem;">No workout plans yet</h3>
             <p style="color: #666; margin-bottom: 1.5rem;">Start a consultation to create your first personalized plan!</p>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
         col1, col2, col3 = st.columns([1, 1, 1])
         with col2:
             if st.button("🚀 Start Consultation", type="primary", use_container_width=True):
@@ -182,33 +236,39 @@ def render():
     completed_consultations = [c for c in consultations if c["completed"]]
 
     if not completed_consultations:
-        st.markdown("""
+        st.markdown(
+            """
         <div style="background: #fff3cd; padding: 1.5rem; border-radius: 10px; border-left: 4px solid #ffc107; margin: 2rem 0;">
             <h4 style="margin: 0 0 0.5rem 0;">⏳ Consultation in Progress</h4>
             <p style="margin: 0; color: #666;">You have consultations in progress but no completed plans yet.</p>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
         if st.button("Continue Consultation", type="primary", use_container_width=True):
             st.session_state.page = "consultation"
             st.rerun()
         return
 
     # Consultation selector
-    st.markdown("""
+    st.markdown(
+        """
     <div style="margin: 1rem 0;">
         <h3>Select a Plan</h3>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     # Create descriptive names for each plan (short - 3-4 words max)
     consultation_options = []
     for c in completed_consultations:
-        plan = get_workout_plan(c['id'])
+        plan = get_workout_plan(c["id"])
         if plan:
             # Extract key details
-            days = plan.get('training_days')
-            weeks = plan.get('program_duration_weeks')
-            num_days = len(plan.get('schedule', {}))
+            days = plan.get("training_days")
+            weeks = plan.get("program_duration_weeks")
+            num_days = len(plan.get("schedule", {}))
 
             # Build concise name
             if days and weeks:
@@ -220,10 +280,11 @@ def render():
             else:
                 # Use date as fallback
                 import datetime
+
                 try:
-                    date_obj = datetime.datetime.fromisoformat(c['created_at'])
+                    date_obj = datetime.datetime.fromisoformat(c["created_at"])
                     plan_name = date_obj.strftime("%b %d, %Y")
-                except:
+                except Exception:
                     plan_name = "Workout Plan"
 
             consultation_options.append(plan_name)
@@ -234,7 +295,7 @@ def render():
         "Choose a workout plan to view",
         range(len(consultation_options)),
         format_func=lambda i: consultation_options[i],
-        label_visibility="collapsed"
+        label_visibility="collapsed",
     )
 
     selected_consultation = completed_consultations[selected_idx]
@@ -248,23 +309,31 @@ def render():
         return
 
     # Exercise swap dialog - streamlined quick action
-    if st.session_state.get('show_swap_dialog'):
-        exercise_to_swap = st.session_state.get('swap_exercise')
-        swap_day = st.session_state.get('swap_day')
+    if st.session_state.get("show_swap_dialog"):
+        exercise_to_swap = st.session_state.get("swap_exercise")
+        swap_day = st.session_state.get("swap_day")
 
-        st.markdown(f"""
+        st.markdown(
+            f"""
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 10px; color: white; margin: 1rem 0;">
             <h3 style="margin: 0 0 0.5rem 0; color: white;">🔄 Swap Exercise</h3>
             <p style="margin: 0; opacity: 0.9;">Replace <strong>{exercise_to_swap}</strong> on {swap_day}</p>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
 
         # Quick swap buttons - single click to AI
         st.markdown("**Quick swap options:**")
         col1, col2 = st.columns(2)
 
         with col1:
-            if st.button("🚀 Similar Exercise (Quick)", type="primary", use_container_width=True, help="AI suggests similar alternative"):
+            if st.button(
+                "🚀 Similar Exercise (Quick)",
+                type="primary",
+                use_container_width=True,
+                help="AI suggests similar alternative",
+            ):
                 request_text = f"I need to swap '{exercise_to_swap}' on {swap_day}. Please suggest 2-3 similar alternative exercises I can do instead, and update my plan if I choose one."
                 st.session_state.consultation_id = consultation_id
                 st.session_state.messages = get_conversation_history(consultation_id)
@@ -275,7 +344,11 @@ def render():
                 st.rerun()
 
         with col2:
-            if st.button("🏋️ Equipment Issue", use_container_width=True, help="Don't have the equipment"):
+            if st.button(
+                "🏋️ Equipment Issue",
+                use_container_width=True,
+                help="Don't have the equipment",
+            ):
                 request_text = f"I don't have the equipment for '{exercise_to_swap}' on {swap_day}. Please suggest alternatives I can do with minimal/different equipment and update my plan."
                 st.session_state.consultation_id = consultation_id
                 st.session_state.messages = get_conversation_history(consultation_id)
@@ -287,7 +360,11 @@ def render():
 
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("🤕 Injury/Discomfort", use_container_width=True, help="Exercise causes pain"):
+            if st.button(
+                "🤕 Injury/Discomfort",
+                use_container_width=True,
+                help="Exercise causes pain",
+            ):
                 request_text = f"'{exercise_to_swap}' on {swap_day} is causing discomfort. Please suggest safer alternative exercises that work the same muscles without aggravating the issue."
                 st.session_state.consultation_id = consultation_id
                 st.session_state.messages = get_conversation_history(consultation_id)
@@ -298,18 +375,22 @@ def render():
                 st.rerun()
 
         with col2:
-            if st.button("✏️ Custom Request", use_container_width=True, help="Specify your own reason"):
+            if st.button(
+                "✏️ Custom Request",
+                use_container_width=True,
+                help="Specify your own reason",
+            ):
                 # Show expanded form
                 st.session_state.show_custom_swap = True
                 st.rerun()
 
         # Show custom form if requested
-        if st.session_state.get('show_custom_swap'):
+        if st.session_state.get("show_custom_swap"):
             st.markdown("---")
             custom_reason = st.text_area(
                 "Tell us why you need to swap:",
                 placeholder="E.g., 'I prefer dumbbells over barbells', 'This exercise is too advanced'...",
-                key="custom_swap_reason"
+                key="custom_swap_reason",
             )
 
             col1, col2 = st.columns(2)
@@ -338,14 +419,16 @@ def render():
 
     # AI Trainer Quick Chat
     with st.expander("💬 Ask Your AI Trainer", expanded=False):
-        st.markdown("""
+        st.markdown(
+            """
         **Your AI trainer is always available for:**
         - Quick questions about exercises
         - Modify sets/reps/intensity
         - Swap exercises (temporary or permanent)
         - Adjust training schedule
         - Nutrition and recovery advice
-        """)
+        """
+        )
 
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -362,7 +445,9 @@ def render():
                 st.session_state.consultation_id = consultation_id
                 st.session_state.messages = get_conversation_history(consultation_id)
                 st.session_state.workout_plan = workout_plan
-                st.session_state.prefilled_message = "I need to adjust my training schedule. Can we modify the plan?"
+                st.session_state.prefilled_message = (
+                    "I need to adjust my training schedule. Can we modify the plan?"
+                )
                 st.session_state.page = "consultation"
                 st.rerun()
 
@@ -380,43 +465,58 @@ def render():
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.markdown(f"""
+        st.markdown(
+            f"""
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 10px; text-align: center; color: white;">
             <div style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem;">{workout_plan.get("training_days", "N/A")}</div>
             <div style="font-size: 0.9rem; opacity: 0.9;">Training Days/Week</div>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
 
     with col2:
-        st.markdown(f"""
+        st.markdown(
+            f"""
         <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 1.5rem; border-radius: 10px; text-align: center; color: white;">
             <div style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem;">{workout_plan.get('program_duration_weeks', 'N/A')}</div>
             <div style="font-size: 0.9rem; opacity: 0.9;">Program Weeks</div>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
 
     with col3:
-        st.markdown(f"""
+        st.markdown(
+            f"""
         <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 1.5rem; border-radius: 10px; text-align: center; color: white;">
             <div style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem;">{len(workout_plan.get("schedule", {}))}</div>
             <div style="font-size: 0.9rem; opacity: 0.9;">Workout Days</div>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
 
     st.markdown("<br><br>", unsafe_allow_html=True)
 
     # Display summary
     if "summary" in workout_plan:
-        st.markdown("""
+        st.markdown(
+            """
         <div style="margin: 1rem 0;">
             <h3>📝 Plan Overview</h3>
         </div>
-        """, unsafe_allow_html=True)
-        st.markdown(f"""
+        """,
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"""
         <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; border-left: 4px solid #667eea;">
             {workout_plan["summary"]}
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
 
     # Display workout schedule
     st.subheader("🏋️ Workout Schedule")
@@ -441,76 +541,49 @@ def render():
                 if session_start_key not in st.session_state:
                     st.session_state[session_start_key] = None
 
-                # Display session timer controls
-                col1, col2, col3 = st.columns([2, 2, 2])
-                with col1:
-                    if not st.session_state[session_timer_key]:
-                        if st.button("▶️ Start & Log Workout", key=f"start_session_{day_name}", use_container_width=True, type="primary"):
-                            # Start timer and navigate to progress page
-                            st.session_state[session_timer_key] = True
-                            st.session_state[session_start_key] = time.time()
-                            st.session_state.page = "progress"
-                            st.session_state.selected_day = day_name
-                            st.session_state.selected_consultation = consultation_id
-                            st.rerun()
-                    else:
-                        if st.button("⏹️ End Workout", key=f"end_session_{day_name}", use_container_width=True):
-                            st.session_state[session_timer_key] = False
-                            elapsed = int(time.time() - st.session_state[session_start_key])
-                            st.session_state[session_start_key] = None
-                            st.success(f"✅ Workout complete! Duration: {elapsed // 60}m {elapsed % 60}s")
-                            st.rerun()
-
-                with col2:
-                    if st.session_state[session_timer_key]:
+                # Display workout controls (timer shown on progress page during active workout)
+                if not st.session_state[session_timer_key]:
+                    if st.button(
+                        "▶️ Start & Log Workout",
+                        key=f"start_session_{day_name}",
+                        use_container_width=True,
+                        type="primary",
+                    ):
+                        # Start timer and navigate to progress page
+                        st.session_state[session_timer_key] = True
+                        st.session_state[session_start_key] = time.time()
+                        st.session_state.page = "progress"
+                        st.session_state.selected_day = day_name
+                        st.session_state.selected_consultation = consultation_id
+                        st.rerun()
+                else:
+                    if st.button(
+                        "⏹️ End Workout",
+                        key=f"end_session_{day_name}",
+                        use_container_width=True,
+                    ):
+                        st.session_state[session_timer_key] = False
                         elapsed = int(time.time() - st.session_state[session_start_key])
-                        mins = elapsed // 60
-                        secs = elapsed % 60
-                        st.markdown(f"""
-                        <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-                                    padding: 0.75rem; border-radius: 8px; text-align: center; color: white;">
-                            <div style="font-size: 1.5rem; font-weight: bold;">⏱️ {mins:02d}:{secs:02d}</div>
-                            <div style="font-size: 0.8rem; opacity: 0.9;">Workout Duration</div>
-                        </div>
-                        """, unsafe_allow_html=True)
+                        st.session_state[session_start_key] = None
+                        st.success(
+                            f"✅ Workout complete! Duration: {elapsed // 60}m {elapsed % 60}s"
+                        )
+                        st.rerun()
 
                 st.markdown("<br>", unsafe_allow_html=True)
 
                 exercises = day_data.get("exercises", [])
 
                 if exercises:
+                    from chat_pt.utils import (
+                        get_sorted_sequence_keys,
+                        group_exercises_by_sequence,
+                    )
+
                     # Group exercises by sequence for supersets
-                    # Build groups: {sequence_num: [exercises]}
-                    sequence_groups = {}
-                    exercise_index = 0
-
-                    for exercise in exercises:
-                        sequence = exercise.get('sequence')
-                        if sequence:
-                            # Extract numeric part (e.g., "2A" -> 2, "3B" -> 3)
-                            import re
-                            match = re.match(r'(\d+)', str(sequence))
-                            if match:
-                                seq_num = int(match.group(1))
-                            else:
-                                seq_num = None
-                        else:
-                            seq_num = None
-
-                        if seq_num is not None:
-                            if seq_num not in sequence_groups:
-                                sequence_groups[seq_num] = []
-                            sequence_groups[seq_num].append((exercise_index, exercise))
-                        else:
-                            # Standalone exercise
-                            sequence_groups[f"solo_{exercise_index}"] = [(exercise_index, exercise)]
-
-                        exercise_index += 1
-
-                    # Display exercises grouped by sequence
+                    sequence_groups = group_exercises_by_sequence(exercises)
                     display_idx = 1
-                    sorted_keys = sorted([k for k in sequence_groups.keys() if isinstance(k, int)]) + \
-                                  [k for k in sequence_groups.keys() if isinstance(k, str)]
+                    sorted_keys = get_sorted_sequence_keys(sequence_groups)
 
                     for seq_key in sorted_keys:
                         group = sequence_groups[seq_key]
@@ -520,7 +593,8 @@ def render():
 
                         if is_superset:
                             # Display superset header
-                            st.markdown(f"""
+                            st.markdown(
+                                f"""
                             <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
                                         padding: 0.5rem 1rem; border-radius: 8px; margin: 1rem 0 0.5rem 0;">
                                 <strong style="color: white;">🔗 Superset {seq_key}</strong>
@@ -528,15 +602,17 @@ def render():
                                     Alternate between exercises with minimal rest
                                 </span>
                             </div>
-                            """, unsafe_allow_html=True)
+                            """,
+                                unsafe_allow_html=True,
+                            )
 
                         # Display each exercise in the group
                         for orig_idx, exercise in group:
                             exercise_name = exercise.get("name", "N/A")
-                            sets = exercise.get('sets', 'N/A')
-                            reps = exercise.get('reps', 'N/A')
-                            rest = exercise.get('rest_seconds', 60)
-                            sequence = exercise.get('sequence', '')
+                            sets = exercise.get("sets", "N/A")
+                            reps = exercise.get("reps", "N/A")
+                            rest = exercise.get("rest_seconds", 60)
+                            sequence = exercise.get("sequence", "")
 
                             exercise_key = f"{day_name}_{orig_idx}"
 
@@ -554,36 +630,37 @@ def render():
                                     st.caption(f"💡 {exercise['notes']}")
 
                             with col2:
-                                st.markdown(f"**{sets}** × **{reps}**")
+                                st.markdown(f"**{sets}** x **{reps}**")
 
                             with col3:
                                 st.caption(f"Rest: **{rest}s**")
 
                             with col4:
-                                # Action buttons in a row
-                                btn_col1, btn_col2, btn_col3 = st.columns(3)
+                                # Action buttons in a row (no timers on day schedule page)
+                                btn_col1, btn_col2 = st.columns(2)
                                 with btn_col1:
-                                    if st.button("⏱️", key=f"{exercise_key}_timer", help="Start rest timer", use_container_width=True):
-                                        st.session_state[f"timer_running_{exercise_key}"] = True
-                                        st.session_state[f"timer_start_{exercise_key}"] = time.time()
-                                        st.session_state[f"timer_end_{exercise_key}"] = time.time() + rest
-                                        st.rerun()
-                                with btn_col2:
-                                    if st.button("🔄", key=f"{exercise_key}_swap", help="Swap exercise", use_container_width=True):
+                                    if st.button(
+                                        "🔄",
+                                        key=f"{exercise_key}_swap",
+                                        help="Swap exercise",
+                                        use_container_width=True,
+                                    ):
                                         st.session_state.swap_exercise = exercise_name
                                         st.session_state.swap_day = day_name
                                         st.session_state.swap_consultation_id = consultation_id
                                         st.session_state.show_swap_dialog = True
                                         st.rerun()
-                                with btn_col3:
-                                    if st.button("ℹ️", key=f"{exercise_key}_info", help="Exercise info", use_container_width=True):
+                                with btn_col2:
+                                    if st.button(
+                                        "i",
+                                        key=f"{exercise_key}_info",
+                                        help="Exercise info",
+                                        use_container_width=True,
+                                    ):
                                         st.session_state.viewing_exercise = exercise_name
                                         st.session_state.came_from_plans = True
                                         st.session_state.page = "exercises"
                                         st.rerun()
-
-                            # Show timer if active for this exercise
-                            timer_running = render_rest_timer(rest, exercise_key)
 
                         # Add separator after each exercise group
                         st.markdown("---")
@@ -595,7 +672,11 @@ def render():
                             display_idx += 1  # Increment once per superset group
 
                     # Add option to log this workout
-                    if st.button(f"📊 Log {day_name} Workout", key=f"log_{day_name}", use_container_width=True):
+                    if st.button(
+                        f"📊 Log {day_name} Workout",
+                        key=f"log_{day_name}",
+                        use_container_width=True,
+                    ):
                         st.session_state.page = "progress"
                         st.session_state.selected_day = day_name
                         st.session_state.selected_consultation = consultation_id

@@ -3,14 +3,15 @@ Context builder for coaching consultations.
 Builds shared coaching context for both training and nutrition consultations.
 """
 
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 from chat_pt.db_interface import (
-    get_coaching_profile,
     get_coaching_memory,
-    get_workout_plan,
+    get_coaching_profile,
+    get_consultation_type,
     get_nutrition_plan,
     get_user_consultations,
-    get_consultation_type,
+    get_workout_plan,
 )
 
 
@@ -19,10 +20,13 @@ def format_profile_summary(profile: Optional[Dict[str, Any]]) -> str:
     Format coaching profile into a readable summary.
 
     Args:
+    ----
         profile: User's coaching profile dictionary
 
     Returns:
+    -------
         Formatted string summary
+
     """
     if not profile:
         return "No profile information available yet."
@@ -31,20 +35,20 @@ def format_profile_summary(profile: Optional[Dict[str, Any]]) -> str:
 
     # Extract and format key profile fields
     for key, data in profile.items():
-        if not isinstance(data, dict) or 'value' not in data:
+        if not isinstance(data, dict) or "value" not in data:
             continue
 
-        value = data.get('value')
+        value = data.get("value")
         if value is None:
             continue
 
         # Format the key into readable text
-        readable_key = key.replace('_', ' ').title()
+        readable_key = key.replace("_", " ").title()
 
         # Format value based on type
         if isinstance(value, list):
             if value:  # Only show if list is not empty
-                formatted_value = ', '.join(str(v) for v in value)
+                formatted_value = ", ".join(str(v) for v in value)
                 summary_parts.append(f"{readable_key}: {formatted_value}")
         elif isinstance(value, bool):
             if value:
@@ -55,7 +59,7 @@ def format_profile_summary(profile: Optional[Dict[str, Any]]) -> str:
     if not summary_parts:
         return "No profile information available yet."
 
-    return '; '.join(summary_parts)
+    return "; ".join(summary_parts)
 
 
 def format_memory_summary(memory: Optional[Dict[str, Any]]) -> str:
@@ -63,10 +67,13 @@ def format_memory_summary(memory: Optional[Dict[str, Any]]) -> str:
     Format coaching memory into a readable summary.
 
     Args:
+    ----
         memory: User's coaching memory dictionary
 
     Returns:
+    -------
         Formatted string summary
+
     """
     if not memory:
         return "No coaching memory available yet."
@@ -74,25 +81,25 @@ def format_memory_summary(memory: Optional[Dict[str, Any]]) -> str:
     parts = []
 
     # Main summary
-    if 'summary' in memory and memory['summary']:
-        parts.append(memory['summary'])
+    if "summary" in memory and memory["summary"]:
+        parts.append(memory["summary"])
 
     # Open questions
-    if 'open_questions' in memory and memory['open_questions']:
-        questions = memory['open_questions']
+    if "open_questions" in memory and memory["open_questions"]:
+        questions = memory["open_questions"]
         if questions:
             parts.append(f"Open questions: {'; '.join(questions)}")
 
     # Recent updates
-    if 'recent_updates' in memory and memory['recent_updates']:
-        updates = memory['recent_updates']
+    if "recent_updates" in memory and memory["recent_updates"]:
+        updates = memory["recent_updates"]
         if updates:
             parts.append(f"Recent updates: {'; '.join(updates)}")
 
     if not parts:
         return "No coaching memory available yet."
 
-    return ' | '.join(parts)
+    return " | ".join(parts)
 
 
 def get_workout_context_summary(user_id: int) -> Optional[str]:
@@ -100,37 +107,40 @@ def get_workout_context_summary(user_id: int) -> Optional[str]:
     Get a summary of the user's latest workout plan.
 
     Args:
+    ----
         user_id: User ID
 
     Returns:
+    -------
         Summary string or None
+
     """
     # Get user's consultations
     consultations = get_user_consultations(user_id)
 
     # Find the most recent training consultation with a workout plan
     for consultation in consultations:
-        consultation_id = consultation['id']
+        consultation_id = consultation["id"]
         consultation_type = get_consultation_type(consultation_id)
 
-        if consultation_type == 'training':
+        if consultation_type == "training":
             workout_plan = get_workout_plan(consultation_id)
             if workout_plan:
                 # Build summary from workout plan
                 summary_parts = []
 
-                if 'summary' in workout_plan:
-                    summary_parts.append(workout_plan['summary'])
+                if "summary" in workout_plan:
+                    summary_parts.append(workout_plan["summary"])
 
-                if 'training_days' in workout_plan:
+                if "training_days" in workout_plan:
                     summary_parts.append(f"{workout_plan['training_days']} days/week")
 
-                if 'schedule' in workout_plan:
-                    days = list(workout_plan['schedule'].keys())
+                if "schedule" in workout_plan:
+                    days = list(workout_plan["schedule"].keys())
                     if days:
                         summary_parts.append(f"Training on: {', '.join(days)}")
 
-                return ' | '.join(summary_parts) if summary_parts else "Active workout plan exists"
+                return " | ".join(summary_parts) if summary_parts else "Active workout plan exists"
 
     return None
 
@@ -140,37 +150,42 @@ def get_nutrition_context_summary(user_id: int) -> Optional[str]:
     Get a summary of the user's latest nutrition plan.
 
     Args:
+    ----
         user_id: User ID
 
     Returns:
+    -------
         Summary string or None
+
     """
     # Get user's consultations
     consultations = get_user_consultations(user_id)
 
     # Find the most recent nutrition consultation with a nutrition plan
     for consultation in consultations:
-        consultation_id = consultation['id']
+        consultation_id = consultation["id"]
         consultation_type = get_consultation_type(consultation_id)
 
-        if consultation_type == 'nutrition':
+        if consultation_type == "nutrition":
             nutrition_plan = get_nutrition_plan(consultation_id)
             if nutrition_plan:
                 # Build summary from nutrition plan
                 summary_parts = []
 
-                if 'summary' in nutrition_plan:
-                    summary_parts.append(nutrition_plan['summary'])
+                if "summary" in nutrition_plan:
+                    summary_parts.append(nutrition_plan["summary"])
 
-                if 'daily_calories' in nutrition_plan:
+                if "daily_calories" in nutrition_plan:
                     summary_parts.append(f"{nutrition_plan['daily_calories']} calories/day")
 
-                if 'macros' in nutrition_plan:
-                    macros = nutrition_plan['macros']
+                if "macros" in nutrition_plan:
+                    macros = nutrition_plan["macros"]
                     macro_str = f"P:{macros.get('protein_g', '?')}g C:{macros.get('carbs_g', '?')}g F:{macros.get('fats_g', '?')}g"
                     summary_parts.append(macro_str)
 
-                return ' | '.join(summary_parts) if summary_parts else "Active nutrition plan exists"
+                return (
+                    " | ".join(summary_parts) if summary_parts else "Active nutrition plan exists"
+                )
 
     return None
 
@@ -179,8 +194,10 @@ def get_training_system_prompt() -> str:
     """
     Get the base system prompt for training consultations.
 
-    Returns:
+    Returns
+    -------
         Training system prompt string
+
     """
     return """You are a professional personal trainer conducting a consultation. Your goal is to understand the client's:
 - Fitness goals (weight loss, muscle gain, strength, endurance, etc.)
@@ -282,8 +299,10 @@ def get_nutrition_system_prompt() -> str:
     """
     Get the system prompt for nutrition consultations.
 
-    Returns:
+    Returns
+    -------
         Nutrition system prompt string
+
     """
     return """You are a professional nutrition coach conducting a consultation. Your goal is to create a personalized nutrition plan that supports the client's goals.
 
@@ -490,11 +509,14 @@ def build_consultation_context(user_id: int, consultation_type: str) -> Dict[str
     Build shared coaching context for a consultation.
 
     Args:
+    ----
         user_id: User ID
         consultation_type: Type of consultation ('training' or 'nutrition')
 
     Returns:
+    -------
         Dictionary containing shared context and appropriate system prompt
+
     """
     # Get shared profile and memory
     profile = get_coaching_profile(user_id)
@@ -509,7 +531,7 @@ def build_consultation_context(user_id: int, consultation_type: str) -> Dict[str
     memory_summary = format_memory_summary(memory)
 
     # Select appropriate system prompt
-    if consultation_type == 'nutrition':
+    if consultation_type == "nutrition":
         system_prompt = get_nutrition_system_prompt()
     else:
         system_prompt = get_training_system_prompt()
@@ -536,27 +558,30 @@ def build_context_prefix(context: Dict[str, Any]) -> str:
     Build a context prefix to prepend to the system prompt.
 
     Args:
+    ----
         context: Context dictionary from build_consultation_context
 
     Returns:
+    -------
         String to prepend to conversation
+
     """
     parts = []
 
     # Add profile context if available
-    if context.get('has_profile') and context.get('shared_profile_summary'):
+    if context.get("has_profile") and context.get("shared_profile_summary"):
         parts.append(f"KNOWN PROFILE: {context['shared_profile_summary']}")
 
     # Add memory context if available
-    if context.get('has_memory') and context.get('shared_memory_summary'):
+    if context.get("has_memory") and context.get("shared_memory_summary"):
         parts.append(f"COACHING MEMORY: {context['shared_memory_summary']}")
 
     # Add workout context if available and relevant
-    if context.get('has_workout_plan') and context.get('workout_context_summary'):
+    if context.get("has_workout_plan") and context.get("workout_context_summary"):
         parts.append(f"CURRENT WORKOUT PLAN: {context['workout_context_summary']}")
 
     # Add nutrition context if available and relevant
-    if context.get('has_nutrition_plan') and context.get('nutrition_context_summary'):
+    if context.get("has_nutrition_plan") and context.get("nutrition_context_summary"):
         parts.append(f"CURRENT NUTRITION PLAN: {context['nutrition_context_summary']}")
 
     if parts:

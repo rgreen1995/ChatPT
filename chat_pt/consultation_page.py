@@ -1,26 +1,32 @@
 import streamlit as st
+
 from chat_pt.db_interface import (
     create_consultation,
-    save_message,
     get_conversation_history,
+    save_message,
     save_workout_plan,
 )
 from chat_pt.llm_handler import LLMHandler
 
+
 def render():
     """Render the consultation page."""
-    st.markdown("""
+    st.markdown(
+        """
     <div style="text-align: center; padding: 1rem 0 2rem 0;">
         <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">💬 AI Consultation</h1>
         <p style="font-size: 1.1rem; color: #666;">Chat with your personal AI trainer to create a custom workout plan</p>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     # Show helpful tips in an expandable card for first-time users
     message_count = len(st.session_state.get("messages", []))
     if message_count <= 2:  # Show for first 2 messages
         with st.expander("💡 Tips for a Great Consultation", expanded=True):
-            st.markdown("""
+            st.markdown(
+                """
             **Share these details to get the best personalized plan:**
 
             - 🎯 **Your Goals:** Build muscle, lose weight, improve endurance, sports performance, etc.
@@ -31,7 +37,8 @@ def render():
             - 🚫 **Limitations:** Any injuries or exercises to avoid
 
             The AI will ask follow-up questions to ensure your plan is perfect for you!
-            """)
+            """
+            )
 
     # Display any stored errors
     if "last_error" in st.session_state:
@@ -51,7 +58,7 @@ def render():
         # Add initial assistant message
         initial_message = {
             "role": "assistant",
-            "content": "Hi! I'm your AI personal trainer. I'm excited to help you create a personalized workout plan! Let's start by understanding your fitness goals. What are you looking to achieve? (e.g., build muscle, lose weight, improve endurance, get stronger)"
+            "content": "Hi! I'm your AI personal trainer. I'm excited to help you create a personalized workout plan! Let's start by understanding your fitness goals. What are you looking to achieve? (e.g., build muscle, lose weight, improve endurance, get stronger)",
         }
         st.session_state.messages.append(initial_message)
         save_message(st.session_state.consultation_id, "assistant", initial_message["content"])
@@ -67,13 +74,16 @@ def render():
 
     # Check if workout plan was generated - show notification but allow conversation to continue
     if st.session_state.workout_plan:
-        st.markdown("""
+        st.markdown(
+            """
         <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 1.5rem; border-radius: 10px; text-align: center; color: white; margin: 1rem 0;">
             <div style="font-size: 2rem; margin-bottom: 0.5rem;">✅</div>
             <h3 style="margin: 0.5rem 0; color: white;">Your Workout Plan is Ready!</h3>
             <p style="margin: 0; opacity: 0.9;">View your personalized plan or continue chatting to refine it</p>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
 
         col1, col2 = st.columns(2)
         with col1:
@@ -88,14 +98,17 @@ def render():
                 del st.session_state.workout_plan
                 st.rerun()
 
-        st.markdown("""
+        st.markdown(
+            """
         <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #667eea; margin: 1rem 0;">
             💬 You can continue chatting to refine your plan or ask questions. Any new plan generated will update the existing one.
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
 
     # Check for pre-filled message from plans page
-    prefilled = st.session_state.get('prefilled_message', '')
+    prefilled = st.session_state.get("prefilled_message", "")
     if prefilled:
         st.info(f"💬 Pre-filled request: {prefilled}")
         if st.button("✅ Send this request", type="primary", use_container_width=True):
@@ -124,10 +137,22 @@ def render():
         # Get AI response
         with st.chat_message("assistant"):
             # Check if this might be a plan generation request
-            plan_keywords = ['create', 'generate', 'plan', 'workout', 'program', 'schedule', 'json']
+            plan_keywords = [
+                "create",
+                "generate",
+                "plan",
+                "workout",
+                "program",
+                "schedule",
+                "json",
+            ]
             is_likely_plan_request = any(keyword in prompt.lower() for keyword in plan_keywords)
 
-            spinner_text = "Creating your personalized plan... This may take a minute ⏳" if is_likely_plan_request else "Thinking..."
+            spinner_text = (
+                "Creating your personalized plan... This may take a minute ⏳"
+                if is_likely_plan_request
+                else "Thinking..."
+            )
 
             with st.spinner(spinner_text):
                 try:
@@ -148,41 +173,69 @@ def render():
                     if workout_plan:
                         # Remove JSON code blocks from the response before displaying
                         import re
-                        display_response = re.sub(r'```json.*?```', '', response, flags=re.DOTALL | re.IGNORECASE)
-                        display_response = re.sub(r'```.*?```', '', display_response, flags=re.DOTALL)
+
+                        display_response = re.sub(
+                            r"```json.*?```",
+                            "",
+                            response,
+                            flags=re.DOTALL | re.IGNORECASE,
+                        )
+                        display_response = re.sub(
+                            r"```.*?```", "", display_response, flags=re.DOTALL
+                        )
 
                         # Also remove common JSON-related phrases
-                        display_response = re.sub(r'in json format\s*[:\.]?', '', display_response, flags=re.IGNORECASE)
-                        display_response = re.sub(r'json format\s*[:\.]?', '', display_response, flags=re.IGNORECASE)
-                        display_response = re.sub(r'here\'?s? (the |your )?json', '', display_response, flags=re.IGNORECASE)
-                        display_response = re.sub(r'below is (the |your )?json', '', display_response, flags=re.IGNORECASE)
+                        display_response = re.sub(
+                            r"in json format\s*[:\.]?",
+                            "",
+                            display_response,
+                            flags=re.IGNORECASE,
+                        )
+                        display_response = re.sub(
+                            r"json format\s*[:\.]?",
+                            "",
+                            display_response,
+                            flags=re.IGNORECASE,
+                        )
+                        display_response = re.sub(
+                            r"here\'?s? (the |your )?json",
+                            "",
+                            display_response,
+                            flags=re.IGNORECASE,
+                        )
+                        display_response = re.sub(
+                            r"below is (the |your )?json",
+                            "",
+                            display_response,
+                            flags=re.IGNORECASE,
+                        )
 
                         # Clean up extra whitespace
-                        display_response = re.sub(r'\n\n\n+', '\n\n', display_response.strip())
+                        display_response = re.sub(r"\n\n\n+", "\n\n", display_response.strip())
 
                         # If very little text remains (mostly JSON), create a nice summary message
                         if len(display_response.strip()) < 50:
                             # Generate a nice message based on the plan
-                            num_days = len(workout_plan.get('schedule', {}))
-                            days_per_week = workout_plan.get('training_days', num_days)
-                            weeks = workout_plan.get('program_duration_weeks', 'several')
+                            num_days = len(workout_plan.get("schedule", {}))
+                            days_per_week = workout_plan.get("training_days", num_days)
+                            weeks = workout_plan.get("program_duration_weeks", "several")
 
                             summary_msg = f"Perfect! I've created your personalized **{days_per_week}-day per week** training program"
-                            if weeks != 'several':
+                            if weeks != "several":
                                 summary_msg += f" for **{weeks} weeks**"
-                            summary_msg += f".\n\n"
+                            summary_msg += ".\n\n"
 
                             # Add schedule overview
                             if num_days > 0:
-                                day_names = list(workout_plan.get('schedule', {}).keys())
+                                day_names = list(workout_plan.get("schedule", {}).keys())
                                 summary_msg += f"**Your {num_days}-day schedule:**\n"
                                 for day in day_names[:5]:  # Show first 5 days
-                                    focus = workout_plan['schedule'][day].get('focus', 'Workout')
+                                    focus = workout_plan["schedule"][day].get("focus", "Workout")
                                     summary_msg += f"- {day}: {focus}\n"
                                 if num_days > 5:
                                     summary_msg += f"- ...and {num_days - 5} more days\n"
 
-                            summary_msg += f"\n✨ Your plan is ready to view! Click **'View My Plan'** below to see the full details."
+                            summary_msg += "\n✨ Your plan is ready to view! Click **'View My Plan'** below to see the full details."
 
                             st.markdown(summary_msg)
                             display_response = summary_msg  # Save the clean version
@@ -196,9 +249,9 @@ def render():
                         st.markdown(response)
 
                     # Handle incomplete JSON - auto-retry once
-                    if not workout_plan and ('```json' in response.lower() or '{' in response):
+                    if not workout_plan and ("```json" in response.lower() or "{" in response):
                         # Check if it looks like truncated JSON
-                        json_start = response.find('{')
+                        json_start = response.find("{")
                         if json_start != -1:
                             potential_json = response[json_start:]
                             if llm.is_json_truncated(potential_json):
@@ -211,10 +264,14 @@ def render():
                                     try:
                                         # Add the retry as a system request (not saved to conversation)
                                         retry_messages = st.session_state.messages.copy()
-                                        retry_messages.append({"role": "user", "content": retry_prompt})
+                                        retry_messages.append(
+                                            {"role": "user", "content": retry_prompt}
+                                        )
 
                                         retry_response = llm.chat(retry_messages)
-                                        workout_plan = llm.extract_workout_plan(retry_response, debug=True)
+                                        workout_plan = llm.extract_workout_plan(
+                                            retry_response, debug=True
+                                        )
 
                                         if workout_plan:
                                             st.success("✅ Received complete workout plan!")
@@ -223,17 +280,36 @@ def render():
                                             # Clear the warning and show new response (hide JSON)
                                             st.markdown("---")
                                             import re
-                                            retry_display = re.sub(r'```json.*?```', '', retry_response, flags=re.DOTALL | re.IGNORECASE)
-                                            retry_display = re.sub(r'```.*?```', '', retry_display, flags=re.DOTALL)
-                                            retry_display = re.sub(r'\n\n\n+', '\n\n', retry_display.strip())
+
+                                            retry_display = re.sub(
+                                                r"```json.*?```",
+                                                "",
+                                                retry_response,
+                                                flags=re.DOTALL | re.IGNORECASE,
+                                            )
+                                            retry_display = re.sub(
+                                                r"```.*?```",
+                                                "",
+                                                retry_display,
+                                                flags=re.DOTALL,
+                                            )
+                                            retry_display = re.sub(
+                                                r"\n\n\n+",
+                                                "\n\n",
+                                                retry_display.strip(),
+                                            )
                                             if retry_display.strip():
                                                 st.markdown(retry_display)
                                             else:
-                                                st.markdown("I've created your personalized workout plan! 🎉")
+                                                st.markdown(
+                                                    "I've created your personalized workout plan! 🎉"
+                                                )
                                         else:
-                                            st.error("Still couldn't extract complete plan. Please ask me to 'provide a more concise workout plan in JSON format'.")
+                                            st.error(
+                                                "Still couldn't extract complete plan. Please ask me to 'provide a more concise workout plan in JSON format'."
+                                            )
                                     except Exception as retry_error:
-                                        st.error(f"Retry failed: {str(retry_error)}")
+                                        st.error(f"Retry failed: {retry_error!s}")
 
                     if workout_plan:
                         # Save workout plan (this will update if one already exists)
@@ -241,53 +317,82 @@ def render():
                         st.session_state.workout_plan = workout_plan
 
                         # Show success message with details
-                        num_days = len(workout_plan.get('schedule', {}))
-                        if st.session_state.get('workout_plan_previously_generated'):
-                            st.success(f"✅ Workout plan updated successfully! ({num_days} training days)")
+                        num_days = len(workout_plan.get("schedule", {}))
+                        if st.session_state.get("workout_plan_previously_generated"):
+                            st.success(
+                                f"✅ Workout plan updated successfully! ({num_days} training days)"
+                            )
                         else:
-                            st.success(f"✅ Workout plan generated successfully! ({num_days} training days)")
+                            st.success(
+                                f"✅ Workout plan generated successfully! ({num_days} training days)"
+                            )
                             st.session_state.workout_plan_previously_generated = True
 
                         # Show a preview of what was detected
                         with st.expander("📋 Detected Plan Summary"):
                             st.write(f"**Training days:** {num_days}")
-                            st.write(f"**Schedule:** {', '.join(workout_plan.get('schedule', {}).keys())}")
-                            if 'summary' in workout_plan:
+                            st.write(
+                                f"**Schedule:** {', '.join(workout_plan.get('schedule', {}).keys())}"
+                            )
+                            if "summary" in workout_plan:
                                 st.write(f"**Summary:** {workout_plan['summary'][:200]}...")
                     else:
                         # No plan detected - check if response contains JSON-like content
-                        has_json_markers = '```json' in response.lower() or '```' in response or '{' in response
+                        has_json_markers = (
+                            "```json" in response.lower() or "```" in response or "{" in response
+                        )
 
                         if has_json_markers:
                             # Check if JSON looks incomplete (common signs)
                             is_incomplete = (
-                                response.rstrip().endswith(',') or
-                                response.rstrip().endswith(':') or
-                                not response.rstrip().endswith('}')
+                                response.rstrip().endswith(",")
+                                or response.rstrip().endswith(":")
+                                or not response.rstrip().endswith("}")
                             )
 
                             if is_incomplete:
-                                st.error("⚠️ The workout plan JSON appears incomplete - the AI response was cut off mid-generation.")
-                                st.info("💡 **Solution:** Ask me to provide a more concise plan, or ask for just the workout schedule without the detailed nutrition/recovery sections.")
+                                st.error(
+                                    "⚠️ The workout plan JSON appears incomplete - the AI response was cut off mid-generation."
+                                )
+                                st.info(
+                                    "💡 **Solution:** Ask me to provide a more concise plan, or ask for just the workout schedule without the detailed nutrition/recovery sections."
+                                )
 
                                 with st.expander("Why does this happen?"):
-                                    st.markdown("""
+                                    st.markdown(
+                                        """
                                     The AI has a maximum response length. Very detailed plans can exceed this limit.
 
                                     **Options:**
                                     1. Ask for "just the workout schedule in JSON"
                                     2. Request "a more concise plan with less detail"
                                     3. Get the plan in chunks (schedule first, then nutrition separately)
-                                    """)
+                                    """
+                                    )
                             else:
-                                st.warning("⚠️ I detected JSON-like content but couldn't extract a valid workout plan. The JSON might be missing the 'schedule' field.")
-                                st.info("💡 Please ask me to provide the complete workout plan in the correct JSON format.")
-                        elif st.session_state.get('workout_plan'):
+                                st.warning(
+                                    "⚠️ I detected JSON-like content but couldn't extract a valid workout plan. The JSON might be missing the 'schedule' field."
+                                )
+                                st.info(
+                                    "💡 Please ask me to provide the complete workout plan in the correct JSON format."
+                                )
+                        elif st.session_state.get("workout_plan"):
                             # User has a plan but this response doesn't contain one
                             # Check if they're asking for changes
-                            change_keywords = ['change', 'update', 'modify', 'adjust', 'swap', 'replace', 'add', 'remove']
+                            change_keywords = [
+                                "change",
+                                "update",
+                                "modify",
+                                "adjust",
+                                "swap",
+                                "replace",
+                                "add",
+                                "remove",
+                            ]
                             if any(word in response.lower() for word in change_keywords):
-                                st.info("💡 Tip: If you want to save these changes, ask me to provide the complete updated plan in JSON format!")
+                                st.info(
+                                    "💡 Tip: If you want to save these changes, ask me to provide the complete updated plan in JSON format!"
+                                )
 
                     # Save assistant message
                     assistant_message = {"role": "assistant", "content": response}
@@ -296,12 +401,13 @@ def render():
 
                 except Exception as e:
                     import traceback
-                    error_msg = f"⚠️ Error: {str(e)}\n\nPlease check your API key for {st.session_state.llm_provider}."
+
+                    error_msg = f"⚠️ Error: {e!s}\n\nPlease check your API key for {st.session_state.llm_provider}."
 
                     # Store error in session state so it persists
                     st.session_state.last_error = {
                         "message": error_msg,
-                        "traceback": traceback.format_exc()
+                        "traceback": traceback.format_exc(),
                     }
 
                     st.error(error_msg)

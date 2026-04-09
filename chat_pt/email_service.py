@@ -4,12 +4,15 @@ Sends welcome emails and other notifications.
 """
 
 import os
+from typing import Optional
+
 import streamlit as st
 
-def get_secret(key: str, default: str = None) -> str:
+
+def get_secret(key: str, default: Optional[str] = None) -> str:
     """Get secret from Streamlit secrets or environment variables."""
     try:
-        if hasattr(st, 'secrets') and key in st.secrets:
+        if hasattr(st, "secrets") and key in st.secrets:
             return st.secrets[key]
     except (FileNotFoundError, KeyError):
         pass
@@ -27,11 +30,14 @@ def send_welcome_email(email: str, name: str) -> bool:
     Send a welcome email to a new user.
 
     Args:
+    ----
         email: User's email address
         name: User's name
 
     Returns:
+    -------
         True if email was sent successfully, False otherwise
+
     """
     if not is_email_configured():
         return False
@@ -175,8 +181,9 @@ You received this email because you signed up for a ChatPT account.
 
     except Exception as e:
         # Log error but don't fail signup if email fails
-        print(f"❌ Failed to send welcome email: {type(e).__name__}: {str(e)}")
+        print(f"❌ Failed to send welcome email: {type(e).__name__}: {e!s}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -186,12 +193,15 @@ def send_plan_ready_email(email: str, name: str, plan_details: str = "") -> bool
     Send an email notification when a workout plan is ready.
 
     Args:
+    ----
         email: User's email address
         name: User's name
         plan_details: Brief description of the plan
 
     Returns:
+    -------
         True if email was sent successfully, False otherwise
+
     """
     if not is_email_configured():
         return False
@@ -281,5 +291,5 @@ def send_plan_ready_email(email: str, name: str, plan_details: str = "") -> bool
         return True
 
     except Exception as e:
-        print(f"Failed to send plan ready email: {str(e)}")
+        print(f"Failed to send plan ready email: {e!s}")
         return False

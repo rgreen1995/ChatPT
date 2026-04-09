@@ -1,27 +1,31 @@
-import os
-from typing import List, Dict, Any, Optional
 import json
-from dotenv import load_dotenv
-import requests
+import os
+from typing import Any, Dict, List, Optional
+
 import google.generativeai as genai
-from openai import OpenAI
+import requests
 import streamlit as st
+from dotenv import load_dotenv
+from openai import OpenAI
 
 # Load environment variables from .env file (fallback for local dev)
 load_dotenv()
 
-def get_secret(key: str, default: str = None) -> str:
+
+def get_secret(key: str, default: Optional[str] = None) -> str:
     """Get secret from Streamlit secrets or environment variables."""
     # Try Streamlit secrets first (preferred method)
     try:
-        if hasattr(st, 'secrets') and key in st.secrets:
+        if hasattr(st, "secrets") and key in st.secrets:
             return st.secrets[key]
     except (FileNotFoundError, KeyError):
         pass
     # Fall back to environment variables
     return os.getenv(key, default)
 
+
 class LLMHandler:
+
     """Handle interactions with different LLM providers."""
 
     def __init__(self, provider: str = "gemini", mode: str = "training"):
@@ -29,8 +33,10 @@ class LLMHandler:
         Initialize LLM handler.
 
         Args:
+        ----
             provider: One of "openai", "anthropic", or "gemini"
             mode: One of "training" or "nutrition"
+
         """
         self.provider = provider
         self.mode = mode
@@ -38,13 +44,17 @@ class LLMHandler:
         if provider == "openai":
             api_key = get_secret("OPENAI_API_KEY")
             if not api_key:
-                raise ValueError("OPENAI_API_KEY not found in Streamlit secrets or environment variables")
+                raise ValueError(
+                    "OPENAI_API_KEY not found in Streamlit secrets or environment variables"
+                )
             self.client = OpenAI(api_key=api_key)
             self.model = "gpt-4o"
         elif provider == "anthropic":
             api_key = get_secret("ANTHROPIC_API_KEY")
             if not api_key:
-                raise ValueError("ANTHROPIC_API_KEY not found in Streamlit secrets or environment variables")
+                raise ValueError(
+                    "ANTHROPIC_API_KEY not found in Streamlit secrets or environment variables"
+                )
 
             # Store API key for direct REST API calls
             self.client = api_key  # Store the key directly
@@ -53,7 +63,9 @@ class LLMHandler:
         elif provider == "gemini":
             api_key = get_secret("GEMINI_API_KEY")
             if not api_key:
-                raise ValueError("GEMINI_API_KEY not found in Streamlit secrets or environment variables")
+                raise ValueError(
+                    "GEMINI_API_KEY not found in Streamlit secrets or environment variables"
+                )
             genai.configure(api_key=api_key)
 
             # Try different model names that Gemini supports
@@ -66,8 +78,10 @@ class LLMHandler:
                 try:
                     self.client = genai.GenerativeModel("gemini-1.5-flash-latest")
                     self.model = "gemini-1.5-flash-latest"
-                except:
-                    raise ValueError(f"Could not initialize Gemini model. Error: {str(e)}")
+                except Exception as inner_e:
+                    raise ValueError(
+                        f"Could not initialize Gemini model. Error: {e!s}"
+                    ) from inner_e
         else:
             raise ValueError(f"Unknown provider: {provider}")
 
@@ -75,13 +89,15 @@ class LLMHandler:
         """Get the system prompt based on the current mode (training or nutrition)."""
         if self.mode == "nutrition":
             from chat_pt.context_builder import get_nutrition_system_prompt
+
             return get_nutrition_system_prompt()
         else:
             return self.get_training_system_prompt()
 
     def get_training_system_prompt(self) -> str:
         """Get the system prompt for the personal trainer consultation."""
-        return """You are a professional personal trainer conducting a consultation. Your goal is to understand the client's:
+        return """You are a professional personal trainer conducting a consultation.
+Your goal is to understand the client's:
 - Fitness goals (weight loss, muscle gain, strength, endurance, etc.)
 - Current fitness level and experience
 - Available training days per week
@@ -90,22 +106,22 @@ class LLMHandler:
 - Equipment availability (home gym, commercial gym, minimal equipment)
 - Lifestyle factors (work schedule, stress, sleep, nutrition)
 
-Ask thoughtful follow-up questions to gather any information you need. Be encouraging and 
-professional. You are the expert so as  soon as you have a good idea about the client trust your 
-intuition and suggest rather than asking over and over. Equally feel free to just put it in the 
-program and ask if 
-they're happy. They are always 
-able to ask follow ups when they see the output. For example do not ask if the 
-client would prefer option A 
-or option B, just pick which ever option you think is best. 
+Ask thoughtful follow-up questions to gather any information you need. Be encouraging and
+professional. You are the expert so as  soon as you have a good idea about the client trust your
+intuition and suggest rather than asking over and over. Equally feel free to just put it in the
+program and ask if
+they're happy. They are always
+able to ask follow ups when they see the output. For example do not ask if the
+client would prefer option A
+or option B, just pick which ever option you think is best.
 
-You are aware and comfortable with science backed research, you definitely don't like fads and 
-prefer to stick to well researched and scientifically proven methods. You have a preference for 
-training athletes but can also adapt and cater to whatever your client needs. 
+You are aware and comfortable with science backed research, you definitely don't like fads and
+prefer to stick to well researched and scientifically proven methods. You have a preference for
+training athletes but can also adapt and cater to whatever your client needs.
 
-In general try to program enough exercises so that the session last about 45-60 minutes. Most 
-gym sessions should start with one or two compound lifts and then have auxillary exercises in 
-supersets. 
+In general try to program enough exercises so that the session last about 45-60 minutes. Most
+gym sessions should start with one or two compound lifts and then have auxillary exercises in
+supersets.
 
 When you have enough information, provide a complete workout plan in the following JSON format:
 
@@ -149,25 +165,29 @@ When you have enough information, provide a complete workout plan in the followi
 }
 ```
 
-IMPORTANT: For supersets, use the SAME number with different letters (e.g., "2A", "2B", "2C") to group exercises together.
-For standalone exercises, just use numbers (e.g., "1", "3", "4"). The app will automatically group and display supersets with a special header.
+IMPORTANT: For supersets, use the SAME number with different letters (e.g., "2A", "2B", "2C")
+to group exercises together.
+For standalone exercises, just use numbers (e.g., "1", "3", "4").
+The app will automatically group and display supersets with a special header.
 
-Check with the client but your preference should be to program days of the week, e,g. Monday 
-rather than day 1. You can ask questions to work out which days are best. 
+Check with the client but your preference should be to program days of the week, e,g. Monday
+rather than day 1. You can ask questions to work out which days are best.
 
 
-If the client wants multiple blocks then first suggest yuu give them one black and touch base 
-after that one is finished. If they really want two blocks (they must ask again after you suggest 
-not doing this) then call it block 1 - day 1 but otherwise 
-keep to the 
-exact same format, so don't have block inside the reps or anything like that. 
+If the client wants multiple blocks then first suggest yuu give them one black and touch base
+after that one is finished. If they really want two blocks (they must ask again after you suggest
+not doing this) then call it block 1 - day 1 but otherwise
+keep to the
+exact same format, so don't have block inside the reps or anything like that.
 
-Be very careful with the length of the json, if it's too large then the format won't work so try 
-not to be too verbose. 
+Be very careful with the length of the json, if it's too large then the format won't work so try
+not to be too verbose.
 
-Only output the JSON when you're confident you have all necessary information. Before that, ask questions naturally.
+Only output the JSON when you're confident you have all necessary information.
+Before that, ask questions naturally.
 
-IMPORTANT: After providing a workout plan, you can continue the conversation! The client may want to:
+IMPORTANT: After providing a workout plan, you can continue the conversation!
+The client may want to:
 - Make adjustments to the plan (e.g., swap exercises, change days, adjust volume)
 - Ask questions about exercises or techniques
 - Update the plan due to injuries or schedule changes
@@ -176,12 +196,13 @@ IMPORTANT: After providing a workout plan, you can continue the conversation! Th
 
 If the client requests changes to the workout plan:
 1. Acknowledge the change they want
-2. If you are unsure regarding the change then feel free to ask more follow up questions
+2. If you are unsure regarding the change then feel free to ask more
+follow up questions
 3. Provide the COMPLETE updated JSON plan (not just the changed parts)
 4. Use the same JSON format as before
 5. Include all days and exercises, even if only some changed
 
-When happy that you understand the change then output the new program in the same full JSON format 
+When happy that you understand the change then output the new program in the same full JSON format
 again so it can be saved properly
 
 IMPORTANT: Keep plans concise to avoid truncation. Focus on the essential information:
@@ -189,32 +210,32 @@ IMPORTANT: Keep plans concise to avoid truncation. Focus on the essential inform
 - Keep notes brief and actionable
 - Avoid excessive detail in nutrition/recovery sections
 - If a very detailed plan is needed, offer to provide it in chunks
-- The most important part is the core schedule and exercises, so focus on that first and ensure 
-that the json format is correct and complete. 
-- REPEAT: THE ABSOLUTELY CRITICAL ASPECT OF THIS CONSULTATION IS THAT A JSON IS CREATED,CREATED IN 
+- The most important part is the core schedule and exercises, so focus on that first and ensure
+that the json format is correct and complete.
+- REPEAT: THE ABSOLUTELY CRITICAL ASPECT OF THIS CONSULTATION IS THAT A JSON IS CREATED,CREATED IN
 THE PRESCRIBED FORMAT. BRACKETS MUST BE CHECKED TO ENSURE IT IS NOT TRUNCATED
 
 The conversation history is preserved, so you can reference previous discussions.
 
 ."""
 
-
     def chat(self, messages: List[Dict[str, str]]) -> str:
         """
         Send messages to the LLM and get a response.
 
         Args:
+        ----
             messages: List of message dicts with 'role' and 'content'
 
         Returns:
+        -------
             Response content as string
+
         """
         if self.provider == "openai":
             response = self.client.chat.completions.create(
                 model=self.model,
-                messages=[
-                    {"role": "system", "content": self.get_system_prompt()}
-                ] + messages,
+                messages=[{"role": "system", "content": self.get_system_prompt()}, *messages],
                 temperature=0.7,
             )
             return response.choices[0].message.content
@@ -224,7 +245,7 @@ The conversation history is preserved, so you can reference previous discussions
             headers = {
                 "x-api-key": self.client,
                 "anthropic-version": "2023-06-01",
-                "content-type": "application/json"
+                "content-type": "application/json",
             }
 
             data = {
@@ -232,13 +253,11 @@ The conversation history is preserved, so you can reference previous discussions
                 "max_tokens": 8000,  # Increased from 4096 to handle longer JSON responses
                 "system": self.get_system_prompt(),
                 "messages": messages,
-                "temperature": 0.7
+                "temperature": 0.7,
             }
 
             response = requests.post(
-                "https://api.anthropic.com/v1/messages",
-                headers=headers,
-                json=data
+                "https://api.anthropic.com/v1/messages", headers=headers, json=data
             )
 
             if response.status_code != 200:
@@ -271,16 +290,16 @@ The conversation history is preserved, so you can reference previous discussions
 
         # Check for obvious truncation signs
         truncation_signs = [
-            json_str.endswith(','),
-            json_str.endswith(':'),
-            json_str.endswith('['),
-            json_str.endswith('{'),
-            not json_str.endswith('}') and not json_str.endswith(']'),
+            json_str.endswith(","),
+            json_str.endswith(":"),
+            json_str.endswith("["),
+            json_str.endswith("{"),
+            not json_str.endswith("}") and not json_str.endswith("]"),
         ]
 
         # Also check brace balance
-        open_braces = json_str.count('{')
-        close_braces = json_str.count('}')
+        open_braces = json_str.count("{")
+        close_braces = json_str.count("}")
 
         return any(truncation_signs) or (open_braces != close_braces)
 
@@ -289,11 +308,14 @@ The conversation history is preserved, so you can reference previous discussions
         Extract JSON workout plan from LLM response if present.
 
         Args:
+        ----
             response: LLM response text
             debug: If True, print debug information
 
         Returns:
+        -------
             Parsed JSON dict or None if no valid JSON found
+
         """
         json_str = None
 
@@ -326,7 +348,7 @@ The conversation history is preserved, so you can reference previous discussions
                     elif response[i] == "}":
                         brace_count -= 1
                         if brace_count == 0:
-                            json_str = response[start_idx:i+1]
+                            json_str = response[start_idx : i + 1]
                             if debug:
                                 print("Found raw JSON object")
                             break
@@ -356,19 +378,25 @@ The conversation history is preserved, so you can reference previous discussions
 
             # Try closing incomplete structures
             salvage_attempts = [
-                json_str + '}}',  # Close two levels
-                json_str + '}',   # Close one level
-                json_str + ']}}', # Close array and objects
-                json_str.rstrip(',') + '}}',  # Remove trailing comma and close
-                json_str.rstrip(',').rstrip() + '}}}',  # Close three levels
+                json_str + "}}",  # Close two levels
+                json_str + "}",  # Close one level
+                json_str + "]}}",  # Close array and objects
+                json_str.rstrip(",") + "}}",  # Remove trailing comma and close
+                json_str.rstrip(",").rstrip() + "}}}",  # Close three levels
             ]
 
             for attempt in salvage_attempts:
                 try:
                     plan = json.loads(attempt)
-                    if "schedule" in plan and isinstance(plan["schedule"], dict) and len(plan["schedule"]) > 0:
+                    if (
+                        "schedule" in plan
+                        and isinstance(plan["schedule"], dict)
+                        and len(plan["schedule"]) > 0
+                    ):
                         if debug:
-                            print(f"✓ Salvaged partial workout plan with {len(plan['schedule'])} days")
+                            print(
+                                f"✓ Salvaged partial workout plan with {len(plan['schedule'])} days"
+                            )
                         return plan
                 except json.JSONDecodeError:
                     continue
@@ -378,9 +406,12 @@ The conversation history is preserved, so you can reference previous discussions
             if "Expecting" in error_msg or "Unterminated" in error_msg:
                 print(f"⚠️ Incomplete JSON detected: {error_msg}")
                 if debug:
-                    print("The LLM response was likely truncated. Try asking for a shorter or more concise plan.")
+                    print(
+                        "The LLM response was likely truncated. "
+                        "Try asking for a shorter or more concise plan."
+                    )
                     # Show where it failed
-                    lines = json_str.split('\n')
+                    lines = json_str.split("\n")
                     print(f"JSON has {len(lines)} lines, failed near the end")
             else:
                 print(f"JSON decode error: {e}")
@@ -390,16 +421,21 @@ The conversation history is preserved, so you can reference previous discussions
                 print(f"Last 200 chars: ...{json_str[-200:]}")
             return None
 
-    def extract_nutrition_plan(self, response: str, debug: bool = False) -> Optional[Dict[str, Any]]:
+    def extract_nutrition_plan(
+        self, response: str, debug: bool = False
+    ) -> Optional[Dict[str, Any]]:
         """
         Extract JSON nutrition plan from LLM response if present.
 
         Args:
+        ----
             response: LLM response text
             debug: If True, print debug information
 
         Returns:
+        -------
             Parsed JSON dict or None if no valid JSON found
+
         """
         json_str = None
 
@@ -432,7 +468,7 @@ The conversation history is preserved, so you can reference previous discussions
                     elif response[i] == "}":
                         brace_count -= 1
                         if brace_count == 0:
-                            json_str = response[start_idx:i+1]
+                            json_str = response[start_idx : i + 1]
                             if debug:
                                 print("Found raw JSON object")
                             break
@@ -456,15 +492,21 @@ The conversation history is preserved, so you can reference previous discussions
             if has_required:
                 if debug:
                     if has_single_calories:
-                        print(f"✓ Valid nutrition plan found with {plan.get('daily_calories')} calories")
+                        print(
+                            f"✓ Valid nutrition plan found with {plan.get('daily_calories')} calories"
+                        )
                     else:
-                        print(f"✓ Valid nutrition plan found with training: {plan.get('daily_calories_training')}, rest: {plan.get('daily_calories_rest')} calories")
+                        print(
+                            f"✓ Valid nutrition plan found with training: {plan.get('daily_calories_training')}, rest: {plan.get('daily_calories_rest')} calories"
+                        )
                 return plan
             else:
                 if debug:
                     print("JSON parsed but missing required nutrition fields")
                     print(f"Available keys: {plan.keys()}")
-                    print(f"Required: macros AND (daily_calories OR (daily_calories_training AND daily_calories_rest))")
+                    print(
+                        "Required: macros AND (daily_calories OR (daily_calories_training AND daily_calories_rest))"
+                    )
                 return None
         except json.JSONDecodeError as e:
             # Try to salvage partial JSON by attempting to close it
@@ -473,12 +515,12 @@ The conversation history is preserved, so you can reference previous discussions
 
             # Try closing incomplete structures
             salvage_attempts = [
-                json_str + '}}',  # Close two levels
-                json_str + '}',   # Close one level
-                json_str + ']}}', # Close array and objects
-                json_str.rstrip(',') + '}}',  # Remove trailing comma and close
-                json_str.rstrip(',').rstrip() + '}}}',  # Close three levels
-                json_str.rstrip(',').rstrip() + '}}}}',  # Close four levels
+                json_str + "}}",  # Close two levels
+                json_str + "}",  # Close one level
+                json_str + "]}}",  # Close array and objects
+                json_str.rstrip(",") + "}}",  # Remove trailing comma and close
+                json_str.rstrip(",").rstrip() + "}}}",  # Close three levels
+                json_str.rstrip(",").rstrip() + "}}}}",  # Close four levels
             ]
 
             for attempt in salvage_attempts:
@@ -486,7 +528,9 @@ The conversation history is preserved, so you can reference previous discussions
                     plan = json.loads(attempt)
                     # Accept either single daily_calories OR both daily_calories_training and daily_calories_rest
                     has_single_calories = "daily_calories" in plan
-                    has_split_calories = "daily_calories_training" in plan and "daily_calories_rest" in plan
+                    has_split_calories = (
+                        "daily_calories_training" in plan and "daily_calories_rest" in plan
+                    )
                     has_macros = "macros" in plan and isinstance(plan.get("macros"), dict)
 
                     has_required = (has_single_calories or has_split_calories) and has_macros
@@ -494,9 +538,13 @@ The conversation history is preserved, so you can reference previous discussions
                     if has_required:
                         if debug:
                             if has_single_calories:
-                                print(f"✓ Salvaged partial nutrition plan with {plan.get('daily_calories')} calories")
+                                print(
+                                    f"✓ Salvaged partial nutrition plan with {plan.get('daily_calories')} calories"
+                                )
                             else:
-                                print(f"✓ Salvaged partial nutrition plan with training: {plan.get('daily_calories_training')}, rest: {plan.get('daily_calories_rest')} calories")
+                                print(
+                                    f"✓ Salvaged partial nutrition plan with training: {plan.get('daily_calories_training')}, rest: {plan.get('daily_calories_rest')} calories"
+                                )
                         return plan
                 except json.JSONDecodeError:
                     continue
@@ -506,9 +554,11 @@ The conversation history is preserved, so you can reference previous discussions
             if "Expecting" in error_msg or "Unterminated" in error_msg:
                 print(f"⚠️ Incomplete JSON detected: {error_msg}")
                 if debug:
-                    print("The LLM response was likely truncated. Try asking for a shorter or more concise plan.")
+                    print(
+                        "The LLM response was likely truncated. Try asking for a shorter or more concise plan."
+                    )
                     # Show where it failed
-                    lines = json_str.split('\n')
+                    lines = json_str.split("\n")
                     print(f"JSON has {len(lines)} lines, failed near the end")
             else:
                 print(f"JSON decode error: {e}")
