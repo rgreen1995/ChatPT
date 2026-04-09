@@ -82,157 +82,65 @@ def render():
         [data-testid="column"] {
             min-width: 0px !important;
             flex-shrink: 1 !important;
-            overflow: hidden !important;
             box-sizing: border-box !important;
-            width: auto !important;
         }
 
-        /* ===== MOBILE-SPECIFIC TIGHTENING (portrait) ===== */
-        @media (max-width: 640px) {
-            [data-testid="stHorizontalBlock"] {
-                gap: 0.1rem !important;
-                justify-content: center !important;
-                overflow: hidden !important;
-            }
-
-            [data-testid="column"] {
-                padding: 0 0.05rem !important;
-                max-width: none !important;
-            }
-
-            /* Remove extra padding from main container on mobile */
-            .main .block-container {
-                padding-left: 0.3rem !important;
-                padding-right: 0.3rem !important;
-                padding-top: 1rem !important;
-                max-width: 100vw !important;
-                overflow-x: hidden !important;
-                box-sizing: border-box !important;
-            }
-
-            /* Prevent horizontal scroll everywhere */
-            html, body, [data-testid="stAppViewContainer"], .main,
-            [data-testid="stApp"], section[data-testid="stMain"] {
-                overflow-x: hidden !important;
-                max-width: 100vw !important;
-            }
-
-            /* Compact number inputs — only 2-3 digit values */
-            .stNumberInput {
-                width: 100% !important;
-                max-width: 75px !important;
-                min-width: 0px !important;
-                margin: 0 auto !important;
-            }
-
-            .stNumberInput > div {
-                min-width: 0px !important;
-            }
-
-            .stNumberInput div[data-baseweb="input"] {
-                padding: 0 !important;
-                min-width: 0px !important;
-                min-height: 0px !important;
-                height: 2rem !important;
-                border-radius: 4px !important;
-                background-color: #f8f9fa !important;
-                border: 1px solid #dee2e6 !important;
-            }
-
-            .stNumberInput input {
-                padding: 0 !important;
-                font-size: 0.85rem !important;
-                text-align: center !important;
-                min-width: 0px !important;
-                min-height: 0px !important;
-                width: 100% !important;
-                height: 2rem !important;
-                box-sizing: border-box !important;
-                -moz-appearance: textfield !important;
-            }
-
-            /* Hide browser native spinners */
-            .stNumberInput input::-webkit-outer-spin-button,
-            .stNumberInput input::-webkit-inner-spin-button {
-                -webkit-appearance: none !important;
-                margin: 0 !important;
-            }
-
-            /* Hide Streamlit number input step buttons on mobile */
-            .stNumberInput [data-testid="stNumberInputStepDown"],
-            .stNumberInput [data-testid="stNumberInputStepUp"],
-            .stNumberInput div[data-baseweb="input"] > div:last-child {
-                display: none !important;
-            }
-
-            /* Make buttons more compact in the grid */
-            .stButton button {
-                width: 100% !important;
-                padding: 0 !important;
-                min-height: 2rem !important;
-                min-width: 0px !important;
-                height: 2rem !important;
-                font-size: 0.85rem !important;
-                border-radius: 6px !important;
-                background-color: #e9ecef !important;
-                border: none !important;
-            }
-
-            .compact-header {
-                font-size: 0.65rem !important;
-                letter-spacing: 0px !important;
-                white-space: nowrap !important;
-            }
-
-            .set-circle {
-                width: 20px !important;
-                height: 20px !important;
-                font-size: 0.65rem !important;
-            }
-
-            /* Prevent label/caption wrapping */
-            .stNumberInput label, .stSelectbox label {
-                white-space: nowrap !important;
-                overflow: hidden !important;
-                text-overflow: ellipsis !important;
-            }
+        /* ===== NUMBER INPUT — compact on ALL screen sizes ===== */
+        .stNumberInput {
+            max-width: 80px !important;
+            min-width: 0px !important;
+            margin: 0 auto !important;
         }
 
-        /* ===== EXTRA-SMALL SCREENS (< 380px, e.g. iPhone SE portrait) ===== */
-        @media (max-width: 380px) {
-            .main .block-container {
-                padding-left: 0.15rem !important;
-                padding-right: 0.15rem !important;
-            }
+        .stNumberInput > div {
+            min-width: 0px !important;
+        }
 
-            .stNumberInput input {
-                font-size: 0.8rem !important;
-                height: 1.8rem !important;
-                min-height: 0px !important;
-                min-width: 0px !important;
-            }
+        .stNumberInput div[data-baseweb="input"] {
+            padding: 0 2px !important;
+            min-width: 0px !important;
+            min-height: 0px !important;
+            height: 2.2rem !important;
+            border-radius: 4px !important;
+        }
 
-            .stNumberInput div[data-baseweb="input"] {
-                height: 1.8rem !important;
-                min-height: 0px !important;
-            }
+        .stNumberInput input {
+            padding: 0 4px !important;
+            font-size: 0.9rem !important;
+            text-align: center !important;
+            min-width: 0px !important;
+            width: 100% !important;
+            height: 2.2rem !important;
+            box-sizing: border-box !important;
+            -moz-appearance: textfield !important;
+        }
 
-            .compact-header {
-                font-size: 0.5rem !important;
-            }
+        /* Hide browser native spinners everywhere */
+        .stNumberInput input::-webkit-outer-spin-button,
+        .stNumberInput input::-webkit-inner-spin-button {
+            -webkit-appearance: none !important;
+            margin: 0 !important;
+        }
 
-            .set-circle {
-                width: 18px !important;
-                height: 18px !important;
-                font-size: 0.6rem !important;
-            }
+        /* Hide Streamlit step buttons everywhere — they waste space */
+        .stNumberInput [data-testid="stNumberInputStepDown"],
+        .stNumberInput [data-testid="stNumberInputStepUp"] {
+            display: none !important;
+            width: 0 !important;
+            min-width: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+        }
 
-            .stButton button {
-                min-height: 1.8rem !important;
-                height: 1.8rem !important;
-                min-width: 0px !important;
-                font-size: 0.75rem !important;
-            }
+        /* ===== BUTTON — compact on all screen sizes ===== */
+        .stButton button {
+            min-width: 0px !important;
+            min-height: 2.2rem !important;
+            height: 2.2rem !important;
+            padding: 0 0.5rem !important;
+            font-size: 0.9rem !important;
+            border-radius: 6px !important;
         }
 
         /* ===== General styles (Desktop & Mobile) ===== */
@@ -274,6 +182,121 @@ def render():
         hr {
             margin: 0.3rem 0 !important;
             opacity: 0.1 !important;
+        }
+
+        /* ===== MOBILE-SPECIFIC TIGHTENING (portrait) ===== */
+        @media (max-width: 640px) {
+            [data-testid="stHorizontalBlock"] {
+                gap: 0.1rem !important;
+                justify-content: center !important;
+                overflow: hidden !important;
+            }
+
+            [data-testid="column"] {
+                padding: 0 0.05rem !important;
+            }
+
+            /* Remove extra padding from main container on mobile */
+            .main .block-container {
+                padding-left: 0.3rem !important;
+                padding-right: 0.3rem !important;
+                padding-top: 1rem !important;
+                max-width: 100vw !important;
+                overflow-x: hidden !important;
+                box-sizing: border-box !important;
+            }
+
+            /* Prevent horizontal scroll everywhere */
+            html, body, [data-testid="stAppViewContainer"], .main,
+            [data-testid="stApp"], section[data-testid="stMain"] {
+                overflow-x: hidden !important;
+                max-width: 100vw !important;
+            }
+
+            /* Tighter inputs on mobile */
+            .stNumberInput {
+                max-width: 60px !important;
+            }
+
+            .stNumberInput div[data-baseweb="input"] {
+                height: 2rem !important;
+                background-color: #f8f9fa !important;
+                border: 1px solid #dee2e6 !important;
+            }
+
+            .stNumberInput input {
+                font-size: 0.85rem !important;
+                height: 2rem !important;
+                padding: 0 2px !important;
+            }
+
+            .stButton button {
+                width: 100% !important;
+                padding: 0 !important;
+                min-height: 2rem !important;
+                height: 2rem !important;
+                min-width: 0px !important;
+                font-size: 0.85rem !important;
+                background-color: #e9ecef !important;
+                border: none !important;
+            }
+
+            .compact-header {
+                font-size: 0.6rem !important;
+                letter-spacing: 0px !important;
+                white-space: nowrap !important;
+            }
+
+            .set-circle {
+                width: 20px !important;
+                height: 20px !important;
+                font-size: 0.65rem !important;
+            }
+
+            /* Prevent label/caption wrapping */
+            .stNumberInput label, .stSelectbox label {
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+            }
+        }
+
+        /* ===== EXTRA-SMALL SCREENS (< 380px, e.g. iPhone SE portrait) ===== */
+        @media (max-width: 380px) {
+            .main .block-container {
+                padding-left: 0.15rem !important;
+                padding-right: 0.15rem !important;
+            }
+
+            .stNumberInput {
+                max-width: 50px !important;
+            }
+
+            .stNumberInput input {
+                font-size: 0.75rem !important;
+                height: 1.8rem !important;
+            }
+
+            .stNumberInput div[data-baseweb="input"] {
+                height: 1.8rem !important;
+            }
+
+            .compact-header {
+                font-size: 0.5rem !important;
+            }
+
+            .set-circle {
+                width: 18px !important;
+                height: 18px !important;
+                font-size: 0.55rem !important;
+            }
+
+            .stButton button {
+                min-height: 1.8rem !important;
+                height: 1.8rem !important;
+                min-width: 0px !important;
+                font-size: 0.75rem !important;
+            }
         }
         </style>
     """,
@@ -581,7 +604,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
             st.session_state.exercise_logs[exercise_key]["exercise_notes"] = ""
 
         # Table header for sets (Strong app style)
-        hcol1, hcol2, hcol3, hcol4 = st.columns([0.4, 1, 1, 0.8])
+        hcol1, hcol2, hcol3, hcol4 = st.columns([0.3, 0.7, 0.7, 0.5])
         with hcol1:
             st.markdown('<div class="compact-header">SET</div>', unsafe_allow_html=True)
         with hcol2:
@@ -601,7 +624,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
                 st.session_state[timer_running_key] = False
 
             # Single row for all set details
-            col1, col2, col3, col4 = st.columns([0.4, 1, 1, 0.8])
+            col1, col2, col3, col4 = st.columns([0.3, 0.7, 0.7, 0.5])
 
             with col1:
                 st.markdown(
@@ -642,7 +665,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
                         ).replace("-", "_")
                         st.components.v1.html(
                             f"""
-                        <div style="text-align: center; font-weight: bold; color: #667eea; padding-top: 5px;">
+                        <div style="text-align: center; font-weight: bold; color: #667eea; padding-top: 2px;">
                             <span id="{timer_dom_id}">{remaining}s</span>
                         </div>
                         <script>
@@ -678,7 +701,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
                         window.__chatptTimerIntervals[timerId] = window.setInterval(updateTimer, 1000);
                         </script>
                         """,
-                            height=35,
+                            height=30,
                         )
                     else:
                         st.session_state[timer_running_key] = False
