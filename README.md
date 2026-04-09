@@ -1,7 +1,9 @@
-# ChatPT
+# ChatPT 
 
 
 ## TL;DR
+
+[Try it out](https://chat-pt.streamlit.app/)
 
 ChatPT is an AI-powered fitness app for building, delivering, and adapting personalised training and nutrition plans.
 
