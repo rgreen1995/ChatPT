@@ -84,13 +84,13 @@ def get_or_create_user_by_email(email: str, name: str, auth_provider: str = 'goo
         return db.get_or_create_user_by_email(email, name, auth_provider)
 
 
-def create_consultation(user_id: Any) -> Any:
+def create_consultation(user_id: Any, consultation_type: str = 'training') -> Any:
     """Create a new consultation for a user."""
     db = get_db()
     if db == 'sqlite':
-        return sqlite_db.create_consultation(user_id)
+        return sqlite_db.create_consultation(user_id, consultation_type)
     else:
-        return db.create_consultation(user_id)
+        return db.create_consultation(user_id, consultation_type)
 
 
 def save_message(consultation_id: Any, role: str, content: str):
@@ -193,3 +193,79 @@ def get_missing_exercise_requests(min_requests: int = 1, limit: int = 50) -> Lis
     else:
         # For Supabase, you'd implement this if needed
         return []
+
+
+# ============================================================================
+# Nutrition Consultation Functions
+# ============================================================================
+
+def get_coaching_profile(user_id: Any) -> Optional[Dict[str, Any]]:
+    """Get user's coaching profile (shared across training and nutrition)."""
+    db = get_db()
+    if db == 'sqlite':
+        return sqlite_db.get_coaching_profile(user_id)
+    else:
+        return db.get_coaching_profile(user_id)
+
+
+def save_coaching_profile(user_id: Any, profile: Dict[str, Any]):
+    """Save/update user's coaching profile."""
+    db = get_db()
+    if db == 'sqlite':
+        sqlite_db.save_coaching_profile(user_id, profile)
+    else:
+        db.save_coaching_profile(user_id, profile)
+
+
+def get_coaching_memory(user_id: Any) -> Optional[Dict[str, Any]]:
+    """Get user's coaching memory summary."""
+    db = get_db()
+    if db == 'sqlite':
+        return sqlite_db.get_coaching_memory(user_id)
+    else:
+        return db.get_coaching_memory(user_id)
+
+
+def save_coaching_memory(user_id: Any, memory: Dict[str, Any]):
+    """Save/update user's coaching memory summary."""
+    db = get_db()
+    if db == 'sqlite':
+        sqlite_db.save_coaching_memory(user_id, memory)
+    else:
+        db.save_coaching_memory(user_id, memory)
+
+
+def save_nutrition_plan(user_id: Any, consultation_id: Any, plan: Dict[str, Any]):
+    """Save nutrition plan for a consultation."""
+    db = get_db()
+    if db == 'sqlite':
+        sqlite_db.save_nutrition_plan(user_id, consultation_id, plan)
+    else:
+        db.save_nutrition_plan(user_id, consultation_id, plan)
+
+
+def get_nutrition_plan(consultation_id: Any) -> Optional[Dict[str, Any]]:
+    """Get nutrition plan by consultation ID."""
+    db = get_db()
+    if db == 'sqlite':
+        return sqlite_db.get_nutrition_plan(consultation_id)
+    else:
+        return db.get_nutrition_plan(consultation_id)
+
+
+def get_latest_nutrition_plan(user_id: Any) -> Optional[Dict[str, Any]]:
+    """Get user's latest active nutrition plan."""
+    db = get_db()
+    if db == 'sqlite':
+        return sqlite_db.get_latest_nutrition_plan(user_id)
+    else:
+        return db.get_latest_nutrition_plan(user_id)
+
+
+def get_consultation_type(consultation_id: Any) -> str:
+    """Get the type of a consultation (training or nutrition)."""
+    db = get_db()
+    if db == 'sqlite':
+        return sqlite_db.get_consultation_type(consultation_id)
+    else:
+        return db.get_consultation_type(consultation_id)
