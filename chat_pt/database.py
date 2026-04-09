@@ -220,6 +220,18 @@ def user_exists(email: str) -> bool:
     return result is not None
 
 
+def get_user_by_id(user_id: int) -> Optional[Dict[str, Any]]:
+    """Get a user by their ID. Returns user dict or None."""
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, email FROM users WHERE id = ?", (user_id,))
+    result = cursor.fetchone()
+    conn.close()
+    if result:
+        return {"id": result[0], "name": result[1], "email": result[2]}
+    return None
+
+
 def get_users() -> List[Dict[str, Any]]:
     """Get all users."""
     conn = sqlite3.connect(DATABASE_NAME)

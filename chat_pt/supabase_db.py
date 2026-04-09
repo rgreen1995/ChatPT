@@ -162,6 +162,14 @@ class SupabaseDB:
         result = self.client.table("users").select("id").eq("email", email).execute()
         return len(result.data) > 0
 
+    def get_user_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """Get a user by their ID. Returns user dict or None."""
+        result = self.client.table("users").select("id, name, email").eq("id", user_id).execute()
+        if result.data:
+            user = result.data[0]
+            return {"id": user["id"], "name": user["name"], "email": user.get("email")}
+        return None
+
     def get_or_create_user_by_email(
         self, email: str, name: str, auth_provider: str = "google"
     ) -> str:

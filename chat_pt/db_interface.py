@@ -81,6 +81,15 @@ def user_exists(email: str) -> bool:
         return db.user_exists(email)
 
 
+def get_user_by_id(user_id: Any) -> Optional[Dict[str, Any]]:
+    """Get a user by their ID. Returns user dict or None."""
+    db = get_db()
+    if db == "sqlite":
+        return sqlite_db.get_user_by_id(user_id)
+    else:
+        return db.get_user_by_id(user_id)
+
+
 def get_or_create_user_by_email(email: str, name: str, auth_provider: str = "google") -> Any:
     """Get existing user by email or create a new one (for OAuth)."""
     db = get_db()

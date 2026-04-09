@@ -1,13 +1,18 @@
-import json
-
 import streamlit as st
 
 from chat_pt.db_interface import (
     authenticate_user,
     create_user,
+    get_user_by_id,
     get_user_consultations,
     init_db,
     user_exists,
+)
+from chat_pt.session_manager import (
+    clear_session_cookie,
+    read_session_cookie_js,
+    restore_session_from_token,
+    set_session_cookie,
 )
 
 # Initialize database
@@ -22,13 +27,12 @@ st.set_page_config(
     menu_items={"About": "ChatPT - Your AI-Powered Personal Trainer"},
 )
 
-# Auto-close sidebar on navigation, add smooth transitions, and handle persistent login
+# Auto-close sidebar on navigation and add smooth transitions
 st.markdown(
     """
 <script>
 // Auto-close sidebar when any button is clicked
 document.addEventListener('DOMContentLoaded', function() {
-    // Close sidebar on any navigation
     const closeSidebar = () => {
         const sidebar = window.parent.document.querySelector('[data-testid="stSidebar"]');
         if (sidebar && !sidebar.classList.contains('collapsed')) {
@@ -38,54 +42,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     };
-
-    // Listen for button clicks
     document.querySelectorAll('button').forEach(button => {
         button.addEventListener('click', closeSidebar);
     });
-
-    // Store auth token in localStorage when logging in
-    window.storeAuthToken = function(userId, userName, userEmail) {
-        const authData = {
-            userId: userId,
-            userName: userName,
-            userEmail: userEmail,
-            timestamp: Date.now()
-        };
-        localStorage.setItem('chatpt_auth', JSON.stringify(authData));
-    };
-
-    // Clear auth token on logout
-    window.clearAuthToken = function() {
-        localStorage.removeItem('chatpt_auth');
-    };
-
-    // Get stored auth token
-    window.getAuthToken = function() {
-        const stored = localStorage.getItem('chatpt_auth');
-        if (!stored) return null;
-
-        const authData = JSON.parse(stored);
-        const ninetyDays = 90 * 24 * 60 * 60 * 1000;
-
-        // Check if token is still valid (90 days for fitness app - don't want users logged out during workouts)
-        if (Date.now() - authData.timestamp > ninetyDays) {
-            localStorage.removeItem('chatpt_auth');
-            return null;
-        }
-
-        return authData;
-    };
-
-    // Refresh auth timestamp to keep session alive during workouts
-    window.refreshAuthToken = function() {
-        const stored = localStorage.getItem('chatpt_auth');
-        if (stored) {
-            const authData = JSON.parse(stored);
-            authData.timestamp = Date.now(); // Update timestamp to extend session
-            localStorage.setItem('chatpt_auth', JSON.stringify(authData));
-        }
-    };
 });
 </script>
 
@@ -235,39 +194,16 @@ def go_back():
         st.rerun()
 
 
-def persist_auth_to_local_storage(user_id: int, user_name: str, user_email: str):
-    """Persist auth data in browser localStorage for session recovery."""
-    auth_data = {
-        "userId": user_id,
-        "userName": user_name,
-        "userEmail": user_email or "",
-    }
-    st.components.v1.html(
-        f"""
-    <script>
-    try {{
-        const authData = {json.dumps(auth_data)};
-        authData.timestamp = Date.now();
-        window.parent.localStorage.setItem('chatpt_auth', JSON.stringify(authData));
-    }} catch (e) {{}}
-    </script>
-    """,
-        height=0,
-    )
+def persist_auth_cookie(user_id: int, user_name: str, user_email: str):
+    """Persist auth data in a signed browser cookie for session recovery."""
+    js = set_session_cookie(user_id, user_name, user_email)
+    st.components.v1.html(js, height=0)
 
 
-def clear_auth_from_local_storage():
-    """Clear persisted auth data from browser localStorage."""
-    st.components.v1.html(
-        """
-    <script>
-    try {
-        window.parent.localStorage.removeItem('chatpt_auth');
-    } catch (e) {}
-    </script>
-    """,
-        height=0,
-    )
+def clear_auth_cookie():
+    """Clear persisted auth cookie from the browser."""
+    js = clear_session_cookie()
+    st.components.v1.html(js, height=0)
 
 
 def _query_param_scalar(query_params, key, default=None):
@@ -291,106 +227,31 @@ if st.session_state.get("scroll_to_top"):
     )
     st.session_state.scroll_to_top = False
 
-# Add session heartbeat to keep auth alive and restore if lost
-# This is crucial for preventing logout during workouts or brief disconnections
+# Refresh session cookie while user is logged in (keeps cookie alive during workouts)
 if st.session_state.user_id is not None:
-    current_auth_data = {
-        "userId": st.session_state.user_id,
-        "userName": st.session_state.user_name,
-        "userEmail": st.session_state.user_email or "",
-    }
-    st.components.v1.html(
-        f"""
-    <script>
-    const rootWindow = (() => {{
-        try {{
-            return (window.parent && window.parent !== window) ? window.parent : window;
-        }} catch (e) {{
-            return window;
-        }}
-    }})();
-
-    const sessionAuthData = {json.dumps(current_auth_data)};
-
-    const refreshAuth = function() {{
-        try {{
-            const stored = rootWindow.localStorage.getItem('chatpt_auth');
-            const authData = stored ? JSON.parse(stored) : {{ ...sessionAuthData }};
-
-            authData.userId = authData.userId || sessionAuthData.userId;
-            authData.userName = authData.userName || sessionAuthData.userName;
-            authData.userEmail = authData.userEmail || sessionAuthData.userEmail;
-            authData.timestamp = Date.now();
-            rootWindow.localStorage.setItem('chatpt_auth', JSON.stringify(authData));
-        }} catch (e) {{}}
-    }};
-
-    if (!rootWindow.__chatptHeartbeatInterval) {{
-        rootWindow.__chatptHeartbeatInterval = rootWindow.setInterval(refreshAuth, 5 * 60 * 1000);
-    }}
-
-    if (!rootWindow.__chatptHeartbeatBound) {{
-        ['click', 'touchstart', 'scroll', 'keypress'].forEach(function(eventName) {{
-            rootWindow.document.addEventListener(eventName, refreshAuth, {{ passive: true }});
-        }});
-        rootWindow.addEventListener('focus', refreshAuth);
-        rootWindow.document.addEventListener('visibilitychange', () => {{
-            if (!rootWindow.document.hidden) {{
-                refreshAuth();
-            }}
-        }});
-        rootWindow.__chatptHeartbeatBound = true;
-    }}
-
-    refreshAuth();
-    </script>
-    """,
-        height=0,
+    persist_auth_cookie(
+        st.session_state.user_id,
+        st.session_state.user_name,
+        st.session_state.user_email or "",
     )
 
-# Check for stored auth on first load OR if session was lost (crucial for workout continuity)
+# Check for stored auth cookie on first load OR if session was lost
 if st.session_state.user_id is None:
-    # Always check localStorage if not logged in - handles reconnection scenarios
-    check_auth_html = """
-    <script>
-    try {
-        const rootWindow = (window.parent && window.parent !== window) ? window.parent : window;
-        const stored = rootWindow.localStorage.getItem('chatpt_auth');
-        if (stored) {
-            const authData = JSON.parse(stored);
-            const ninetyDays = 90 * 24 * 60 * 60 * 1000;
+    # Inject JS that reads the session cookie and redirects with ?restore_session=<token>
+    st.components.v1.html(read_session_cookie_js(), height=0)
 
-            if (Date.now() - authData.timestamp > ninetyDays) {
-                rootWindow.localStorage.removeItem('chatpt_auth');
-            } else {
-                const urlParams = new URLSearchParams(rootWindow.location.search);
-                if (!urlParams.has('auto_login')) {
-                    const url = new URL(rootWindow.location);
-                    url.searchParams.set('auto_login', '1');
-                    url.searchParams.set('user_id', authData.userId);
-                    url.searchParams.set('user_name', authData.userName);
-                    url.searchParams.set('user_email', authData.userEmail || '');
-                    rootWindow.location.href = url.toString();
-                }
-            }
-        }
-    } catch (e) {}
-    </script>
-    """
-    st.components.v1.html(check_auth_html, height=0)
-
-    # Check query params for auto-login
+    # Check query params for cookie-based session restore
     try:
         query_params = st.query_params
-        if _query_param_scalar(query_params, "auto_login") == "1":
-            user_id = _query_param_scalar(query_params, "user_id")
-            user_name = _query_param_scalar(query_params, "user_name")
-            user_email = _query_param_scalar(query_params, "user_email", "")
-
-            if user_id and user_name:
-                st.session_state.user_id = int(user_id)
-                st.session_state.user_name = user_name
-                st.session_state.user_email = user_email
+        restore_token = _query_param_scalar(query_params, "restore_session")
+        if restore_token:
+            session_data = restore_session_from_token(
+                restore_token, validate_user_fn=get_user_by_id
+            )
+            if session_data:
+                st.session_state.user_id = session_data["user_id"]
+                st.session_state.user_name = session_data["user_name"]
+                st.session_state.user_email = session_data["user_email"]
                 st.session_state.auth_checked = True
                 st.session_state.scroll_to_top = True
                 # Clear query params
@@ -452,7 +313,7 @@ with st.sidebar:
                             st.session_state.user_id = user["id"]
                             st.session_state.user_name = user["name"]
                             st.session_state.user_email = user["email"]
-                            persist_auth_to_local_storage(user["id"], user["name"], user["email"])
+                            persist_auth_cookie(user["id"], user["name"], user["email"])
                             st.session_state.scroll_to_top = True
                             st.success(f"Welcome back, {user['name']}!")
                             st.rerun()
@@ -491,7 +352,7 @@ with st.sidebar:
                             st.session_state.signup_email_status = None
                             st.session_state.scroll_to_top = True
 
-                            persist_auth_to_local_storage(user_id, name, email)
+                            persist_auth_cookie(user_id, name, email)
 
                             # Send welcome email (non-blocking)
                             try:
@@ -540,8 +401,8 @@ with st.sidebar:
             st.caption(f"{db_emoji} {st.session_state.db_type.title()}")
 
         if st.button("Logout"):
-            # Clear localStorage auth
-            clear_auth_from_local_storage()
+            # Clear session cookie
+            clear_auth_cookie()
 
             # Clear all session state
             st.session_state.user_id = None
@@ -769,9 +630,7 @@ if st.session_state.user_id is None:
                                     st.session_state.user_email = user["email"]
                                     st.session_state.show_auth_in_main = False
                                     st.session_state.scroll_to_top = True
-                                    persist_auth_to_local_storage(
-                                        user["id"], user["name"], user["email"]
-                                    )
+                                    persist_auth_cookie(user["id"], user["name"], user["email"])
                                     st.success(f"Welcome back, {user['name']}!")
                                     st.rerun()
                                 else:
@@ -811,7 +670,7 @@ if st.session_state.user_id is None:
                                     st.session_state.signup_email_status = None
                                     st.session_state.scroll_to_top = True
 
-                                    persist_auth_to_local_storage(user_id, name, email)
+                                    persist_auth_cookie(user_id, name, email)
 
                                     # Send welcome email (non-blocking)
                                     try:
@@ -874,7 +733,7 @@ if st.session_state.user_id is None:
                                     st.session_state.user_email = email
                                     st.session_state.signup_email_status = None
                                     st.session_state.scroll_to_top = True
-                                    persist_auth_to_local_storage(user_id, name, email)
+                                    persist_auth_cookie(user_id, name, email)
 
                                     # Send welcome email (non-blocking)
                                     try:
@@ -923,9 +782,7 @@ if st.session_state.user_id is None:
                                     st.session_state.user_email = user["email"]
                                     st.session_state.show_auth_in_main = False
                                     st.session_state.scroll_to_top = True
-                                    persist_auth_to_local_storage(
-                                        user["id"], user["name"], user["email"]
-                                    )
+                                    persist_auth_cookie(user["id"], user["name"], user["email"])
                                     st.success(f"Welcome back, {user['name']}!")
                                     st.rerun()
                                 else:
