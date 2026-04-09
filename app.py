@@ -24,7 +24,7 @@ st.set_page_config(
     page_icon="💪",
     layout="centered",  # Better for mobile
     initial_sidebar_state="collapsed",  # Collapsed by default on mobile
-    menu_items={"About": "ChatPT - Your AI-Powered Personal Trainer"},
+    menu_items={"About": "ChatPT - Your AI-Powered Personal Trainer and Nutritionist"},
 )
 
 # Auto-close sidebar on navigation and add smooth transitions
@@ -456,8 +456,12 @@ with st.sidebar:
             navigate_to("home")
         if st.button("💬 New Consultation", use_container_width=True):
             navigate_to("consultation")
-        if st.button("📋 My Plans", use_container_width=True):
+        if st.button("📋 My Workout Plans", use_container_width=True):
             navigate_to("plans")
+        if st.button("🥗 Nutrition Consultation", use_container_width=True):
+            navigate_to("nutrition_consultation")
+        if st.button("🥗 My Nutrition Plans", use_container_width=True):
+            navigate_to("nutrition_plans")
         if st.button("📚 Exercise Library", use_container_width=True):
             navigate_to("exercises")
         if st.button("📊 Progress Tracking", use_container_width=True):
@@ -906,11 +910,11 @@ else:
             unsafe_allow_html=True,
         )
 
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4, col5, col6 = st.columns(6)
 
         with col1:
             if st.button(
-                "💬 New\nConsultation",
+                "💬 Training\nConsultation",
                 use_container_width=True,
                 type="primary",
                 key="home_new_consult",
@@ -918,14 +922,26 @@ else:
                 navigate_to("consultation")
 
         with col2:
-            if st.button("📋 My\nPlans", use_container_width=True, key="home_plans"):
+            if st.button("📋 Workout\nPlans", use_container_width=True, key="home_plans"):
                 navigate_to("plans")
 
         with col3:
+            if st.button(
+                "🥗 Nutrition\nConsultation", use_container_width=True, key="home_nutrition_consult"
+            ):
+                navigate_to("nutrition_consultation")
+
+        with col4:
+            if st.button(
+                "🥗 Nutrition\nPlans", use_container_width=True, key="home_nutrition_plans"
+            ):
+                navigate_to("nutrition_plans")
+
+        with col5:
             if st.button("📚 Exercise\nLibrary", use_container_width=True, key="home_exercises"):
                 navigate_to("exercises")
 
-        with col4:
+        with col6:
             if st.button("📊 Track\nProgress", use_container_width=True, key="home_progress"):
                 navigate_to("progress")
 
@@ -1082,3 +1098,15 @@ else:
         from chat_pt import progress_page
 
         progress_page.render()
+
+    if st.session_state.page == "nutrition_consultation":
+        # Import nutrition consultation page
+        from chat_pt import nutrition_consultation_page
+
+        nutrition_consultation_page.render()
+
+    if st.session_state.page == "nutrition_plans":
+        # Import nutrition plans page
+        from chat_pt import nutrition_plans_page
+
+        nutrition_plans_page.render()

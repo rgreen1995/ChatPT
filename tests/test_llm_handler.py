@@ -77,3 +77,53 @@ def test_chat_anthropic(mock_post, mock_get_secret):
 
     assert response == "Hello from Anthropic"
     mock_post.assert_called_once()
+
+
+@patch("chat_pt.llm_handler.get_secret")
+def test_extract_nutrition_plan(mock_get_secret):
+    """Test extraction of nutrition plan from LLM response."""
+    mock_get_secret.return_value = "fake_key"
+    handler = LLMHandler(provider="openai", mode="nutrition")
+
+    # Valid JSON with single daily_calories
+    response = 'Here is your nutrition plan: ```json\n{"daily_calories": 2000, "macros": {"p": 150, "f": 60, "c": 200}}\n```'
+    plan = handler.extract_nutrition_plan(response)
+    assert plan == {"daily_calories": 2000, "macros": {"p": 150, "f": 60, "c": 200}}
+
+    # Valid JSON with split daily_calories
+    response = 'Plan: {"daily_calories_training": 2500, "daily_calories_rest": 1800, "macros": {"p": 150}}\n'
+    plan = handler.extract_nutrition_plan(response)
+    assert plan == {
+        "daily_calories_training": 2500,
+        "daily_calories_rest": 1800,
+        "macros": {"p": 150},
+    }
+
+    # Invalid nutrition plan (missing macros)
+    response = 'Plan: {"daily_calories": 2000}'
+    plan = handler.extract_nutrition_plan(response)
+    assert plan is None
+
+    # Partial JSON salvage - needs to be more complex to be valid
+    response = 'Plan: {"daily_calories": 2200, "macros": {"p": 160, "f": 70}}'
+    plan = handler.extract_nutrition_plan(response)
+    assert plan is not None
+    assert plan["daily_calories"] == 2200
+    assert plan["macros"]["p"] == 160
+
+
+@patch("chat_pt.llm_handler.get_secret")
+@patch("chat_pt.llm_handler.LLMHandler.get_training_system_prompt")
+@patch("chat_pt.context_builder.get_nutrition_system_prompt")
+def test_get_system_prompt_nutrition(
+    mock_get_nutrition_prompt, mock_get_training_prompt, mock_get_secret
+):
+    """Test getting nutrition system prompt."""
+    mock_get_secret.return_value = "fake_key"
+    mock_get_nutrition_prompt.return_value = "Nutrition prompt"
+
+    handler = LLMHandler(provider="openai", mode="nutrition")
+    prompt = handler.get_system_prompt()
+
+    assert prompt == "Nutrition prompt"
+    mock_get_nutrition_prompt.assert_called_once()
