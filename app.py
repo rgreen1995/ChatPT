@@ -113,29 +113,40 @@ input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focu
 }
 
 /* Loading spinner smoothness */
-.stSpinner > div {
-    animation: spin 1s cubic-bezier(0.4, 0.0, 0.2, 1) infinite !important;
-}
+    .stSpinner > div {
+        animation: spin 1s cubic-bezier(0.4, 0.0, 0.2, 1) infinite !important;
+    }
 
-/* Smooth expander transitions */
-.streamlit-expanderHeader {
-    transition: background-color 0.2s ease-in-out !important;
-}
+    /* Smooth expander transitions */
+    .streamlit-expanderHeader {
+        transition: background-color 0.2s ease-in-out !important;
+    }
 
-.streamlit-expanderHeader:hover {
-    background-color: rgba(0,0,0,0.02) !important;
-}
+    .streamlit-expanderHeader:hover {
+        background-color: rgba(0,0,0,0.02) !important;
+    }
 
-/* Card-like containers with subtle shadows */
-div[data-testid="stVerticalBlock"] > div {
-    transition: box-shadow 0.2s ease-in-out;
-}
+    /* Card-like containers with subtle shadows */
+    div[data-testid="stVerticalBlock"] > div {
+        transition: box-shadow 0.2s ease-in-out;
+    }
 
-/* Smooth scroll behavior */
-html {
-    scroll-behavior: smooth;
-}
-</style>
+    /* Smooth scroll behavior */
+    html {
+        scroll-behavior: smooth;
+    }
+
+    /* Equal-height quick action buttons */
+        div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button {
+            height: 5rem !important;
+            white-space: pre-wrap !important;
+            line-height: 1.5 !important;
+            font-size: 0.95rem !important;
+            padding: 0.5rem !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+    }
 """,
     unsafe_allow_html=True,
 )
