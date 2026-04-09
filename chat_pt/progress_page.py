@@ -1,20 +1,29 @@
-import streamlit as st
+import time
+
 import pandas as pd
 import plotly.express as px
-import time
-from datetime import datetime
+import streamlit as st
+
 from chat_pt.db_interface import (
+    get_exercise_progress,
     get_user_consultations,
     get_workout_plan,
     save_exercise_progress,
-    get_exercise_progress,
 )
 
 
 def sort_workout_days(schedule_dict):
     """Sort workout days in a sensible order (days of week or numerical)."""
-    days_of_week = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-    day_abbrev = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+    days_of_week = [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+    ]
+    day_abbrev = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
     keys = list(schedule_dict.keys())
 
@@ -32,15 +41,17 @@ def sort_workout_days(schedule_dict):
                 return (0, idx)
 
         # Check for "Day X" format
-        if 'day' in day_lower:
+        if "day" in day_lower:
             import re
-            match = re.search(r'day\s*(\d+)', day_lower)
+
+            match = re.search(r"day\s*(\d+)", day_lower)
             if match:
                 return (1, int(match.group(1)))
 
         # Check for pure numbers at start
         import re
-        match = re.match(r'^(\d+)', day_name)
+
+        match = re.match(r"^(\d+)", day_name)
         if match:
             return (2, int(match.group(1)))
 
@@ -54,7 +65,8 @@ def sort_workout_days(schedule_dict):
 def render():
     """Render the progress tracking page."""
     # Combined, optimized CSS for mobile grid (Strong app style)
-    st.markdown("""
+    st.markdown(
+        """
         <style>
         /* ===== FORCE COLUMNS HORIZONTAL ON ALL SCREEN SIZES ===== */
         /* Streamlit switches columns to flex-direction:column on small screens.
@@ -264,27 +276,35 @@ def render():
             opacity: 0.1 !important;
         }
         </style>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
-    st.markdown("""
+    st.markdown(
+        """
     <div style="text-align: center; padding: 1rem 0 2rem 0;">
         <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">📊 Progress Tracking</h1>
         <p style="font-size: 1.1rem; color: #666;">Log workouts and track your fitness journey</p>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     # Get user's completed consultations
     consultations = get_user_consultations(st.session_state.user_id)
     completed = [c for c in consultations if c["completed"]]
 
     if not completed:
-        st.markdown("""
+        st.markdown(
+            """
         <div style="background: #f8f9fa; padding: 2rem; border-radius: 10px; text-align: center; margin: 2rem 0;">
             <div style="font-size: 3rem; margin-bottom: 1rem;">📊</div>
             <h3 style="margin-bottom: 0.5rem;">No workout plans yet</h3>
             <p style="color: #666; margin-bottom: 1.5rem;">Create a personalized plan first, then come back to track your progress!</p>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
         col1, col2, col3 = st.columns([1, 1, 1])
         with col2:
             if st.button("🚀 Start Consultation", type="primary", use_container_width=True):
@@ -293,11 +313,14 @@ def render():
         return
 
     # Consultation selector
-    st.markdown("""
+    st.markdown(
+        """
     <div style="margin: 1rem 0;">
         <h3>Select Workout Plan</h3>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     # Check if coming from plans page with selected consultation
     preselected_idx = 0
@@ -310,12 +333,12 @@ def render():
     # Create descriptive names for each plan (short - 3-4 words max)
     consultation_options = []
     for c in completed:
-        plan = get_workout_plan(c['id'])
+        plan = get_workout_plan(c["id"])
         if plan:
             # Extract key details
-            days = plan.get('training_days')
-            weeks = plan.get('program_duration_weeks')
-            num_days = len(plan.get('schedule', {}))
+            days = plan.get("training_days")
+            weeks = plan.get("program_duration_weeks")
+            num_days = len(plan.get("schedule", {}))
 
             # Build concise name
             if days and weeks:
@@ -327,10 +350,11 @@ def render():
             else:
                 # Use date as fallback
                 import datetime
+
                 try:
-                    date_obj = datetime.datetime.fromisoformat(c['created_at'])
+                    date_obj = datetime.datetime.fromisoformat(c["created_at"])
                     plan_name = date_obj.strftime("%b %d, %Y")
-                except:
+                except Exception:
                     plan_name = "Workout Plan"
 
             consultation_options.append(plan_name)
@@ -342,7 +366,7 @@ def render():
         range(len(consultation_options)),
         format_func=lambda i: consultation_options[i],
         index=preselected_idx,
-        label_visibility="collapsed"
+        label_visibility="collapsed",
     )
 
     consultation_id = completed[selected_idx]["id"]
@@ -364,7 +388,6 @@ def render():
 
 def render_log_workout(consultation_id: int, workout_plan: dict):
     """Render the workout logging interface."""
-
     # Check if timer is running from plans page
     schedule = workout_plan.get("schedule", {})
     if not schedule:
@@ -382,9 +405,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
             preselected_day = days.index(st.session_state.selected_day)
 
     selected_day = st.selectbox(
-        "Select Training Day",
-        list(sorted_schedule.keys()),
-        index=preselected_day
+        "Select Training Day", list(sorted_schedule.keys()), index=preselected_day
     )
 
     day_data = schedule[selected_day]
@@ -405,9 +426,11 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
     if st.session_state.get(session_timer_key) and st.session_state.get(session_start_key):
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            timer_dom_id = f"progress_workout_timer_{selected_day}".replace(" ", "_").replace("-",
-                                                                                              "_")
-            st.components.v1.html(f"""
+            timer_dom_id = f"progress_workout_timer_{selected_day}".replace(" ", "_").replace(
+                "-", "_"
+            )
+            st.components.v1.html(
+                f"""
             <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
                         padding: 1rem; border-radius: 10px; text-align: center; color: white; margin-bottom: 1rem;">
                 <div id="{timer_dom_id}" style="font-size: 2rem; font-weight: bold;">⏱️ 00:00</div>
@@ -443,46 +466,51 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
             updateTimer();
             window.__chatptTimerIntervals[timerId] = window.setInterval(updateTimer, 1000);
             </script>
-            """, height=110)
+            """,
+                height=110,
+            )
 
     st.markdown("---")
 
     # Initialize exercise logging state
-    if 'exercise_logs' not in st.session_state:
+    if "exercise_logs" not in st.session_state:
         st.session_state.exercise_logs = {}
 
     # Create grid-style workout log (similar to Strong app)
     for idx, exercise in enumerate(exercises):
         exercise_key = f"{selected_day}_{idx}_{exercise['name']}"
-        rest_seconds = exercise.get('rest_seconds', 60)
+        rest_seconds = exercise.get("rest_seconds", 60)
 
         # Exercise header
-        st.markdown(f"""
+        st.markdown(
+            f"""
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                     padding: 0.75rem 1rem; border-radius: 8px; color: white; margin: 1rem 0 0.5rem 0;">
             <strong>{idx + 1}. {exercise['name']}</strong>
             <span style="opacity: 0.9; margin-left: 1rem; font-size: 0.9rem;">
-                {exercise.get('sets')} × {exercise.get('reps')} | Rest: {rest_seconds}s
+                {exercise.get('sets')} x {exercise.get('reps')} | Rest: {rest_seconds}s
             </span>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
 
-        if exercise.get('notes'):
+        if exercise.get("notes"):
             st.caption(f"💡 {exercise['notes']}")
 
         # Grid layout for sets with weight input
         # Parse sets - handle ranges like "3-4" by taking the lower bound
-        sets_value = exercise.get('sets', 3)
+        sets_value = exercise.get("sets", 3)
         if isinstance(sets_value, str):
-            if '-' in sets_value:
+            if "-" in sets_value:
                 try:
-                    num_sets = int(sets_value.split('-')[0])
-                except:
+                    num_sets = int(sets_value.split("-")[0])
+                except Exception:
                     num_sets = 3
             else:
                 try:
                     num_sets = int(sets_value)
-                except:
+                except Exception:
                     num_sets = 3
         else:
             num_sets = int(sets_value) if isinstance(sets_value, (int, float)) else 3
@@ -490,31 +518,33 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
         # Initialize logs for this exercise
         if exercise_key not in st.session_state.exercise_logs:
             # Parse reps - handle ranges like "8-10" by taking the midpoint
-            reps_value = exercise.get('reps', 10)
+            reps_value = exercise.get("reps", 10)
             if isinstance(reps_value, str):
                 # Handle range like "8-10"
-                if '-' in reps_value:
+                if "-" in reps_value:
                     try:
-                        parts = reps_value.split('-')
+                        parts = reps_value.split("-")
                         default_reps = int((int(parts[0]) + int(parts[1])) / 2)
-                    except:
+                    except Exception:
                         default_reps = 10
                 else:
                     try:
                         default_reps = int(reps_value)
-                    except:
+                    except Exception:
                         default_reps = 10
             else:
                 default_reps = int(reps_value) if isinstance(reps_value, (int, float)) else 10
 
             st.session_state.exercise_logs[exercise_key] = {
-                'sets': [{'reps': default_reps, 'weight': 0.0, 'completed': False}
-                         for _ in range(num_sets)],
-                'exercise_notes': ''
+                "sets": [
+                    {"reps": default_reps, "weight": 0.0, "completed": False}
+                    for _ in range(num_sets)
+                ],
+                "exercise_notes": "",
             }
 
-        if 'exercise_notes' not in st.session_state.exercise_logs[exercise_key]:
-            st.session_state.exercise_logs[exercise_key]['exercise_notes'] = ''
+        if "exercise_notes" not in st.session_state.exercise_logs[exercise_key]:
+            st.session_state.exercise_logs[exercise_key]["exercise_notes"] = ""
 
         # Table header for sets (Strong app style)
         hcol1, hcol2, hcol3, hcol4 = st.columns([0.4, 1, 1, 0.8])
@@ -540,7 +570,10 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
             col1, col2, col3, col4 = st.columns([0.4, 1, 1, 0.8])
 
             with col1:
-                st.markdown(f'<div class="set-circle">{set_idx + 1}</div>', unsafe_allow_html=True)
+                st.markdown(
+                    f'<div class="set-circle">{set_idx + 1}</div>',
+                    unsafe_allow_html=True,
+                )
 
             with col2:
                 weight = st.number_input(
@@ -548,32 +581,33 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
                     min_value=0.0,
                     max_value=1000.0,
                     step=2.5,
-                    value=st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['weight'],
+                    value=st.session_state.exercise_logs[exercise_key]["sets"][set_idx]["weight"],
                     key=f"weight_{exercise_key}_{set_idx}",
-                    label_visibility="collapsed"
+                    label_visibility="collapsed",
                 )
-                st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['weight'] = weight
+                st.session_state.exercise_logs[exercise_key]["sets"][set_idx]["weight"] = weight
 
             with col3:
                 reps = st.number_input(
                     "Reps",
                     min_value=1,
                     max_value=100,
-                    value=st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['reps'],
+                    value=st.session_state.exercise_logs[exercise_key]["sets"][set_idx]["reps"],
                     key=f"reps_{exercise_key}_{set_idx}",
-                    label_visibility="collapsed"
+                    label_visibility="collapsed",
                 )
-                st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['reps'] = reps
+                st.session_state.exercise_logs[exercise_key]["sets"][set_idx]["reps"] = reps
 
             with col4:
                 if st.session_state[timer_running_key]:
                     timer_end = st.session_state.get(timer_end_key)
                     remaining = max(0, int(timer_end - time.time())) if timer_end else 0
                     if remaining > 0:
-                        timer_dom_id = f"rest_timer_{exercise_key}_{set_idx}".replace(" ",
-                                                                                      "_").replace(
-                            "-", "_")
-                        st.components.v1.html(f"""
+                        timer_dom_id = f"rest_timer_{exercise_key}_{set_idx}".replace(
+                            " ", "_"
+                        ).replace("-", "_")
+                        st.components.v1.html(
+                            f"""
                         <div style="text-align: center; font-weight: bold; color: #667eea; padding-top: 5px;">
                             <span id="{timer_dom_id}">{remaining}s</span>
                         </div>
@@ -609,23 +643,35 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
                         updateTimer();
                         window.__chatptTimerIntervals[timerId] = window.setInterval(updateTimer, 1000);
                         </script>
-                        """, height=35)
+                        """,
+                            height=35,
+                        )
                     else:
                         st.session_state[timer_running_key] = False
                         st.rerun()
-                elif st.session_state.exercise_logs[exercise_key]['sets'][set_idx]['completed']:
-                    if st.button("✅", key=f"done_{timer_key}", use_container_width=True,
-                                 help="Set Completed - Click to Reset"):
-                        st.session_state.exercise_logs[exercise_key]['sets'][set_idx][
-                            'completed'] = False
+                elif st.session_state.exercise_logs[exercise_key]["sets"][set_idx]["completed"]:
+                    if st.button(
+                        "✅",
+                        key=f"done_{timer_key}",
+                        use_container_width=True,
+                        help="Set Completed - Click to Reset",
+                    ):
+                        st.session_state.exercise_logs[exercise_key]["sets"][set_idx][
+                            "completed"
+                        ] = False
                         st.rerun()
                 else:
-                    if st.button("⏱️", key=f"start_{timer_key}", use_container_width=True,
-                                 help="Start Rest Timer"):
+                    if st.button(
+                        "⏱️",
+                        key=f"start_{timer_key}",
+                        use_container_width=True,
+                        help="Start Rest Timer",
+                    ):
                         st.session_state[timer_running_key] = True
                         st.session_state[timer_end_key] = time.time() + rest_seconds
-                        st.session_state.exercise_logs[exercise_key]['sets'][set_idx][
-                            'completed'] = True
+                        st.session_state.exercise_logs[exercise_key]["sets"][set_idx][
+                            "completed"
+                        ] = True
                         st.rerun()
 
             st.markdown("<hr style='margin: 0.2rem 0; opacity: 0.1;'>", unsafe_allow_html=True)
@@ -633,44 +679,49 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
         with st.expander("📝 Optional notes for this exercise", expanded=False):
             exercise_notes = st.text_area(
                 "Exercise notes",
-                value=st.session_state.exercise_logs[exercise_key].get('exercise_notes', ''),
+                value=st.session_state.exercise_logs[exercise_key].get("exercise_notes", ""),
                 key=f"exercise_notes_{exercise_key}",
                 placeholder="How did this exercise feel? Form notes, RPE, etc.",
-                label_visibility="collapsed"
+                label_visibility="collapsed",
             )
-            st.session_state.exercise_logs[exercise_key]['exercise_notes'] = exercise_notes
+            st.session_state.exercise_logs[exercise_key]["exercise_notes"] = exercise_notes
 
         st.markdown("<div style='margin-bottom: 0.25rem;'></div>", unsafe_allow_html=True)
 
     # Save workout button
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        if st.button("💾 Save Workout", type="primary", use_container_width=True,
-                     key="save_workout"):
+        if st.button(
+            "💾 Save Workout",
+            type="primary",
+            use_container_width=True,
+            key="save_workout",
+        ):
             # Save all exercises
             for exercise in exercises:
                 exercise_key = f"{selected_day}_{exercises.index(exercise)}_{exercise['name']}"
                 if exercise_key in st.session_state.exercise_logs:
-                    logs = st.session_state.exercise_logs[exercise_key]['sets']
+                    logs = st.session_state.exercise_logs[exercise_key]["sets"]
                     exercise_notes = st.session_state.exercise_logs[exercise_key].get(
-                        'exercise_notes', '')
+                        "exercise_notes", ""
+                    )
                     for set_log in logs:
-                        set_notes = set_log.get('notes', '') if isinstance(set_log, dict) else ''
+                        set_notes = set_log.get("notes", "") if isinstance(set_log, dict) else ""
                         save_exercise_progress(
                             user_id=st.session_state.user_id,
                             consultation_id=consultation_id,
                             exercise_name=exercise["name"],
                             day=selected_day,
                             sets=1,  # Each set logged individually
-                            reps=set_log['reps'],
-                            weight=set_log['weight'],
-                            notes=set_notes or exercise_notes
+                            reps=set_log["reps"],
+                            weight=set_log["weight"],
+                            notes=set_notes or exercise_notes,
                         )
 
             # Stop timer
             if st.session_state.get(session_timer_key):
                 st.session_state[session_timer_key] = False
-                elapsed = int(time.time() - st.session_state[session_start_key])
+                int(time.time() - st.session_state[session_start_key])
                 st.session_state[session_start_key] = None
 
             # Clear logs
@@ -684,11 +735,14 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
 
 def render_view_progress(workout_plan: dict):
     """Render the progress viewing interface."""
-    st.markdown("""
+    st.markdown(
+        """
     <div style="margin: 2rem 0 1rem 0;">
         <h3>Your Progress Over Time</h3>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     schedule = workout_plan.get("schedule", {})
 
@@ -711,13 +765,16 @@ def render_view_progress(workout_plan: dict):
     progress = get_exercise_progress(st.session_state.user_id, selected_exercise)
 
     if not progress:
-        st.markdown(f"""
+        st.markdown(
+            f"""
         <div style="background: #f8f9fa; padding: 2rem; border-radius: 10px; text-align: center; margin: 2rem 0;">
             <div style="font-size: 2.5rem; margin-bottom: 1rem;">📈</div>
             <h4 style="margin-bottom: 0.5rem;">No progress logged yet for {selected_exercise}</h4>
             <p style="color: #666;">Switch to the "Log Workout" tab to record your first session!</p>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
         return
 
     # Display progress table
@@ -748,7 +805,7 @@ def render_view_progress(workout_plan: dict):
                 y="weight",
                 title="Weight Progression",
                 labels={"completed_at": "Date", "weight": "Weight (lbs/kg)"},
-                markers=True
+                markers=True,
             )
             fig_weight.update_layout(showlegend=False)
             st.plotly_chart(fig_weight, use_container_width=True)
@@ -756,7 +813,7 @@ def render_view_progress(workout_plan: dict):
             st.info("No weight data logged yet")
 
     with col2:
-        # Volume chart (sets × reps × weight)
+        # Volume chart (sets x reps x weight)
         df_sorted = df.sort_values("completed_at")
         df_sorted["volume"] = df_sorted["sets"] * df_sorted["reps"] * df_sorted["weight"]
 
@@ -765,9 +822,9 @@ def render_view_progress(workout_plan: dict):
                 df_sorted,
                 x="completed_at",
                 y="volume",
-                title="Training Volume (Sets × Reps × Weight)",
+                title="Training Volume (Sets x Reps x Weight)",
                 labels={"completed_at": "Date", "volume": "Volume"},
-                markers=True
+                markers=True,
             )
             fig_volume.update_layout(showlegend=False)
             st.plotly_chart(fig_volume, use_container_width=True)

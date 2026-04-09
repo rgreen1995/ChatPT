@@ -5,7 +5,6 @@ YouTube links are from reputable fitness channels for proper form demonstration.
 
 EXERCISE_LIBRARY = [
     # ==================== UPPER BODY ====================
-
     # CHEST EXERCISES
     {
         "name": "Barbell Bench Press",
@@ -16,7 +15,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Intermediate",
         "youtube_url": "https://www.youtube.com/watch?v=rT7DgCr-3pg",
         "instructions": "1. Lie on bench with eyes under bar\n2. Grip bar slightly wider than shoulder-width\n3. Unrack and lower bar to mid-chest\n4. Press bar up in slight arc to starting position\n5. Keep feet flat on floor, maintain arch",
-        "form_cues": "• Retract shoulder blades\n• Keep elbows at 45° angle\n• Touch chest lightly, don't bounce\n• Drive through legs for stability"
+        "form_cues": "• Retract shoulder blades\n• Keep elbows at 45° angle\n• Touch chest lightly, don't bounce\n• Drive through legs for stability",
     },
     {
         "name": "Dumbbell Bench Press",
@@ -27,7 +26,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=VmB1G1K7v94",
         "instructions": "1. Sit on edge of bench with dumbbells on thighs\n2. Lie back and bring dumbbells to chest level\n3. Press dumbbells up until arms extended\n4. Lower with control to starting position\n5. Maintain natural arch in lower back",
-        "form_cues": "• Keep wrists straight\n• Lower until slight stretch in chest\n• Press in slight arc, bringing dumbbells together\n• Control the descent"
+        "form_cues": "• Keep wrists straight\n• Lower until slight stretch in chest\n• Press in slight arc, bringing dumbbells together\n• Control the descent",
     },
     {
         "name": "Push-Ups",
@@ -38,9 +37,8 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=IODxDxX7oi4",
         "instructions": "1. Start in plank position, hands shoulder-width\n2. Lower body until chest nearly touches floor\n3. Push back up to starting position\n4. Keep body in straight line throughout\n5. Breathe in on descent, out on ascent",
-        "form_cues": "• Keep core tight\n• Don't let hips sag\n• Elbows at 45° angle\n• Full range of motion"
+        "form_cues": "• Keep core tight\n• Don't let hips sag\n• Elbows at 45° angle\n• Full range of motion",
     },
-
     # BACK EXERCISES
     {
         "name": "Barbell Row",
@@ -51,7 +49,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Intermediate",
         "youtube_url": "https://www.youtube.com/watch?v=FWJR5Ve8bnQ",
         "instructions": "1. Stand with feet hip-width, barbell over mid-foot\n2. Hinge at hips, grip bar shoulder-width\n3. Pull bar to lower chest/upper abdomen\n4. Lower with control to starting position\n5. Keep back flat throughout movement",
-        "form_cues": "• Lead with elbows\n• Squeeze shoulder blades together\n• Don't use momentum\n• Maintain neutral spine"
+        "form_cues": "• Lead with elbows\n• Squeeze shoulder blades together\n• Don't use momentum\n• Maintain neutral spine",
     },
     {
         "name": "Pull-Ups",
@@ -62,7 +60,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Intermediate",
         "youtube_url": "https://www.youtube.com/watch?v=eGo4IYlbE5g",
         "instructions": "1. Hang from bar with overhand grip, hands shoulder-width\n2. Pull yourself up until chin over bar\n3. Lower with control to full hang\n4. Keep core engaged throughout\n5. Avoid swinging or kipping",
-        "form_cues": "• Full range of motion\n• Pull elbows down and back\n• Chest to bar if possible\n• Controlled descent"
+        "form_cues": "• Full range of motion\n• Pull elbows down and back\n• Chest to bar if possible\n• Controlled descent",
     },
     {
         "name": "Lat Pulldown",
@@ -73,7 +71,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=CAwf7n6Luuc",
         "instructions": "1. Sit at machine, adjust thigh pad\n2. Grip bar wider than shoulder-width\n3. Pull bar down to upper chest\n4. Squeeze shoulder blades together\n5. Control return to starting position",
-        "form_cues": "• Slight lean back\n• Pull elbows down and back\n• Don't use momentum\n• Full stretch at top"
+        "form_cues": "• Slight lean back\n• Pull elbows down and back\n• Don't use momentum\n• Full stretch at top",
     },
     {
         "name": "Deadlift",
@@ -84,9 +82,8 @@ EXERCISE_LIBRARY = [
         "difficulty": "Advanced",
         "youtube_url": "https://www.youtube.com/watch?v=op9kVnSso6Q",
         "instructions": "1. Stand with feet hip-width, bar over mid-foot\n2. Bend down and grip bar just outside legs\n3. Chest up, back flat, hips higher than knees\n4. Drive through floor, stand up fully\n5. Lower bar with control, maintaining form",
-        "form_cues": "• Neutral spine throughout\n• Drive through heels\n• Bar stays close to body\n• Hips and shoulders rise together"
+        "form_cues": "• Neutral spine throughout\n• Drive through heels\n• Bar stays close to body\n• Hips and shoulders rise together",
     },
-
     # SHOULDER EXERCISES
     {
         "name": "Overhead Press",
@@ -97,7 +94,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Intermediate",
         "youtube_url": "https://www.youtube.com/watch?v=2yjwXTZQDDI",
         "instructions": "1. Stand with feet shoulder-width, bar at shoulders\n2. Grip bar just outside shoulders\n3. Press bar straight up overhead\n4. Lock out arms at top\n5. Lower with control to starting position",
-        "form_cues": "• Keep core tight\n• Don't arch back excessively\n• Bar path slightly back over head\n• Full lockout at top"
+        "form_cues": "• Keep core tight\n• Don't arch back excessively\n• Bar path slightly back over head\n• Full lockout at top",
     },
     {
         "name": "Lateral Raise",
@@ -108,9 +105,8 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=3VcKaXpzqRo",
         "instructions": "1. Stand with dumbbells at sides, slight bend in elbows\n2. Raise arms out to sides until shoulder height\n3. Pause briefly at top\n4. Lower with control to starting position\n5. Maintain slight forward lean",
-        "form_cues": "• Lead with elbows\n• Don't swing weights\n• Slight bend in elbows\n• Control the negative"
+        "form_cues": "• Lead with elbows\n• Don't swing weights\n• Slight bend in elbows\n• Control the negative",
     },
-
     # LEG EXERCISES
     {
         "name": "Barbell Back Squat",
@@ -121,7 +117,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Intermediate",
         "youtube_url": "https://www.youtube.com/watch?v=ultWZbUMPL8",
         "instructions": "1. Bar on upper back, feet shoulder-width\n2. Unrack and step back\n3. Descend by breaking at hips and knees\n4. Lower until thighs parallel or below\n5. Drive through heels to stand",
-        "form_cues": "• Chest up, core braced\n• Knees track over toes\n• Full depth if mobility allows\n• Drive knees out"
+        "form_cues": "• Chest up, core braced\n• Knees track over toes\n• Full depth if mobility allows\n• Drive knees out",
     },
     {
         "name": "Romanian Deadlift",
@@ -132,7 +128,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Intermediate",
         "youtube_url": "https://www.youtube.com/watch?v=2SHsk9AzdjA",
         "instructions": "1. Stand with barbell at hip height\n2. Slight knee bend, push hips back\n3. Lower bar down shins, feel hamstring stretch\n4. Stop when back starts to round\n5. Drive hips forward to return",
-        "form_cues": "• Keep bar close to legs\n• Neutral spine\n• Push hips back, not down\n• Feel stretch in hamstrings"
+        "form_cues": "• Keep bar close to legs\n• Neutral spine\n• Push hips back, not down\n• Feel stretch in hamstrings",
     },
     {
         "name": "Leg Press",
@@ -143,7 +139,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=IZxyjW7MPJQ",
         "instructions": "1. Sit in machine, feet shoulder-width on platform\n2. Release safety, lower platform with control\n3. Lower until knees at 90° or slightly below\n4. Press through heels to extend legs\n5. Don't lock knees at top",
-        "form_cues": "• Keep lower back pressed to pad\n• Full range of motion\n• Don't bounce at bottom\n• Controlled tempo"
+        "form_cues": "• Keep lower back pressed to pad\n• Full range of motion\n• Don't bounce at bottom\n• Controlled tempo",
     },
     {
         "name": "Lunges",
@@ -154,9 +150,8 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=QOVaHwm-Q6U",
         "instructions": "1. Stand with feet hip-width apart\n2. Step forward with one leg\n3. Lower until both knees at 90°\n4. Push through front heel to return\n5. Alternate legs",
-        "form_cues": "• Keep torso upright\n• Front knee over ankle\n• Back knee just above floor\n• Long stride"
+        "form_cues": "• Keep torso upright\n• Front knee over ankle\n• Back knee just above floor\n• Long stride",
     },
-
     # ARM EXERCISES
     {
         "name": "Barbell Curl",
@@ -167,7 +162,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=kwG2ipFRgfo",
         "instructions": "1. Stand with feet shoulder-width, bar in hands\n2. Curl bar up to shoulders\n3. Squeeze biceps at top\n4. Lower with control to starting position\n5. Keep elbows stationary",
-        "form_cues": "• Don't swing body\n• Keep elbows tight to sides\n• Full range of motion\n• Controlled eccentric"
+        "form_cues": "• Don't swing body\n• Keep elbows tight to sides\n• Full range of motion\n• Controlled eccentric",
     },
     {
         "name": "Tricep Dips",
@@ -178,9 +173,8 @@ EXERCISE_LIBRARY = [
         "difficulty": "Intermediate",
         "youtube_url": "https://www.youtube.com/watch?v=2z8JmcrW-As",
         "instructions": "1. Grip bars or bench edge, support bodyweight\n2. Lower body by bending elbows\n3. Descend until upper arms parallel to ground\n4. Push back up to starting position\n5. Keep body upright for tricep focus",
-        "form_cues": "• Don't shrug shoulders\n• Elbows back, not flared\n• Controlled descent\n• Full extension at top"
+        "form_cues": "• Don't shrug shoulders\n• Elbows back, not flared\n• Controlled descent\n• Full extension at top",
     },
-
     # CORE EXERCISES
     {
         "name": "Plank",
@@ -191,7 +185,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=pSHjTRCQxIw",
         "instructions": "1. Start in forearm plank position\n2. Body in straight line from head to heels\n3. Engage core, squeeze glutes\n4. Hold position for prescribed time\n5. Breathe normally",
-        "form_cues": "• Don't let hips sag\n• Keep neck neutral\n• Squeeze everything\n• Quality over duration"
+        "form_cues": "• Don't let hips sag\n• Keep neck neutral\n• Squeeze everything\n• Quality over duration",
     },
     {
         "name": "Russian Twist",
@@ -202,11 +196,9 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=wkD8rjkodUI",
         "instructions": "1. Sit with knees bent, feet off floor\n2. Lean back slightly, core engaged\n3. Rotate torso side to side\n4. Touch weight/hands to floor each side\n5. Keep movement controlled",
-        "form_cues": "• Rotate from core, not arms\n• Keep chest up\n• Controlled rotation\n• Breathe throughout"
+        "form_cues": "• Rotate from core, not arms\n• Keep chest up\n• Controlled rotation\n• Breathe throughout",
     },
-
     # ==================== RUGBY/FUNCTIONAL EXERCISES ====================
-
     # POWER & EXPLOSIVE MOVEMENTS
     {
         "name": "Power Clean",
@@ -217,7 +209,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Advanced",
         "youtube_url": "https://www.youtube.com/watch?v=KwYJTpQ_x5A",
         "instructions": "1. Start in deadlift position, bar over mid-foot\n2. Explosively extend hips, knees, and ankles\n3. Shrug shoulders and pull bar up\n4. Drop under bar, catch at shoulders\n5. Stand to full extension",
-        "form_cues": "• Triple extension (ankles, knees, hips)\n• Fast elbows\n• Catch with soft knees\n• Keep bar close to body"
+        "form_cues": "• Triple extension (ankles, knees, hips)\n• Fast elbows\n• Catch with soft knees\n• Keep bar close to body",
     },
     {
         "name": "Box Jump",
@@ -228,7 +220,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Intermediate",
         "youtube_url": "https://www.youtube.com/watch?v=52r_Ul5k03g",
         "instructions": "1. Stand facing box, feet hip-width\n2. Swing arms back, quarter squat\n3. Explosively jump onto box\n4. Land softly with bent knees\n5. Step down (don't jump down)",
-        "form_cues": "• Soft landing\n• Full hip extension at top\n• Reset between reps\n• Quality over quantity"
+        "form_cues": "• Soft landing\n• Full hip extension at top\n• Reset between reps\n• Quality over quantity",
     },
     {
         "name": "Broad Jump",
@@ -239,7 +231,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=LFl6Ar3fZ4g",
         "instructions": "1. Start with feet hip-width\n2. Swing arms back, load hips\n3. Jump forward explosively\n4. Land in athletic position\n5. Measure distance for progress tracking",
-        "form_cues": "• Drive arms forward\n• Push through ground\n• Land balanced\n• Absorb landing with legs"
+        "form_cues": "• Drive arms forward\n• Push through ground\n• Land balanced\n• Absorb landing with legs",
     },
     {
         "name": "Medicine Ball Slam",
@@ -250,9 +242,8 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=LFUHJQZYRjk",
         "instructions": "1. Hold medicine ball overhead\n2. Rise onto toes, extend fully\n3. Slam ball down with maximum force\n4. Catch on bounce or pick up\n5. Repeat explosively",
-        "form_cues": "• Full body engagement\n• Explosive power\n• Use core, not just arms\n• Keep back safe"
+        "form_cues": "• Full body engagement\n• Explosive power\n• Use core, not just arms\n• Keep back safe",
     },
-
     # STRENGTH & CONTACT PREPARATION
     {
         "name": "Front Squat",
@@ -263,7 +254,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Intermediate",
         "youtube_url": "https://www.youtube.com/watch?v=uYumuL_G_V0",
         "instructions": "1. Bar rests on front delts, elbows high\n2. Feet shoulder-width, toes slightly out\n3. Descend keeping chest up\n4. Lower until thighs parallel\n5. Drive through heels to stand",
-        "form_cues": "• Elbows stay high\n• Chest up throughout\n• Core braced hard\n• More upright than back squat"
+        "form_cues": "• Elbows stay high\n• Chest up throughout\n• Core braced hard\n• More upright than back squat",
     },
     {
         "name": "Farmer's Walk",
@@ -274,7 +265,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=rt17lmztSlY",
         "instructions": "1. Pick up heavy dumbbells/weights\n2. Stand tall with weights at sides\n3. Walk forward with controlled steps\n4. Keep shoulders back and down\n5. Walk prescribed distance",
-        "form_cues": "• Tight core\n• Don't let shoulders shrug up\n• Controlled breathing\n• Strong grip"
+        "form_cues": "• Tight core\n• Don't let shoulders shrug up\n• Controlled breathing\n• Strong grip",
     },
     {
         "name": "Sled Push",
@@ -285,7 +276,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Intermediate",
         "youtube_url": "https://www.youtube.com/watch?v=PJeIeVKC9NY",
         "instructions": "1. Hands on sled, arms extended\n2. Lean forward at 45° angle\n3. Drive legs powerfully\n4. Short, powerful steps\n5. Push for prescribed distance",
-        "form_cues": "• Stay low\n• Drive through ground\n• Straight line from head to heel\n• Explosive leg drive"
+        "form_cues": "• Stay low\n• Drive through ground\n• Straight line from head to heel\n• Explosive leg drive",
     },
     {
         "name": "Sled Drag/Pull",
@@ -296,9 +287,8 @@ EXERCISE_LIBRARY = [
         "difficulty": "Intermediate",
         "youtube_url": "https://www.youtube.com/watch?v=qv7kmv8zVi4",
         "instructions": "1. Attach rope to sled\n2. Walk backward pulling sled\n3. Lean back slightly\n4. Use upper back and arms to pull\n5. Powerful backward strides",
-        "form_cues": "• Pull with lats\n• Stay balanced\n• Short powerful steps\n• Core engaged"
+        "form_cues": "• Pull with lats\n• Stay balanced\n• Short powerful steps\n• Core engaged",
     },
-
     # UPPER BODY POWER & CONTACT
     {
         "name": "Incline Bench Press",
@@ -309,7 +299,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Intermediate",
         "youtube_url": "https://www.youtube.com/watch?v=jPLdzuHckI8",
         "instructions": "1. Set bench to 30-45° incline\n2. Lie back, feet flat on floor\n3. Lower bar to upper chest\n4. Press up to arms extended\n5. Control the descent",
-        "form_cues": "• Don't bounce\n• Retract shoulder blades\n• Drive through bench\n• Full range of motion"
+        "form_cues": "• Don't bounce\n• Retract shoulder blades\n• Drive through bench\n• Full range of motion",
     },
     {
         "name": "Floor Press",
@@ -320,7 +310,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Intermediate",
         "youtube_url": "https://www.youtube.com/watch?v=LbzcEXs9Jt4",
         "instructions": "1. Lie on floor with bar at chest height\n2. Lower bar until elbows touch floor\n3. Pause briefly\n4. Press up explosively\n5. Great for lockout strength",
-        "form_cues": "• Pause on floor\n• Don't relax at bottom\n• Explosive concentric\n• Good for rugby contact prep"
+        "form_cues": "• Pause on floor\n• Don't relax at bottom\n• Explosive concentric\n• Good for rugby contact prep",
     },
     {
         "name": "Face Pulls",
@@ -331,9 +321,8 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=rep-qVOkqgk",
         "instructions": "1. Set cable at face height\n2. Pull rope toward face\n3. Separate rope at end, hands past ears\n4. Squeeze shoulder blades\n5. Control return to start",
-        "form_cues": "• Pull to face, not chest\n• External rotation at end\n• Shoulders back and down\n• Essential for shoulder health"
+        "form_cues": "• Pull to face, not chest\n• External rotation at end\n• Shoulders back and down\n• Essential for shoulder health",
     },
-
     # CORE & STABILITY FOR CONTACT
     {
         "name": "Turkish Get-Up",
@@ -344,7 +333,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Advanced",
         "youtube_url": "https://www.youtube.com/watch?v=0bWRPC49-KI",
         "instructions": "1. Lie on back, press weight overhead\n2. Roll to elbow, then hand\n3. Bridge hips up\n4. Sweep leg through\n5. Stand up, reverse to descend",
-        "form_cues": "• Keep eyes on weight\n• Slow controlled movement\n• Excellent functional strength\n• Master technique first"
+        "form_cues": "• Keep eyes on weight\n• Slow controlled movement\n• Excellent functional strength\n• Master technique first",
     },
     {
         "name": "Pallof Press",
@@ -355,7 +344,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=AH_QZLm_0-s",
         "instructions": "1. Stand perpendicular to cable\n2. Hold handle at chest\n3. Press arms straight out\n4. Hold and resist rotation\n5. Return to chest",
-        "form_cues": "• Don't rotate torso\n• Brace core hard\n• Slow controlled press\n• Anti-rotation strength"
+        "form_cues": "• Don't rotate torso\n• Brace core hard\n• Slow controlled press\n• Anti-rotation strength",
     },
     {
         "name": "Dead Bug",
@@ -366,9 +355,8 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=g_BYB0R-4Ws",
         "instructions": "1. Lie on back, arms up, knees bent\n2. Lower opposite arm and leg\n3. Keep lower back pressed to floor\n4. Return to start\n5. Alternate sides",
-        "form_cues": "• No lower back arch\n• Slow controlled movement\n• Breathe throughout\n• Core stability fundamental"
+        "form_cues": "• No lower back arch\n• Slow controlled movement\n• Breathe throughout\n• Core stability fundamental",
     },
-
     # POSTERIOR CHAIN & INJURY PREVENTION
     {
         "name": "Nordic Hamstring Curl",
@@ -379,7 +367,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Advanced",
         "youtube_url": "https://www.youtube.com/watch?v=EthJV19wO6o",
         "instructions": "1. Kneel with ankles secured\n2. Keep body straight from knees to head\n3. Lower forward as slowly as possible\n4. Catch yourself with hands\n5. Push back up to start",
-        "form_cues": "• Eccentric focus\n• Hamstring injury prevention\n• Use assistance if needed\n• Build up gradually"
+        "form_cues": "• Eccentric focus\n• Hamstring injury prevention\n• Use assistance if needed\n• Build up gradually",
     },
     {
         "name": "Bulgarian Split Squat",
@@ -390,7 +378,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Intermediate",
         "youtube_url": "https://www.youtube.com/watch?v=2C-uNgKwPLE",
         "instructions": "1. Back foot elevated on bench\n2. Front foot forward in lunge position\n3. Lower until front thigh parallel\n4. Drive through front heel to stand\n5. Keep torso upright",
-        "form_cues": "• Front knee tracks over toe\n• Torso upright\n• Balance and stability\n• Single leg strength"
+        "form_cues": "• Front knee tracks over toe\n• Torso upright\n• Balance and stability\n• Single leg strength",
     },
     {
         "name": "Glute Bridge",
@@ -401,9 +389,8 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=wPM8icPu6H8",
         "instructions": "1. Lie on back, knees bent, feet flat\n2. Drive through heels\n3. Raise hips until body straight\n4. Squeeze glutes at top\n5. Lower with control",
-        "form_cues": "• Squeeze glutes, not lower back\n• Full hip extension\n• Shoulders stay on ground\n• Posterior chain activation"
+        "form_cues": "• Squeeze glutes, not lower back\n• Full hip extension\n• Shoulders stay on ground\n• Posterior chain activation",
     },
-
     # UPPER BODY PULLING & GRIP
     {
         "name": "Chin-Ups",
@@ -414,7 +401,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Intermediate",
         "youtube_url": "https://www.youtube.com/watch?v=brhYEi8Nzv4",
         "instructions": "1. Hang from bar, underhand grip\n2. Pull chin over bar\n3. Lead with chest\n4. Lower with control\n5. Full range of motion",
-        "form_cues": "• Underhand grip (supinated)\n• More bicep involvement\n• Full hang at bottom\n• Controlled tempo"
+        "form_cues": "• Underhand grip (supinated)\n• More bicep involvement\n• Full hang at bottom\n• Controlled tempo",
     },
     {
         "name": "Inverted Row",
@@ -425,11 +412,9 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=hXTc1mDnZCw",
         "instructions": "1. Lie under bar, grab with overhand grip\n2. Keep body straight\n3. Pull chest to bar\n4. Squeeze shoulder blades\n5. Lower with control",
-        "form_cues": "• Body stays rigid\n• Pull elbows back\n• Lower bar = harder\n• Great progression exercise"
+        "form_cues": "• Body stays rigid\n• Pull elbows back\n• Lower bar = harder\n• Great progression exercise",
     },
-
     # ADDITIONAL COMMON EXERCISES
-
     # CHEST ISOLATION
     {
         "name": "Cable Fly",
@@ -440,9 +425,8 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=Iwe6AmxVf7o",
         "instructions": "1. Set cables to chest height\n2. Stand in center with slight forward lean\n3. Grab handles with arms extended\n4. Bring hands together in arc motion\n5. Squeeze chest, return with control",
-        "form_cues": "• Maintain slight elbow bend\n• Think 'hugging a tree'\n• Control eccentric phase\n• Focus on chest squeeze"
+        "form_cues": "• Maintain slight elbow bend\n• Think 'hugging a tree'\n• Control eccentric phase\n• Focus on chest squeeze",
     },
-
     # TRICEPS
     {
         "name": "Tricep Pushdown",
@@ -453,9 +437,8 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=2-LAMcpzODU",
         "instructions": "1. Attach rope or bar to high pulley\n2. Stand facing cable, elbows at sides\n3. Push down until arms fully extended\n4. Squeeze triceps at bottom\n5. Return with control",
-        "form_cues": "• Keep elbows locked at sides\n• Don't lean forward\n• Full extension at bottom\n• Controlled tempo"
+        "form_cues": "• Keep elbows locked at sides\n• Don't lean forward\n• Full extension at bottom\n• Controlled tempo",
     },
-
     # LEGS - HAMSTRINGS
     {
         "name": "Hamstring Curl",
@@ -466,9 +449,8 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=1Tq3QdYUuHs",
         "instructions": "1. Adjust machine, lie face down\n2. Position ankles under pad\n3. Curl legs toward glutes\n4. Squeeze hamstrings at top\n5. Lower with control",
-        "form_cues": "• Keep hips down\n• Full range of motion\n• Don't hyperextend knees\n• Control the negative"
+        "form_cues": "• Keep hips down\n• Full range of motion\n• Don't hyperextend knees\n• Control the negative",
     },
-
     # LEGS - QUADRICEPS
     {
         "name": "Leg Extension",
@@ -479,9 +461,8 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=YyvSfEjZruE",
         "instructions": "1. Sit in machine, adjust shin pad\n2. Position pad above ankles\n3. Extend legs until straight\n4. Squeeze quads at top\n5. Lower with control",
-        "form_cues": "• Back against pad\n• Full extension (don't lock)\n• Control descent\n• Great for quad isolation"
+        "form_cues": "• Back against pad\n• Full extension (don't lock)\n• Control descent\n• Great for quad isolation",
     },
-
     # SHOULDERS
     {
         "name": "Dumbbell Shoulder Press",
@@ -492,9 +473,8 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=qEwKCR5JCog",
         "instructions": "1. Sit on bench with back support\n2. Hold dumbbells at shoulder height\n3. Press overhead until arms extended\n4. Lower with control to shoulders\n5. Keep core engaged",
-        "form_cues": "• Press straight up\n• Don't arch back excessively\n• Elbows slightly forward\n• Controlled descent"
+        "form_cues": "• Press straight up\n• Don't arch back excessively\n• Elbows slightly forward\n• Controlled descent",
     },
-
     # BACK - DUMBBELL VARIATION
     {
         "name": "Bent Over Dumbbell Row",
@@ -505,9 +485,8 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=roCP6wCXPqo",
         "instructions": "1. Hinge at hips, slight knee bend\n2. Hold dumbbells with neutral grip\n3. Pull dumbbells to hips\n4. Squeeze shoulder blades\n5. Lower with control",
-        "form_cues": "• Keep back flat\n• Pull elbows back, not up\n• Torso near parallel to floor\n• Don't round lower back"
+        "form_cues": "• Keep back flat\n• Pull elbows back, not up\n• Torso near parallel to floor\n• Don't round lower back",
     },
-
     # NEW COMMON EXERCISES
     {
         "name": "Seated Cable Row",
@@ -518,7 +497,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=GZbfZ033f74",
         "instructions": "1. Sit at cable row station with feet braced\n2. Grab handle with neutral grip\n3. Keep chest up and pull handle to lower ribs\n4. Squeeze shoulder blades together\n5. Extend arms forward with control",
-        "form_cues": "• Keep torso mostly still\n• Pull elbows back close to body\n• Avoid shrugging shoulders\n• Control both directions"
+        "form_cues": "• Keep torso mostly still\n• Pull elbows back close to body\n• Avoid shrugging shoulders\n• Control both directions",
     },
     {
         "name": "One-Arm Dumbbell Row",
@@ -529,7 +508,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=pYcpY20QaE8",
         "instructions": "1. Place one knee and hand on bench for support\n2. Hold dumbbell in opposite hand\n3. Row dumbbell toward hip\n4. Pause and squeeze back at top\n5. Lower slowly and repeat each side",
-        "form_cues": "• Keep spine neutral\n• Pull toward hip, not shoulder\n• Minimize torso rotation\n• Full stretch at bottom"
+        "form_cues": "• Keep spine neutral\n• Pull toward hip, not shoulder\n• Minimize torso rotation\n• Full stretch at bottom",
     },
     {
         "name": "Incline Dumbbell Press",
@@ -540,7 +519,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=8iPEnn-ltC8",
         "instructions": "1. Set bench to 30-45 degree incline\n2. Lie back with dumbbells at chest level\n3. Press dumbbells up and slightly inward\n4. Lower until elbows are below bench height\n5. Repeat with controlled tempo",
-        "form_cues": "• Keep wrists stacked over elbows\n• Don't flare elbows too wide\n• Keep shoulder blades retracted\n• Avoid bouncing at bottom"
+        "form_cues": "• Keep wrists stacked over elbows\n• Don't flare elbows too wide\n• Keep shoulder blades retracted\n• Avoid bouncing at bottom",
     },
     {
         "name": "Goblet Squat",
@@ -551,7 +530,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=MeIiIdhvXT4",
         "instructions": "1. Hold weight at chest with elbows down\n2. Stand with feet shoulder-width apart\n3. Sit hips down and back into squat\n4. Keep chest tall and knees tracking over toes\n5. Drive through mid-foot to stand",
-        "form_cues": "• Keep elbows inside knees\n• Brace core before descent\n• Heels stay grounded\n• Maintain neutral spine"
+        "form_cues": "• Keep elbows inside knees\n• Brace core before descent\n• Heels stay grounded\n• Maintain neutral spine",
     },
     {
         "name": "Hip Thrust",
@@ -562,7 +541,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Intermediate",
         "youtube_url": "https://www.youtube.com/watch?v=LM8XHLYJoYs",
         "instructions": "1. Sit on floor with upper back against bench\n2. Roll weight over hips if using load\n3. Drive hips upward until torso is parallel to floor\n4. Squeeze glutes hard at top\n5. Lower hips with control",
-        "form_cues": "• Tuck chin slightly\n• Keep shins near vertical at top\n• Avoid overextending lower back\n• Pause briefly at lockout"
+        "form_cues": "• Tuck chin slightly\n• Keep shins near vertical at top\n• Avoid overextending lower back\n• Pause briefly at lockout",
     },
     {
         "name": "Standing Calf Raise",
@@ -573,7 +552,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=-M4-G8p8fmc",
         "instructions": "1. Stand with balls of feet on edge of platform\n2. Let heels lower for a stretch\n3. Press through toes to raise heels high\n4. Pause at top contraction\n5. Lower slowly and repeat",
-        "form_cues": "• Full range of motion\n• Controlled tempo\n• Don't bounce at bottom\n• Keep knees softly bent"
+        "form_cues": "• Full range of motion\n• Controlled tempo\n• Don't bounce at bottom\n• Keep knees softly bent",
     },
     {
         "name": "Hammer Curl",
@@ -584,7 +563,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=zC3nLlEvin4",
         "instructions": "1. Stand holding dumbbells at sides with neutral grip\n2. Keep elbows tucked at your sides\n3. Curl dumbbells up toward shoulders\n4. Squeeze at top without swinging\n5. Lower under control",
-        "form_cues": "• Palms face each other throughout\n• Avoid shoulder shrugging\n• Keep torso still\n• Control the negative"
+        "form_cues": "• Palms face each other throughout\n• Avoid shoulder shrugging\n• Keep torso still\n• Control the negative",
     },
     {
         "name": "Skull Crushers",
@@ -595,7 +574,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Intermediate",
         "youtube_url": "https://www.youtube.com/watch?v=d_KZxkY_0cM",
         "instructions": "1. Lie on bench with weight held above chest\n2. Keep upper arms mostly vertical\n3. Bend elbows to lower weight near forehead\n4. Extend elbows to return to start\n5. Repeat with controlled motion",
-        "form_cues": "• Elbows stay in line\n• Move only at elbow joint\n• Don't flare arms excessively\n• Use moderate load"
+        "form_cues": "• Elbows stay in line\n• Move only at elbow joint\n• Don't flare arms excessively\n• Use moderate load",
     },
     {
         "name": "Rear Delt Fly",
@@ -606,7 +585,7 @@ EXERCISE_LIBRARY = [
         "difficulty": "Beginner",
         "youtube_url": "https://www.youtube.com/watch?v=EA7u4Q_8HQ0",
         "instructions": "1. Hinge forward with dumbbells hanging below shoulders\n2. Keep slight bend in elbows\n3. Raise arms out wide until shoulder height\n4. Squeeze shoulder blades gently\n5. Lower with control",
-        "form_cues": "• Lead with elbows\n• Avoid swinging torso\n• Keep neck neutral\n• Light weight, strict form"
+        "form_cues": "• Lead with elbows\n• Avoid swinging torso\n• Keep neck neutral\n• Light weight, strict form",
     },
     {
         "name": "Hanging Leg Raise",
@@ -617,6 +596,6 @@ EXERCISE_LIBRARY = [
         "difficulty": "Intermediate",
         "youtube_url": "https://www.youtube.com/watch?v=Pr1ieGZ5atk",
         "instructions": "1. Hang from bar with active shoulders\n2. Brace core and raise legs forward\n3. Lift until thighs reach at least hip height\n4. Pause briefly at top\n5. Lower legs without swinging",
-        "form_cues": "• Avoid momentum\n• Posterior pelvic tilt at top\n• Keep ribcage down\n• Control descent fully"
+        "form_cues": "• Avoid momentum\n• Posterior pelvic tilt at top\n• Keep ribcage down\n• Control descent fully",
     },
 ]

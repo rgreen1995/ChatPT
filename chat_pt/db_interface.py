@@ -3,13 +3,14 @@ Unified database interface for ChatPT.
 Automatically uses Supabase if configured, otherwise falls back to SQLite.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 import streamlit as st
+
+from chat_pt import database as sqlite_db
 
 # Import both database handlers
 from chat_pt.supabase_db import SupabaseDB, is_supabase_configured
-from chat_pt import database as sqlite_db
-
 
 # Global database instance
 _db_instance = None
@@ -23,16 +24,16 @@ def get_db():
         if is_supabase_configured():
             try:
                 _db_instance = SupabaseDB()
-                if 'db_type' not in st.session_state:
-                    st.session_state.db_type = 'supabase'
+                if "db_type" not in st.session_state:
+                    st.session_state.db_type = "supabase"
             except Exception as e:
-                st.warning(f"⚠️ Supabase connection failed: {str(e)}. Falling back to SQLite.")
-                _db_instance = 'sqlite'
-                st.session_state.db_type = 'sqlite'
+                st.warning(f"⚠️ Supabase connection failed: {e!s}. Falling back to SQLite.")
+                _db_instance = "sqlite"
+                st.session_state.db_type = "sqlite"
         else:
-            _db_instance = 'sqlite'
-            if 'db_type' not in st.session_state:
-                st.session_state.db_type = 'sqlite'
+            _db_instance = "sqlite"
+            if "db_type" not in st.session_state:
+                st.session_state.db_type = "sqlite"
 
     return _db_instance
 
@@ -40,18 +41,23 @@ def get_db():
 def init_db():
     """Initialize the database."""
     db = get_db()
-    if db == 'sqlite':
+    if db == "sqlite":
         sqlite_db.init_db()
     else:
         # For Supabase, print schema instructions
-        schema = db.init_db()
+        db.init_db()
         # Schema needs to be run manually in Supabase dashboard
 
 
-def create_user(name: str, email: str = None, password: str = None, auth_provider: str = 'email') -> Any:
+def create_user(
+    name: str,
+    email: Optional[str] = None,
+    password: Optional[str] = None,
+    auth_provider: str = "email",
+) -> Any:
     """Create a new user and return their ID."""
     db = get_db()
-    if db == 'sqlite':
+    if db == "sqlite":
         return sqlite_db.create_user(name, email, password, auth_provider)
     else:
         return db.create_user(name, email, password, auth_provider)
@@ -60,7 +66,7 @@ def create_user(name: str, email: str = None, password: str = None, auth_provide
 def authenticate_user(email: str, password: str) -> Optional[Dict[str, Any]]:
     """Authenticate a user by email and password."""
     db = get_db()
-    if db == 'sqlite':
+    if db == "sqlite":
         return sqlite_db.authenticate_user(email, password)
     else:
         return db.authenticate_user(email, password)
@@ -69,16 +75,16 @@ def authenticate_user(email: str, password: str) -> Optional[Dict[str, Any]]:
 def user_exists(email: str) -> bool:
     """Check if a user with this email already exists."""
     db = get_db()
-    if db == 'sqlite':
+    if db == "sqlite":
         return sqlite_db.user_exists(email)
     else:
         return db.user_exists(email)
 
 
-def get_or_create_user_by_email(email: str, name: str, auth_provider: str = 'google') -> Any:
+def get_or_create_user_by_email(email: str, name: str, auth_provider: str = "google") -> Any:
     """Get existing user by email or create a new one (for OAuth)."""
     db = get_db()
-    if db == 'sqlite':
+    if db == "sqlite":
         return sqlite_db.get_or_create_user_by_email(email, name, auth_provider)
     else:
         return db.get_or_create_user_by_email(email, name, auth_provider)
@@ -87,7 +93,7 @@ def get_or_create_user_by_email(email: str, name: str, auth_provider: str = 'goo
 def create_consultation(user_id: Any) -> Any:
     """Create a new consultation for a user."""
     db = get_db()
-    if db == 'sqlite':
+    if db == "sqlite":
         return sqlite_db.create_consultation(user_id)
     else:
         return db.create_consultation(user_id)
@@ -96,7 +102,7 @@ def create_consultation(user_id: Any) -> Any:
 def save_message(consultation_id: Any, role: str, content: str):
     """Save a message to conversation history."""
     db = get_db()
-    if db == 'sqlite':
+    if db == "sqlite":
         sqlite_db.save_message(consultation_id, role, content)
     else:
         db.save_message(consultation_id, role, content)
@@ -105,7 +111,7 @@ def save_message(consultation_id: Any, role: str, content: str):
 def get_conversation_history(consultation_id: Any) -> List[Dict[str, str]]:
     """Get conversation history for a consultation."""
     db = get_db()
-    if db == 'sqlite':
+    if db == "sqlite":
         return sqlite_db.get_conversation_history(consultation_id)
     else:
         return db.get_conversation_history(consultation_id)
@@ -114,7 +120,7 @@ def get_conversation_history(consultation_id: Any) -> List[Dict[str, str]]:
 def save_workout_plan(consultation_id: Any, workout_plan: Dict[str, Any]):
     """Save the workout plan JSON to the consultation."""
     db = get_db()
-    if db == 'sqlite':
+    if db == "sqlite":
         sqlite_db.save_workout_plan(consultation_id, workout_plan)
     else:
         db.save_workout_plan(consultation_id, workout_plan)
@@ -123,7 +129,7 @@ def save_workout_plan(consultation_id: Any, workout_plan: Dict[str, Any]):
 def get_workout_plan(consultation_id: Any) -> Optional[Dict[str, Any]]:
     """Get the workout plan for a consultation."""
     db = get_db()
-    if db == 'sqlite':
+    if db == "sqlite":
         return sqlite_db.get_workout_plan(consultation_id)
     else:
         return db.get_workout_plan(consultation_id)
@@ -132,7 +138,7 @@ def get_workout_plan(consultation_id: Any) -> Optional[Dict[str, Any]]:
 def get_user_consultations(user_id: Any) -> List[Dict[str, Any]]:
     """Get all consultations for a user."""
     db = get_db()
-    if db == 'sqlite':
+    if db == "sqlite":
         return sqlite_db.get_user_consultations(user_id)
     else:
         return db.get_user_consultations(user_id)
@@ -146,20 +152,24 @@ def save_exercise_progress(
     sets: int,
     reps: int,
     weight: float,
-    notes: str = ""
+    notes: str = "",
 ):
     """Save exercise progress for a user."""
     db = get_db()
-    if db == 'sqlite':
-        sqlite_db.save_exercise_progress(user_id, consultation_id, exercise_name, day, sets, reps, weight, notes)
+    if db == "sqlite":
+        sqlite_db.save_exercise_progress(
+            user_id, consultation_id, exercise_name, day, sets, reps, weight, notes
+        )
     else:
-        db.save_exercise_progress(user_id, consultation_id, exercise_name, day, sets, reps, weight, notes)
+        db.save_exercise_progress(
+            user_id, consultation_id, exercise_name, day, sets, reps, weight, notes
+        )
 
 
 def get_exercise_progress(user_id: Any, exercise_name: str) -> List[Dict[str, Any]]:
     """Get all progress records for a specific exercise."""
     db = get_db()
-    if db == 'sqlite':
+    if db == "sqlite":
         return sqlite_db.get_exercise_progress(user_id, exercise_name)
     else:
         return db.get_exercise_progress(user_id, exercise_name)
@@ -168,7 +178,7 @@ def get_exercise_progress(user_id: Any, exercise_name: str) -> List[Dict[str, An
 def get_users() -> List[Dict[str, Any]]:
     """Get all users (SQLite only for now)."""
     db = get_db()
-    if db == 'sqlite':
+    if db == "sqlite":
         return sqlite_db.get_users()
     else:
         # For Supabase, you'd implement this if needed
@@ -178,7 +188,7 @@ def get_users() -> List[Dict[str, Any]]:
 def log_missing_exercise_request(exercise_name: str, user_id: Any = None):
     """Log a request for an exercise that's not in the library."""
     db = get_db()
-    if db == 'sqlite':
+    if db == "sqlite":
         sqlite_db.log_missing_exercise_request(exercise_name, user_id)
     else:
         # For Supabase, you'd implement this if needed
@@ -188,7 +198,7 @@ def log_missing_exercise_request(exercise_name: str, user_id: Any = None):
 def get_missing_exercise_requests(min_requests: int = 1, limit: int = 50) -> List[Dict[str, Any]]:
     """Get missing exercise requests sorted by request count."""
     db = get_db()
-    if db == 'sqlite':
+    if db == "sqlite":
         return sqlite_db.get_missing_exercise_requests(min_requests, limit)
     else:
         # For Supabase, you'd implement this if needed

@@ -4,19 +4,19 @@ Provides cloud-based PostgreSQL database through Supabase.
 Falls back to SQLite if Supabase is not configured.
 """
 
-import os
-from datetime import datetime
-from typing import List, Dict, Any, Optional
-import json
 import hashlib
+import os
 import secrets
-import streamlit as st
-from supabase import create_client, Client
+from typing import Any, Dict, List, Optional
 
-def get_secret(key: str, default: str = None) -> str:
+import streamlit as st
+from supabase import Client, create_client
+
+
+def get_secret(key: str, default: Optional[str] = None) -> str:
     """Get secret from Streamlit secrets or environment variables."""
     try:
-        if hasattr(st, 'secrets') and key in st.secrets:
+        if hasattr(st, "secrets") and key in st.secrets:
             return st.secrets[key]
     except (FileNotFoundError, KeyError):
         pass
@@ -24,6 +24,7 @@ def get_secret(key: str, default: str = None) -> str:
 
 
 class SupabaseDB:
+
     """Supabase database handler."""
 
     def __init__(self):
@@ -37,12 +38,12 @@ class SupabaseDB:
         self.client: Client = create_client(supabase_url, supabase_key)
 
     @staticmethod
-    def hash_password(password: str, salt: str = None) -> tuple[str, str]:
+    def hash_password(password: str, salt: Optional[str] = None) -> tuple[str, str]:
         """Hash a password with a salt using SHA-256."""
         if salt is None:
             salt = secrets.token_hex(16)
 
-        password_salt = (password + salt).encode('utf-8')
+        password_salt = (password + salt).encode("utf-8")
         hashed = hashlib.sha256(password_salt).hexdigest()
         return hashed, salt
 
@@ -125,13 +126,11 @@ class SupabaseDB:
         """
         return schema
 
-    def create_user(self, name: str, email: str, password: str = None, auth_provider: str = 'email') -> str:
+    def create_user(
+        self, name: str, email: str, password: Optional[str] = None, auth_provider: str = "email"
+    ) -> str:
         """Create a new user and return their ID (UUID as string)."""
-        data = {
-            "name": name,
-            "email": email,
-            "auth_provider": auth_provider
-        }
+        data = {"name": name, "email": email, "auth_provider": auth_provider}
 
         if password:
             hashed_password, salt = self.hash_password(password)
@@ -154,11 +153,7 @@ class SupabaseDB:
             return None
 
         if self.verify_password(password, user["password_hash"], user["password_salt"]):
-            return {
-                "id": user["id"],
-                "name": user["name"],
-                "email": user["email"]
-            }
+            return {"id": user["id"], "name": user["name"], "email": user["email"]}
 
         return None
 
@@ -167,7 +162,9 @@ class SupabaseDB:
         result = self.client.table("users").select("id").eq("email", email).execute()
         return len(result.data) > 0
 
-    def get_or_create_user_by_email(self, email: str, name: str, auth_provider: str = 'google') -> str:
+    def get_or_create_user_by_email(
+        self, email: str, name: str, auth_provider: str = "google"
+    ) -> str:
         """Get existing user by email or create a new one (for OAuth)."""
         result = self.client.table("users").select("id").eq("email", email).execute()
 
@@ -184,36 +181,35 @@ class SupabaseDB:
 
     def save_message(self, consultation_id: str, role: str, content: str):
         """Save a message to conversation history."""
-        data = {
-            "consultation_id": consultation_id,
-            "role": role,
-            "content": content
-        }
+        data = {"consultation_id": consultation_id, "role": role, "content": content}
         self.client.table("conversation_history").insert(data).execute()
 
     def get_conversation_history(self, consultation_id: str) -> List[Dict[str, str]]:
         """Get conversation history for a consultation."""
-        result = self.client.table("conversation_history")\
-            .select("role, content")\
-            .eq("consultation_id", consultation_id)\
-            .order("timestamp")\
+        result = (
+            self.client.table("conversation_history")
+            .select("role, content")
+            .eq("consultation_id", consultation_id)
+            .order("timestamp")
             .execute()
+        )
 
         return [{"role": row["role"], "content": row["content"]} for row in result.data]
 
     def save_workout_plan(self, consultation_id: str, workout_plan: Dict[str, Any]):
         """Save the workout plan JSON to the consultation."""
-        self.client.table("consultations")\
-            .update({"workout_plan": workout_plan, "completed": True})\
-            .eq("id", consultation_id)\
-            .execute()
+        self.client.table("consultations").update(
+            {"workout_plan": workout_plan, "completed": True}
+        ).eq("id", consultation_id).execute()
 
     def get_workout_plan(self, consultation_id: str) -> Optional[Dict[str, Any]]:
         """Get the workout plan for a consultation."""
-        result = self.client.table("consultations")\
-            .select("workout_plan")\
-            .eq("id", consultation_id)\
+        result = (
+            self.client.table("consultations")
+            .select("workout_plan")
+            .eq("id", consultation_id)
             .execute()
+        )
 
         if result.data and result.data[0].get("workout_plan"):
             return result.data[0]["workout_plan"]
@@ -221,17 +217,19 @@ class SupabaseDB:
 
     def get_user_consultations(self, user_id: str) -> List[Dict[str, Any]]:
         """Get all consultations for a user."""
-        result = self.client.table("consultations")\
-            .select("id, created_at, completed")\
-            .eq("user_id", user_id)\
-            .order("created_at", desc=True)\
+        result = (
+            self.client.table("consultations")
+            .select("id, created_at, completed")
+            .eq("user_id", user_id)
+            .order("created_at", desc=True)
             .execute()
+        )
 
         return [
             {
                 "id": row["id"],
                 "created_at": row["created_at"],
-                "completed": row["completed"]
+                "completed": row["completed"],
             }
             for row in result.data
         ]
@@ -245,7 +243,7 @@ class SupabaseDB:
         sets: int,
         reps: int,
         weight: float,
-        notes: str = ""
+        notes: str = "",
     ):
         """Save exercise progress for a user."""
         data = {
@@ -256,18 +254,20 @@ class SupabaseDB:
             "sets": sets,
             "reps": reps,
             "weight": weight,
-            "notes": notes
+            "notes": notes,
         }
         self.client.table("exercise_progress").insert(data).execute()
 
     def get_exercise_progress(self, user_id: str, exercise_name: str) -> List[Dict[str, Any]]:
         """Get all progress records for a specific exercise."""
-        result = self.client.table("exercise_progress")\
-            .select("sets, reps, weight, notes, completed_at, day")\
-            .eq("user_id", user_id)\
-            .eq("exercise_name", exercise_name)\
-            .order("completed_at", desc=True)\
+        result = (
+            self.client.table("exercise_progress")
+            .select("sets, reps, weight, notes, completed_at, day")
+            .eq("user_id", user_id)
+            .eq("exercise_name", exercise_name)
+            .order("completed_at", desc=True)
             .execute()
+        )
 
         return [
             {
@@ -276,7 +276,7 @@ class SupabaseDB:
                 "weight": row["weight"],
                 "notes": row["notes"],
                 "completed_at": row["completed_at"],
-                "day": row["day"]
+                "day": row["day"],
             }
             for row in result.data
         ]
