@@ -24,7 +24,9 @@ def test_render_css_content():
                         assert '.stNumberInput [data-testid="stNumberInputStepDown"]' in arg
                         assert '.stNumberInput [data-testid="stNumberInputStepUp"]' in arg
                         assert ".stNumberInput button {" not in arg
-                        assert '.stNumberInput div[data-baseweb="input"] > div:last-child {' not in arg
+                        assert (
+                            '.stNumberInput div[data-baseweb="input"] > div:last-child {' not in arg
+                        )
                         assert "/* ===== MOBILE-SPECIFIC TIGHTENING (portrait) ===== */" in arg
                         assert "@media (max-width: 640px) {" in arg
                         assert "max-width: 60px !important;" in arg  # Mobile tighter input
@@ -147,9 +149,11 @@ def test_render_log_workout_saves_entered_weight_and_reps():
                                                                     "solo_0": [
                                                                         (
                                                                             0,
-                                                                            workout_plan["schedule"][
-                                                                                "Day 1"
-                                                                            ]["exercises"][0],
+                                                                            workout_plan[
+                                                                                "schedule"
+                                                                            ]["Day 1"]["exercises"][
+                                                                                0
+                                                                            ],
                                                                         )
                                                                     ]
                                                                 },
@@ -158,7 +162,9 @@ def test_render_log_workout_saves_entered_weight_and_reps():
                                                                     "chat_pt.utils.get_sorted_sequence_keys",
                                                                     return_value=["solo_0"],
                                                                 ):
-                                                                    render_log_workout(1, workout_plan)
+                                                                    render_log_workout(
+                                                                        1, workout_plan
+                                                                    )
 
     mock_save.assert_called_once()
     saved_kwargs = mock_save.call_args.kwargs

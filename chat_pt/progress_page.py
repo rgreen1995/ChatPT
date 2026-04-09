@@ -68,21 +68,22 @@ def render():
     st.markdown(
         """
         <style>
-        /* ===== FORCE COLUMNS HORIZONTAL ON ALL SCREEN SIZES ===== */
-        /* Streamlit switches columns to flex-direction:column on small screens.
-           We must override that for the workout grid to stay on one line. */
-        [data-testid="stHorizontalBlock"] {
+        /* ===== SCOPED HORIZONTAL COLUMNS FOR WORKOUT LOG ===== */
+        /* Use :has() so we only force horizontal layout for the workout logging rows.
+           The rest of the app's columns (like charts and stats) will stack normally on mobile. */
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) > div [data-testid="stHorizontalBlock"] {
             flex-direction: row !important;
             flex-wrap: nowrap !important;
             align-items: center !important;
             justify-content: center !important;
-            gap: 0.25rem !important;
+            gap: 0.1rem !important; /* Extremely tight gap between columns */
         }
 
-        [data-testid="column"] {
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) > div [data-testid="column"] {
             min-width: 0px !important;
             flex-shrink: 1 !important;
             box-sizing: border-box !important;
+            padding: 0 0.1rem !important; /* Minimal padding */
         }
 
         /* ===== NUMBER INPUT — compact on ALL screen sizes ===== */
@@ -115,14 +116,14 @@ def render():
             -moz-appearance: textfield !important;
         }
 
-        /* Hide browser native spinners everywhere */
+        /* Hide browser native spinners */
         .stNumberInput input::-webkit-outer-spin-button,
         .stNumberInput input::-webkit-inner-spin-button {
             -webkit-appearance: none !important;
             margin: 0 !important;
         }
 
-        /* Hide Streamlit step buttons everywhere — they waste space */
+        /* Hide Streamlit step buttons */
         .stNumberInput [data-testid="stNumberInputStepDown"],
         .stNumberInput [data-testid="stNumberInputStepUp"] {
             display: none !important;
@@ -138,7 +139,7 @@ def render():
             min-width: 0px !important;
             min-height: 2.2rem !important;
             height: 2.2rem !important;
-            padding: 0 0.5rem !important;
+            padding: 0 0.2rem !important;
             font-size: 0.9rem !important;
             border-radius: 6px !important;
         }
@@ -169,7 +170,6 @@ def render():
             margin: 0 auto;
         }
 
-        /* Reduce vertical spacing between elements */
         .element-container {
             margin-bottom: 0px !important;
         }
@@ -186,17 +186,6 @@ def render():
 
         /* ===== MOBILE-SPECIFIC TIGHTENING (portrait) ===== */
         @media (max-width: 640px) {
-            [data-testid="stHorizontalBlock"] {
-                gap: 0.1rem !important;
-                justify-content: center !important;
-                overflow: hidden !important;
-            }
-
-            [data-testid="column"] {
-                padding: 0 0.05rem !important;
-            }
-
-            /* Remove extra padding from main container on mobile */
             .main .block-container {
                 padding-left: 0.3rem !important;
                 padding-right: 0.3rem !important;
@@ -206,17 +195,13 @@ def render():
                 box-sizing: border-box !important;
             }
 
-            /* Prevent horizontal scroll everywhere */
             html, body, [data-testid="stAppViewContainer"], .main,
             [data-testid="stApp"], section[data-testid="stMain"] {
                 overflow-x: hidden !important;
                 max-width: 100vw !important;
             }
 
-            /* Tighter inputs on mobile */
-            .stNumberInput {
-                max-width: 60px !important;
-            }
+            .stNumberInput { max-width: 60px !important; }
 
             .stNumberInput div[data-baseweb="input"] {
                 height: 2rem !important;
@@ -253,50 +238,27 @@ def render():
                 font-size: 0.65rem !important;
             }
 
-            /* Prevent label/caption wrapping */
+            /* Prevent label/caption wrapping and hide labels to save space */
             .stNumberInput label, .stSelectbox label {
                 white-space: nowrap !important;
                 overflow: hidden !important;
                 text-overflow: ellipsis !important;
+                display: none !important;
             }
         }
 
-        /* ===== EXTRA-SMALL SCREENS (< 380px, e.g. iPhone SE portrait) ===== */
+        /* ===== EXTRA-SMALL SCREENS (< 380px) ===== */
         @media (max-width: 380px) {
             .main .block-container {
                 padding-left: 0.15rem !important;
                 padding-right: 0.15rem !important;
             }
-
-            .stNumberInput {
-                max-width: 50px !important;
-            }
-
-            .stNumberInput input {
-                font-size: 0.75rem !important;
-                height: 1.8rem !important;
-            }
-
-            .stNumberInput div[data-baseweb="input"] {
-                height: 1.8rem !important;
-            }
-
-            .compact-header {
-                font-size: 0.5rem !important;
-            }
-
-            .set-circle {
-                width: 18px !important;
-                height: 18px !important;
-                font-size: 0.55rem !important;
-            }
-
-            .stButton button {
-                min-height: 1.8rem !important;
-                height: 1.8rem !important;
-                min-width: 0px !important;
-                font-size: 0.75rem !important;
-            }
+            .stNumberInput { max-width: 50px !important; }
+            .stNumberInput input { font-size: 0.75rem !important; height: 1.8rem !important; }
+            .stNumberInput div[data-baseweb="input"] { height: 1.8rem !important; }
+            .compact-header { font-size: 0.5rem !important; }
+            .set-circle { width: 18px !important; height: 18px !important; font-size: 0.55rem !important; }
+            .stButton button { min-height: 1.8rem !important; height: 1.8rem !important; min-width: 0px !important; font-size: 0.75rem !important; }
         }
         </style>
     """,
@@ -554,6 +516,11 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
 
         if exercise.get("notes"):
             st.caption(f"💡 {exercise['notes']}")
+
+        # Add marker for scoped CSS so these columns stay horizontal and compact
+        st.markdown(
+            '<div class="workout-grid-marker" style="display:none;"></div>', unsafe_allow_html=True
+        )
 
         # Grid layout for sets with weight input
         # Parse sets - handle ranges like "3-4" by taking the lower bound
