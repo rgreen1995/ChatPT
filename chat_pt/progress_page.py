@@ -118,6 +118,28 @@ def render():
             padding: 0 0.1rem !important;
         }
 
+        /* ===== PIN SET (col1) and REST (col4) so they don't collapse on mobile =====
+           Streamlit's mobile breakpoint + baseweb input min-widths can squeeze
+           narrow columns to 0. Force fixed widths on cols 1 and 4 and let 2/3
+           flex-grow to fill the remaining row. Applies only inside the log. */
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(1) {
+            flex: 0 0 36px !important;
+            width: 36px !important;
+            min-width: 36px !important;
+            max-width: 36px !important;
+        }
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(4) {
+            flex: 0 0 56px !important;
+            width: 56px !important;
+            min-width: 56px !important;
+            max-width: 56px !important;
+        }
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(2),
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(3) {
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+        }
+
         /* Collapse vertical padding between rows inside the log */
         div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) > div {
             padding-top: 0 !important;
