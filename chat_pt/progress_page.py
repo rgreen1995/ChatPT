@@ -131,11 +131,14 @@ def render():
             opacity: 0.08 !important;
         }
 
-        /* ===== COMPACT NUMBER INPUTS (all orientations) ===== */
+        /* ===== COMPACT NUMBER INPUTS (all orientations) =====
+           Let inputs fill their column so they sit side-by-side without
+           huge gaps on mobile. Compactness comes from height/font-size. */
         div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput {
-            max-width: 70px !important;
+            max-width: 100% !important;
             min-width: 0 !important;
-            margin: 0 auto !important;
+            width: 100% !important;
+            margin: 0 !important;
         }
         div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput > div {
             min-width: 0 !important;
@@ -232,7 +235,6 @@ def render():
 
         /* ===== EXTRA-SMALL SCREENS (< 380px) ===== */
         @media (max-width: 380px) {
-            div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput { max-width: 54px !important; }
             div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput input { font-size: 0.75rem !important; height: 1.7rem !important; }
             div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput div[data-baseweb="input"] { height: 1.7rem !important; }
             div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stButton button { min-height: 1.7rem !important; height: 1.7rem !important; font-size: 0.75rem !important; }
@@ -549,15 +551,15 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
                 st.session_state.exercise_logs[exercise_key]["exercise_notes"] = ""
 
             # Compact column header row — shown once per exercise
-            hcol1, hcol2, hcol3, hcol4 = st.columns([0.25, 0.7, 0.7, 0.5])
+            hcol1, hcol2, hcol3, hcol4 = st.columns([0.35, 1.0, 1.0, 0.8])
             with hcol1:
-                st.markdown('<div class="compact-header">#</div>', unsafe_allow_html=True)
+                st.markdown('<div class="compact-header">SET</div>', unsafe_allow_html=True)
             with hcol2:
                 st.markdown('<div class="compact-header">KG</div>', unsafe_allow_html=True)
             with hcol3:
                 st.markdown('<div class="compact-header">REPS</div>', unsafe_allow_html=True)
             with hcol4:
-                st.markdown('<div class="compact-header">⏱</div>', unsafe_allow_html=True)
+                st.markdown('<div class="compact-header">REST</div>', unsafe_allow_html=True)
 
             # Display each set in a compact single-row layout: [#] [weight] [reps] [timer]
             for set_idx in range(num_sets):
@@ -569,7 +571,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
                     st.session_state[timer_running_key] = False
 
                 # Single row for all set details: set#, weight, reps, timer
-                col1, col2, col3, col4 = st.columns([0.25, 0.7, 0.7, 0.5])
+                col1, col2, col3, col4 = st.columns([0.35, 1.0, 1.0, 0.8])
 
                 with col1:
                     st.markdown(

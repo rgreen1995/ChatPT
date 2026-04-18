@@ -79,10 +79,11 @@ def test_render_log_workout_column_ratios():
                             render_log_workout(1, workout_plan)
 
                     ratios_found = [call[0][0] for call in mock_columns.call_args_list]
-                    # Compact redesign uses [0.25, 0.7, 0.7, 0.5]
-                    assert [0.25, 0.7, 0.7, 0.5] in ratios_found
+                    # Compact redesign uses [0.35, 1.0, 1.0, 0.8] (rebalanced
+                    # so inputs pack tightly on mobile without huge gaps).
+                    assert [0.35, 1.0, 1.0, 0.8] in ratios_found
                     # Both header row and each set row use those ratios, so >=2 (1 header + 3 sets)
-                    count = sum(1 for r in ratios_found if r == [0.25, 0.7, 0.7, 0.5])
+                    count = sum(1 for r in ratios_found if r == [0.35, 1.0, 1.0, 0.8])
                     assert count >= 2
 
 
