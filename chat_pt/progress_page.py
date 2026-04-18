@@ -97,16 +97,15 @@ def render():
             margin: 0 auto;
         }
 
-        /* ===== SCOPED TO THE WORKOUT LOG =====
-           We use BOTH a :has() selector (modern browsers) AND a plain class
-           selector (.workout-log-scope) as a fallback for older webviews
-           that don't support :has(). Wrap the log with
-           st.markdown('<div class="workout-log-scope">…') or add the class
-           to the parent container. */
+        /* =====================================================================
+           SCOPED STYLES — only affect horizontal blocks that CONTAIN a
+           .chatpt-log-row marker. The marker is injected into each specific
+           row we want compacted. Nothing else on the page is touched.
+           ===================================================================== */
 
-        /* Keep rows horizontal on ALL viewports */
-        .workout-log-scope [data-testid="stHorizontalBlock"],
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) [data-testid="stHorizontalBlock"] {
+        /* A row is "one of our grid rows" if it directly contains a marker. */
+        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) {
+            display: flex !important;
             flex-direction: row !important;
             flex-wrap: nowrap !important;
             align-items: center !important;
@@ -116,16 +115,14 @@ def render():
             width: 100% !important;
         }
 
-        /* Base column reset inside the log */
-        .workout-log-scope [data-testid="stHorizontalBlock"] > [data-testid="column"],
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+        /* All 4 columns in such a row share these resets */
+        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) > [data-testid="column"] {
             box-sizing: border-box !important;
             padding: 0 0.1rem !important;
         }
 
-        /* Col 1 (SET) — fixed width, cannot shrink */
-        .workout-log-scope [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(1),
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(1) {
+        /* Col 1 (SET) — fixed narrow */
+        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) > [data-testid="column"]:nth-child(1) {
             flex: 0 0 36px !important;
             flex-basis: 36px !important;
             width: 36px !important;
@@ -133,9 +130,8 @@ def render():
             max-width: 36px !important;
         }
 
-        /* Col 4 (REST) — fixed width, cannot shrink */
-        .workout-log-scope [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(4),
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(4) {
+        /* Col 4 (REST) — fixed narrow */
+        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) > [data-testid="column"]:nth-child(4) {
             flex: 0 0 56px !important;
             flex-basis: 56px !important;
             width: 56px !important;
@@ -143,11 +139,9 @@ def render():
             max-width: 56px !important;
         }
 
-        /* Cols 2 & 3 (KG, REPS) — split remaining space equally */
-        .workout-log-scope [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(2),
-        .workout-log-scope [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(3),
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(2),
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(3) {
+        /* Cols 2 & 3 (KG, REPS) — share remaining space */
+        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) > [data-testid="column"]:nth-child(2),
+        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) > [data-testid="column"]:nth-child(3) {
             flex: 1 1 0 !important;
             flex-basis: 0 !important;
             width: auto !important;
@@ -155,50 +149,17 @@ def render():
             max-width: none !important;
         }
 
-        /* Neutralize Streamlit's mobile "stack columns" rule inside the log */
-        @media (max-width: 640px) {
-            .workout-log-scope [data-testid="stHorizontalBlock"],
-            div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) [data-testid="stHorizontalBlock"] {
-                flex-direction: row !important;
-                flex-wrap: nowrap !important;
-            }
-            .workout-log-scope [data-testid="stHorizontalBlock"] > [data-testid="column"],
-            div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) [data-testid="stHorizontalBlock"] > [data-testid="column"] {
-                /* Prevent Streamlit mobile override of width:100% from winning */
-                width: auto !important;
-            }
-        }
-
-        /* Collapse vertical padding between rows inside the log */
-        .workout-log-scope > div,
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) > div {
-            padding-top: 0 !important;
-            padding-bottom: 0 !important;
-        }
-        .workout-log-scope .element-container,
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .element-container {
-            margin-bottom: 0 !important;
-        }
-        .workout-log-scope hr,
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) hr {
-            margin: 0.15rem 0 !important;
-            opacity: 0.08 !important;
-        }
-
-        /* ===== COMPACT NUMBER INPUTS ===== */
-        .workout-log-scope .stNumberInput,
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput {
+        /* Number inputs inside those columns */
+        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput {
             max-width: 100% !important;
             min-width: 0 !important;
             width: 100% !important;
             margin: 0 !important;
         }
-        .workout-log-scope .stNumberInput > div,
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput > div {
+        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput > div {
             min-width: 0 !important;
         }
-        .workout-log-scope .stNumberInput div[data-baseweb="input"],
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput div[data-baseweb="input"] {
+        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput div[data-baseweb="input"] {
             padding: 0 !important;
             min-width: 0 !important;
             min-height: 0 !important;
@@ -207,8 +168,7 @@ def render():
             background-color: #f8f9fa !important;
             border: 1px solid #dee2e6 !important;
         }
-        .workout-log-scope .stNumberInput input,
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput input {
+        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput input {
             padding: 0 2px !important;
             font-size: 0.85rem !important;
             text-align: center !important;
@@ -218,17 +178,13 @@ def render():
             box-sizing: border-box !important;
             -moz-appearance: textfield !important;
         }
-        .workout-log-scope .stNumberInput input::-webkit-outer-spin-button,
-        .workout-log-scope .stNumberInput input::-webkit-inner-spin-button,
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput input::-webkit-outer-spin-button,
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput input::-webkit-inner-spin-button {
+        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput input::-webkit-outer-spin-button,
+        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput input::-webkit-inner-spin-button {
             -webkit-appearance: none !important;
             margin: 0 !important;
         }
-        .workout-log-scope .stNumberInput [data-testid="stNumberInputStepDown"],
-        .workout-log-scope .stNumberInput [data-testid="stNumberInputStepUp"],
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput [data-testid="stNumberInputStepDown"],
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput [data-testid="stNumberInputStepUp"] {
+        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput [data-testid="stNumberInputStepDown"],
+        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput [data-testid="stNumberInputStepUp"] {
             display: none !important;
             width: 0 !important;
             min-width: 0 !important;
@@ -236,14 +192,12 @@ def render():
             margin: 0 !important;
             border: none !important;
         }
-        .workout-log-scope .stNumberInput label,
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput label {
+        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput label {
             display: none !important;
         }
 
-        /* ===== COMPACT BUTTONS inside the log ===== */
-        .workout-log-scope .stButton button,
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stButton button {
+        /* Buttons inside the set row (REST col) */
+        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stButton button {
             min-width: 0 !important;
             width: 100% !important;
             min-height: 1.9rem !important;
@@ -255,7 +209,18 @@ def render():
             border: none !important;
         }
 
-        /* ===== EXERCISE HEADER (compact, single line) ===== */
+        /* Force the row to stay horizontal at mobile widths too */
+        @media (max-width: 640px) {
+            [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) {
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+            }
+            [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) > [data-testid="column"] {
+                width: auto !important;
+            }
+        }
+
+        /* Exercise header card (purple gradient) */
         .exercise-header-compact {
             display: flex;
             align-items: center;
@@ -277,52 +242,28 @@ def render():
             flex-shrink: 0;
         }
 
-        /* ===== MOBILE/LANDSCAPE PAGE PADDING ===== */
-        @media (max-width: 900px), (orientation: landscape) and (max-height: 500px) {
-            .main .block-container {
-                padding-left: 0.3rem !important;
-                padding-right: 0.3rem !important;
-                padding-top: 0.5rem !important;
-                max-width: 100vw !important;
-                overflow-x: hidden !important;
-                box-sizing: border-box !important;
-            }
-            html, body, [data-testid="stAppViewContainer"], .main,
-            [data-testid="stApp"], section[data-testid="stMain"] {
-                overflow-x: hidden !important;
-                max-width: 100vw !important;
-            }
-        }
-
-        /* ===== EXTRA-SMALL SCREENS (< 380px) ===== */
+        /* Extra-small screens: shrink fixed cols slightly */
         @media (max-width: 380px) {
-            .workout-log-scope .stNumberInput input,
-            div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput input { font-size: 0.75rem !important; height: 1.7rem !important; }
-            .workout-log-scope .stNumberInput div[data-baseweb="input"],
-            div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput div[data-baseweb="input"] { height: 1.7rem !important; }
-            .workout-log-scope .stButton button,
-            div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stButton button { min-height: 1.7rem !important; height: 1.7rem !important; font-size: 0.75rem !important; }
-            .set-circle { width: 18px !important; height: 18px !important; font-size: 0.6rem !important; }
-            .exercise-header-compact { font-size: 0.75rem; padding: 0.3rem 0.5rem; }
-            .exercise-header-compact .meta { font-size: 0.65rem; }
-
-            /* On very narrow screens, give SET a bit less and REST just enough for an icon */
-            .workout-log-scope [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(1),
-            div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(1) {
+            [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) > [data-testid="column"]:nth-child(1) {
                 flex: 0 0 28px !important;
                 flex-basis: 28px !important;
                 width: 28px !important;
                 min-width: 28px !important;
                 max-width: 28px !important;
             }
-            .workout-log-scope [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(4),
-            div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(4) {
+            [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) > [data-testid="column"]:nth-child(4) {
                 flex: 0 0 44px !important;
                 flex-basis: 44px !important;
                 width: 44px !important;
                 min-width: 44px !important;
                 max-width: 44px !important;
             }
+            [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput input { font-size: 0.75rem !important; height: 1.7rem !important; }
+            [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput div[data-baseweb="input"] { height: 1.7rem !important; }
+            [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stButton button { min-height: 1.7rem !important; height: 1.7rem !important; font-size: 0.75rem !important; }
+            .set-circle { width: 18px !important; height: 18px !important; font-size: 0.6rem !important; }
+            .exercise-header-compact { font-size: 0.75rem; padding: 0.3rem 0.5rem; }
+            .exercise-header-compact .meta { font-size: 0.65rem; }
         }
         </style>
     """,
@@ -578,12 +519,6 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
             if exercise.get("notes"):
                 st.caption(f"💡 {exercise['notes']}")
 
-            # Add marker for scoped CSS so these columns stay horizontal and compact
-            st.markdown(
-                '<div class="workout-grid-marker workout-log-scope" style="display:contents;"></div>',
-                unsafe_allow_html=True,
-            )
-
             # Grid layout for sets with weight input
             # Parse sets - handle ranges like "3-4" by taking the lower bound
             sets_value = exercise.get("sets", 3)
@@ -632,16 +567,20 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
             if "exercise_notes" not in st.session_state.exercise_logs[exercise_key]:
                 st.session_state.exercise_logs[exercise_key]["exercise_notes"] = ""
 
-            # Compact column header row — shown once per exercise
-            hcol1, hcol2, hcol3, hcol4 = st.columns([0.35, 1.0, 1.0, 0.8])
-            with hcol1:
-                st.markdown('<div class="compact-header">SET</div>', unsafe_allow_html=True)
-            with hcol2:
-                st.markdown('<div class="compact-header">KG</div>', unsafe_allow_html=True)
-            with hcol3:
-                st.markdown('<div class="compact-header">REPS</div>', unsafe_allow_html=True)
-            with hcol4:
-                st.markdown('<div class="compact-header">REST</div>', unsafe_allow_html=True)
+                # Compact column header row — shown once per exercise
+                hcol1, hcol2, hcol3, hcol4 = st.columns([0.35, 1.0, 1.0, 0.8])
+                with hcol1:
+                    st.markdown(
+                        '<span class="chatpt-log-row" style="display:none;"></span>'
+                        '<div class="compact-header">SET</div>',
+                        unsafe_allow_html=True,
+                    )
+                with hcol2:
+                    st.markdown('<div class="compact-header">KG</div>', unsafe_allow_html=True)
+                with hcol3:
+                    st.markdown('<div class="compact-header">REPS</div>', unsafe_allow_html=True)
+                with hcol4:
+                    st.markdown('<div class="compact-header">REST</div>', unsafe_allow_html=True)
 
             # Display each set in a compact single-row layout: [#] [weight] [reps] [timer]
             for set_idx in range(num_sets):
@@ -657,6 +596,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
 
                 with col1:
                     st.markdown(
+                        f'<span class="chatpt-log-row" style="display:none;"></span>'
                         f'<div class="set-circle">{set_idx + 1}</div>',
                         unsafe_allow_html=True,
                     )
