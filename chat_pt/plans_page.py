@@ -201,116 +201,104 @@ def sort_workout_days(schedule_dict):
 
 def render():
     """Render the workout plans page."""
-    # Combined, optimized CSS for mobile grid (Strong app style)
     st.markdown(
         """
         <style>
-        /* ===== FORCE COLUMNS HORIZONTAL ON ALL SCREEN SIZES ===== */
-        /* Streamlit switches columns to flex-direction:column on small screens.
-           We must override that for the workout grid to stay on one line. */
-        [data-testid="stHorizontalBlock"] {
-            flex-direction: row !important;
-            flex-wrap: nowrap !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 0.25rem !important;
-        }
-
-        [data-testid="column"] {
-            min-width: 0px !important;
-            flex-shrink: 1 !important;
-            box-sizing: border-box !important;
-        }
-
-        /* ===== BUTTON — compact on all screen sizes ===== */
+        /* Button tightening (safe, global) */
         .stButton button {
-            min-width: 0px !important;
-            min-height: 2.2rem !important;
-            height: 2.2rem !important;
-            padding: 0 0.5rem !important;
-            font-size: 0.9rem !important;
+            min-height: 2.4rem !important;
             border-radius: 6px !important;
         }
 
-        /* Reduce vertical spacing between elements */
-        .element-container {
-            margin-bottom: 0px !important;
+        /* =====================================================================
+           SCOPED: exercise meta row — sets×reps | rest | swap | info.
+           Target horizontal blocks that contain the marker .plans-exercise-meta.
+           Kills Streamlit's mobile min-width:calc(100%-24px) so cols stay on one row.
+           ===================================================================== */
+        div[data-testid="stHorizontalBlock"]:has(.plans-exercise-meta) {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            gap: 0.25rem !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow: hidden !important;
         }
 
-        div[data-testid="stVerticalBlock"] > div {
-            padding-top: 0px !important;
-            padding-bottom: 0px !important;
+        div[data-testid="stHorizontalBlock"]:has(.plans-exercise-meta) > div[data-testid="stColumn"] {
+            box-sizing: border-box !important;
+            padding: 0 0.15rem !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+            flex-shrink: 1 !important;
         }
 
-        hr {
-            margin: 0.3rem 0 !important;
-            opacity: 0.1 !important;
+        /* sets×reps (wider text) */
+        div[data-testid="stHorizontalBlock"]:has(.plans-exercise-meta) > div[data-testid="stColumn"]:nth-child(1) {
+            flex: 2 1 0 !important;
+            flex-basis: 0 !important;
         }
 
-        /* ===== MOBILE-SPECIFIC TIGHTENING (portrait) ===== */
-        @media (max-width: 640px) {
-            [data-testid="stHorizontalBlock"] {
-                gap: 0.1rem !important;
-                justify-content: center !important;
-                overflow: hidden !important;
-            }
+        /* rest (wider text) */
+        div[data-testid="stHorizontalBlock"]:has(.plans-exercise-meta) > div[data-testid="stColumn"]:nth-child(2) {
+            flex: 2 1 0 !important;
+            flex-basis: 0 !important;
+        }
 
-            [data-testid="column"] {
-                padding: 0 0.05rem !important;
-            }
+        /* swap + info buttons (narrow, fixed) */
+        div[data-testid="stHorizontalBlock"]:has(.plans-exercise-meta) > div[data-testid="stColumn"]:nth-child(3),
+        div[data-testid="stHorizontalBlock"]:has(.plans-exercise-meta) > div[data-testid="stColumn"]:nth-child(4) {
+            flex: 0 0 44px !important;
+            flex-basis: 44px !important;
+            width: 44px !important;
+            min-width: 44px !important;
+            max-width: 44px !important;
+        }
 
-            /* Remove extra padding from main container on mobile */
-            .main .block-container {
-                padding-left: 0.3rem !important;
-                padding-right: 0.3rem !important;
-                padding-top: 1rem !important;
-                max-width: 100vw !important;
-                overflow-x: hidden !important;
-                box-sizing: border-box !important;
-            }
+        /* Compact buttons inside the meta row */
+        div[data-testid="stHorizontalBlock"]:has(.plans-exercise-meta) .stButton,
+        div[data-testid="stHorizontalBlock"]:has(.plans-exercise-meta) .stButton > div {
+            min-width: 0 !important;
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+        div[data-testid="stHorizontalBlock"]:has(.plans-exercise-meta) .stButton button {
+            min-width: 0 !important;
+            width: 100% !important;
+            min-height: 2.2rem !important;
+            height: 2.2rem !important;
+            padding: 0 !important;
+            font-size: 0.95rem !important;
+            border-radius: 6px !important;
+        }
 
-            /* Prevent horizontal scroll everywhere */
-            html, body, [data-testid="stAppViewContainer"], .main,
-            [data-testid="stApp"], section[data-testid="stMain"] {
-                overflow-x: hidden !important;
-                max-width: 100vw !important;
-            }
+        /* Tighten the captions/text inside meta cols so nothing overflows */
+        div[data-testid="stHorizontalBlock"]:has(.plans-exercise-meta) p {
+            margin: 0 !important;
+            font-size: 0.9rem !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
 
-            .stButton button {
-                width: 100% !important;
-                padding: 0 !important;
+        /* Extra-small screens: shrink buttons further */
+        @media (max-width: 380px) {
+            div[data-testid="stHorizontalBlock"]:has(.plans-exercise-meta) > div[data-testid="stColumn"]:nth-child(3),
+            div[data-testid="stHorizontalBlock"]:has(.plans-exercise-meta) > div[data-testid="stColumn"]:nth-child(4) {
+                flex-basis: 38px !important;
+                width: 38px !important;
+                min-width: 38px !important;
+                max-width: 38px !important;
+            }
+            div[data-testid="stHorizontalBlock"]:has(.plans-exercise-meta) .stButton button {
                 min-height: 2rem !important;
                 height: 2rem !important;
-                min-width: 0px !important;
                 font-size: 0.85rem !important;
-                background-color: #e9ecef !important;
-                border: none !important;
-            }
-
-            /* Prevent label/caption wrapping */
-            .stSelectbox label {
-                white-space: nowrap !important;
-                overflow: hidden !important;
-                text-overflow: ellipsis !important;
-            }
-        }
-
-        /* ===== EXTRA-SMALL SCREENS (< 380px) ===== */
-        @media (max-width: 380px) {
-            .main .block-container {
-                padding-left: 0.15rem !important;
-                padding-right: 0.15rem !important;
-            }
-
-            .stButton button {
-                min-height: 1.8rem !important;
-                height: 1.8rem !important;
-                min-width: 0px !important;
-                font-size: 0.75rem !important;
             }
         }
         </style>
-    """,
+        """,
         unsafe_allow_html=True,
     )
 
@@ -729,51 +717,49 @@ def render():
 
                             exercise_key = f"{day_name}_{orig_idx}"
 
-                            # Compact single-row layout: Name | Sets x Reps | Rest | Buttons
-                            col1, col2, col3, col4 = st.columns([4, 2, 1.5, 1.5])
+                            # Row 1: exercise name (+ optional tip)
+                            if is_superset:
+                                st.markdown(f"**{sequence}. {exercise_name}**")
+                            else:
+                                st.markdown(f"**{display_idx}. {exercise_name}**")
 
-                            with col1:
-                                # Show sequence indicator for supersets
-                                if is_superset:
-                                    st.markdown(f"**{sequence}. {exercise_name}**")
-                                else:
-                                    st.markdown(f"**{display_idx}. {exercise_name}**")
+                            if exercise.get("notes"):
+                                st.caption(f"💡 {exercise['notes']}")
 
-                                if exercise.get("notes"):
-                                    st.caption(f"💡 {exercise['notes']}")
-
-                            with col2:
+                            # Row 2: sets x reps | rest | swap | info
+                            # Marker so our scoped CSS targets only these rows.
+                            st.markdown(
+                                '<span class="plans-exercise-meta" style="display:none;"></span>',
+                                unsafe_allow_html=True,
+                            )
+                            meta_col, rest_col, swap_col, info_col = st.columns([2, 2, 1, 1])
+                            with meta_col:
                                 st.markdown(f"**{sets}** x **{reps}**")
-
-                            with col3:
+                            with rest_col:
                                 st.caption(f"Rest: **{rest}s**")
-
-                            with col4:
-                                # Action buttons in a row (no timers on day schedule page)
-                                btn_col1, btn_col2 = st.columns(2)
-                                with btn_col1:
-                                    if st.button(
-                                        "🔄",
-                                        key=f"{exercise_key}_swap",
-                                        help="Swap exercise",
-                                        use_container_width=True,
-                                    ):
-                                        st.session_state.swap_exercise = exercise_name
-                                        st.session_state.swap_day = day_name
-                                        st.session_state.swap_consultation_id = consultation_id
-                                        st.session_state.show_swap_dialog = True
-                                        st.rerun()
-                                with btn_col2:
-                                    if st.button(
-                                        "i",
-                                        key=f"{exercise_key}_info",
-                                        help="Exercise info",
-                                        use_container_width=True,
-                                    ):
-                                        st.session_state.viewing_exercise = exercise_name
-                                        st.session_state.came_from_plans = True
-                                        st.session_state.page = "exercises"
-                                        st.rerun()
+                            with swap_col:
+                                if st.button(
+                                    "🔄",
+                                    key=f"{exercise_key}_swap",
+                                    help="Swap exercise",
+                                    use_container_width=True,
+                                ):
+                                    st.session_state.swap_exercise = exercise_name
+                                    st.session_state.swap_day = day_name
+                                    st.session_state.swap_consultation_id = consultation_id
+                                    st.session_state.show_swap_dialog = True
+                                    st.rerun()
+                            with info_col:
+                                if st.button(
+                                    "i",
+                                    key=f"{exercise_key}_info",
+                                    help="Exercise info",
+                                    use_container_width=True,
+                                ):
+                                    st.session_state.viewing_exercise = exercise_name
+                                    st.session_state.came_from_plans = True
+                                    st.session_state.page = "exercises"
+                                    st.rerun()
 
                         # Add separator after each exercise group
                         st.markdown("---")
