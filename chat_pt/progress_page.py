@@ -104,7 +104,7 @@ def render():
            ===================================================================== */
 
         /* A row is "one of our grid rows" if it directly contains a marker. */
-        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) {
+        [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) {
             display: flex !important;
             flex-direction: row !important;
             flex-wrap: nowrap !important;
@@ -116,13 +116,13 @@ def render():
         }
 
         /* All 4 columns in such a row share these resets */
-        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) > [data-testid="column"] {
+        [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) > [data-testid="stColumn"] {
             box-sizing: border-box !important;
             padding: 0 0.1rem !important;
         }
 
         /* Col 1 (SET) — fixed narrow */
-        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) > [data-testid="column"]:nth-child(1) {
+        [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) > [data-testid="stColumn"]:nth-child(1) {
             flex: 0 0 36px !important;
             flex-basis: 36px !important;
             width: 36px !important;
@@ -131,7 +131,7 @@ def render():
         }
 
         /* Col 4 (REST) — fixed narrow */
-        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) > [data-testid="column"]:nth-child(4) {
+        [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) > [data-testid="stColumn"]:nth-child(4) {
             flex: 0 0 56px !important;
             flex-basis: 56px !important;
             width: 56px !important;
@@ -140,8 +140,8 @@ def render():
         }
 
         /* Cols 2 & 3 (KG, REPS) — share remaining space */
-        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) > [data-testid="column"]:nth-child(2),
-        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) > [data-testid="column"]:nth-child(3) {
+        [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) > [data-testid="stColumn"]:nth-child(2),
+        [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) > [data-testid="stColumn"]:nth-child(3) {
             flex: 1 1 0 !important;
             flex-basis: 0 !important;
             width: auto !important;
@@ -150,16 +150,16 @@ def render():
         }
 
         /* Number inputs inside those columns */
-        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput {
+        [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) .stNumberInput {
             max-width: 100% !important;
             min-width: 0 !important;
             width: 100% !important;
             margin: 0 !important;
         }
-        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput > div {
+        [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) .stNumberInput > div {
             min-width: 0 !important;
         }
-        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput div[data-baseweb="input"] {
+        [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) .stNumberInput div[data-baseweb="input"] {
             padding: 0 !important;
             min-width: 0 !important;
             min-height: 0 !important;
@@ -168,7 +168,7 @@ def render():
             background-color: #f8f9fa !important;
             border: 1px solid #dee2e6 !important;
         }
-        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput input {
+        [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) .stNumberInput input {
             padding: 0 2px !important;
             font-size: 0.85rem !important;
             text-align: center !important;
@@ -178,13 +178,13 @@ def render():
             box-sizing: border-box !important;
             -moz-appearance: textfield !important;
         }
-        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput input::-webkit-outer-spin-button,
-        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput input::-webkit-inner-spin-button {
+        [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) .stNumberInput input::-webkit-outer-spin-button,
+        [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) .stNumberInput input::-webkit-inner-spin-button {
             -webkit-appearance: none !important;
             margin: 0 !important;
         }
-        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput [data-testid="stNumberInputStepDown"],
-        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput [data-testid="stNumberInputStepUp"] {
+        [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) .stNumberInput [data-testid="stNumberInputStepDown"],
+        [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) .stNumberInput [data-testid="stNumberInputStepUp"] {
             display: none !important;
             width: 0 !important;
             min-width: 0 !important;
@@ -192,12 +192,12 @@ def render():
             margin: 0 !important;
             border: none !important;
         }
-        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput label {
+        [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) .stNumberInput label {
             display: none !important;
         }
 
         /* Buttons inside the set row (REST col) */
-        [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stButton button {
+        [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) .stButton button {
             min-width: 0 !important;
             width: 100% !important;
             min-height: 1.9rem !important;
@@ -211,11 +211,11 @@ def render():
 
         /* Force the row to stay horizontal at mobile widths too */
         @media (max-width: 640px) {
-            [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) {
+            [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) {
                 flex-direction: row !important;
                 flex-wrap: nowrap !important;
             }
-            [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) > [data-testid="column"] {
+            [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) > [data-testid="stColumn"] {
                 width: auto !important;
             }
         }
@@ -244,23 +244,23 @@ def render():
 
         /* Extra-small screens: shrink fixed cols slightly */
         @media (max-width: 380px) {
-            [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) > [data-testid="column"]:nth-child(1) {
+            [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) > [data-testid="stColumn"]:nth-child(1) {
                 flex: 0 0 28px !important;
                 flex-basis: 28px !important;
                 width: 28px !important;
                 min-width: 28px !important;
                 max-width: 28px !important;
             }
-            [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) > [data-testid="column"]:nth-child(4) {
+            [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) > [data-testid="stColumn"]:nth-child(4) {
                 flex: 0 0 44px !important;
                 flex-basis: 44px !important;
                 width: 44px !important;
                 min-width: 44px !important;
                 max-width: 44px !important;
             }
-            [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput input { font-size: 0.75rem !important; height: 1.7rem !important; }
-            [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stNumberInput div[data-baseweb="input"] { height: 1.7rem !important; }
-            [data-testid="stHorizontalBlock"]:has(> div .chatpt-log-row) .stButton button { min-height: 1.7rem !important; height: 1.7rem !important; font-size: 0.75rem !important; }
+            [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) .stNumberInput input { font-size: 0.75rem !important; height: 1.7rem !important; }
+            [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) .stNumberInput div[data-baseweb="input"] { height: 1.7rem !important; }
+            [data-testid="stHorizontalBlock"]:has(.chatpt-log-row) .stButton button { min-height: 1.7rem !important; height: 1.7rem !important; font-size: 0.75rem !important; }
             .set-circle { width: 18px !important; height: 18px !important; font-size: 0.6rem !important; }
             .exercise-header-compact { font-size: 0.75rem; padding: 0.3rem 0.5rem; }
             .exercise-header-compact .meta { font-size: 0.65rem; }
@@ -567,20 +567,20 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
             if "exercise_notes" not in st.session_state.exercise_logs[exercise_key]:
                 st.session_state.exercise_logs[exercise_key]["exercise_notes"] = ""
 
-                # Compact column header row — shown once per exercise
-                hcol1, hcol2, hcol3, hcol4 = st.columns([0.35, 1.0, 1.0, 0.8])
-                with hcol1:
-                    st.markdown(
-                        '<span class="chatpt-log-row" style="display:none;"></span>'
-                        '<div class="compact-header">SET</div>',
-                        unsafe_allow_html=True,
-                    )
-                with hcol2:
-                    st.markdown('<div class="compact-header">KG</div>', unsafe_allow_html=True)
-                with hcol3:
-                    st.markdown('<div class="compact-header">REPS</div>', unsafe_allow_html=True)
-                with hcol4:
-                    st.markdown('<div class="compact-header">REST</div>', unsafe_allow_html=True)
+            # Compact column header row — shown once per exercise
+            hcol1, hcol2, hcol3, hcol4 = st.columns([0.35, 1.0, 1.0, 0.8])
+            with hcol1:
+                st.markdown(
+                    '<span class="chatpt-log-row" style="display:none;"></span>'
+                    '<div class="compact-header">SET</div>',
+                    unsafe_allow_html=True,
+                )
+            with hcol2:
+                st.markdown('<div class="compact-header">KG</div>', unsafe_allow_html=True)
+            with hcol3:
+                st.markdown('<div class="compact-header">REPS</div>', unsafe_allow_html=True)
+            with hcol4:
+                st.markdown('<div class="compact-header">REST</div>', unsafe_allow_html=True)
 
             # Display each set in a compact single-row layout: [#] [weight] [reps] [timer]
             for set_idx in range(num_sets):
