@@ -64,95 +64,22 @@ def sort_workout_days(schedule_dict):
 
 def render():
     """Render the progress tracking page."""
-    # Combined, optimized CSS for mobile grid (Strong app style)
+    # Orientation-agnostic, compact in-workout CSS.
+    # All tightening is SCOPED to the workout log via .workout-grid-marker so
+    # it works in both portrait AND landscape (phones, tablets, desktops) and
+    # does NOT affect other parts of the app (charts, stats, etc.).
     st.markdown(
         """
         <style>
-        /* ===== SCOPED HORIZONTAL COLUMNS FOR WORKOUT LOG ===== */
-        /* Use :has() so we only force horizontal layout for the workout logging rows.
-           The rest of the app's columns (like charts and stats) will stack normally on mobile. */
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) > div [data-testid="stHorizontalBlock"] {
-            flex-direction: row !important;
-            flex-wrap: nowrap !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 0.1rem !important; /* Extremely tight gap between columns */
-        }
-
-        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) > div [data-testid="column"] {
-            min-width: 0px !important;
-            flex-shrink: 1 !important;
-            box-sizing: border-box !important;
-            padding: 0 0.1rem !important; /* Minimal padding */
-        }
-
-        /* ===== NUMBER INPUT — compact on ALL screen sizes ===== */
-        .stNumberInput {
-            max-width: 80px !important;
-            min-width: 0px !important;
-            margin: 0 auto !important;
-        }
-
-        .stNumberInput > div {
-            min-width: 0px !important;
-        }
-
-        .stNumberInput div[data-baseweb="input"] {
-            padding: 0 2px !important;
-            min-width: 0px !important;
-            min-height: 0px !important;
-            height: 2.2rem !important;
-            border-radius: 4px !important;
-        }
-
-        .stNumberInput input {
-            padding: 0 4px !important;
-            font-size: 0.9rem !important;
-            text-align: center !important;
-            min-width: 0px !important;
-            width: 100% !important;
-            height: 2.2rem !important;
-            box-sizing: border-box !important;
-            -moz-appearance: textfield !important;
-        }
-
-        /* Hide browser native spinners */
-        .stNumberInput input::-webkit-outer-spin-button,
-        .stNumberInput input::-webkit-inner-spin-button {
-            -webkit-appearance: none !important;
-            margin: 0 !important;
-        }
-
-        /* Hide Streamlit step buttons */
-        .stNumberInput [data-testid="stNumberInputStepDown"],
-        .stNumberInput [data-testid="stNumberInputStepUp"] {
-            display: none !important;
-            width: 0 !important;
-            min-width: 0 !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            border: none !important;
-        }
-
-        /* ===== BUTTON — compact on all screen sizes ===== */
-        .stButton button {
-            min-width: 0px !important;
-            min-height: 2.2rem !important;
-            height: 2.2rem !important;
-            padding: 0 0.2rem !important;
-            font-size: 0.9rem !important;
-            border-radius: 6px !important;
-        }
-
-        /* ===== General styles (Desktop & Mobile) ===== */
+        /* ===== GLOBAL (unscoped) LIGHT TIGHTENING ===== */
         .compact-header {
-            font-size: 0.7rem;
+            font-size: 0.6rem;
             text-transform: uppercase;
             color: #adb5bd;
             font-weight: bold;
             text-align: center;
-            letter-spacing: 0.5px;
-            margin-bottom: 5px;
+            letter-spacing: 0.3px;
+            margin: 0 0 2px 0;
             white-space: nowrap;
         }
 
@@ -160,105 +87,158 @@ def render():
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 28px;
-            height: 28px;
+            width: 22px;
+            height: 22px;
             background-color: #dee2e6;
             color: #495057;
             border-radius: 50%;
             font-weight: bold;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             margin: 0 auto;
         }
 
-        .element-container {
-            margin-bottom: 0px !important;
+        /* ===== SCOPED TO THE WORKOUT LOG =====
+           Everything below applies only inside the vertical block that
+           contains a .workout-grid-marker. Works in ANY orientation. */
+        .workout-log-scope [data-testid="stHorizontalBlock"],
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) [data-testid="stHorizontalBlock"] {
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 0.15rem !important;
+            margin-bottom: 0 !important;
         }
 
-        div[data-testid="stVerticalBlock"] > div {
-            padding-top: 0px !important;
-            padding-bottom: 0px !important;
+        .workout-log-scope [data-testid="column"],
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) [data-testid="column"] {
+            min-width: 0px !important;
+            flex-shrink: 1 !important;
+            box-sizing: border-box !important;
+            padding: 0 0.1rem !important;
         }
 
-        hr {
-            margin: 0.3rem 0 !important;
-            opacity: 0.1 !important;
+        /* Collapse vertical padding between rows inside the log */
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) > div {
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .element-container {
+            margin-bottom: 0 !important;
+        }
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) hr {
+            margin: 0.15rem 0 !important;
+            opacity: 0.08 !important;
         }
 
-        /* ===== MOBILE-SPECIFIC TIGHTENING (portrait) ===== */
-        @media (max-width: 640px) {
+        /* ===== COMPACT NUMBER INPUTS (all orientations) ===== */
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput {
+            max-width: 70px !important;
+            min-width: 0 !important;
+            margin: 0 auto !important;
+        }
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput > div {
+            min-width: 0 !important;
+        }
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput div[data-baseweb="input"] {
+            padding: 0 !important;
+            min-width: 0 !important;
+            min-height: 0 !important;
+            height: 1.9rem !important;
+            border-radius: 4px !important;
+            background-color: #f8f9fa !important;
+            border: 1px solid #dee2e6 !important;
+        }
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput input {
+            padding: 0 2px !important;
+            font-size: 0.85rem !important;
+            text-align: center !important;
+            min-width: 0 !important;
+            width: 100% !important;
+            height: 1.9rem !important;
+            box-sizing: border-box !important;
+            -moz-appearance: textfield !important;
+        }
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput input::-webkit-outer-spin-button,
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput input::-webkit-inner-spin-button {
+            -webkit-appearance: none !important;
+            margin: 0 !important;
+        }
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput [data-testid="stNumberInputStepDown"],
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput [data-testid="stNumberInputStepUp"] {
+            display: none !important;
+            width: 0 !important;
+            min-width: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+        }
+        /* Hide labels inside the log to save vertical space */
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput label {
+            display: none !important;
+        }
+
+        /* ===== COMPACT BUTTONS inside the log ===== */
+        div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stButton button {
+            min-width: 0 !important;
+            width: 100% !important;
+            min-height: 1.9rem !important;
+            height: 1.9rem !important;
+            padding: 0 0.2rem !important;
+            font-size: 0.85rem !important;
+            border-radius: 6px !important;
+            background-color: #e9ecef !important;
+            border: none !important;
+        }
+
+        /* ===== EXERCISE HEADER (compact, single line) ===== */
+        .exercise-header-compact {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0.35rem 0.6rem;
+            border-radius: 6px;
+            color: white;
+            margin: 0.4rem 0 0.2rem 0;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .exercise-header-compact .meta {
+            font-size: 0.75rem;
+            opacity: 0.9;
+            flex-shrink: 0;
+        }
+
+        /* ===== MOBILE/LANDSCAPE PAGE PADDING ===== */
+        @media (max-width: 900px), (orientation: landscape) and (max-height: 500px) {
             .main .block-container {
                 padding-left: 0.3rem !important;
                 padding-right: 0.3rem !important;
-                padding-top: 1rem !important;
+                padding-top: 0.5rem !important;
                 max-width: 100vw !important;
                 overflow-x: hidden !important;
                 box-sizing: border-box !important;
             }
-
             html, body, [data-testid="stAppViewContainer"], .main,
             [data-testid="stApp"], section[data-testid="stMain"] {
                 overflow-x: hidden !important;
                 max-width: 100vw !important;
             }
-
-            .stNumberInput { max-width: 60px !important; }
-
-            .stNumberInput div[data-baseweb="input"] {
-                height: 2rem !important;
-                background-color: #f8f9fa !important;
-                border: 1px solid #dee2e6 !important;
-            }
-
-            .stNumberInput input {
-                font-size: 0.85rem !important;
-                height: 2rem !important;
-                padding: 0 2px !important;
-            }
-
-            .stButton button {
-                width: 100% !important;
-                padding: 0 !important;
-                min-height: 2rem !important;
-                height: 2rem !important;
-                min-width: 0px !important;
-                font-size: 0.85rem !important;
-                background-color: #e9ecef !important;
-                border: none !important;
-            }
-
-            .compact-header {
-                font-size: 0.6rem !important;
-                letter-spacing: 0px !important;
-                white-space: nowrap !important;
-            }
-
-            .set-circle {
-                width: 20px !important;
-                height: 20px !important;
-                font-size: 0.65rem !important;
-            }
-
-            /* Prevent label/caption wrapping and hide labels to save space */
-            .stNumberInput label, .stSelectbox label {
-                white-space: nowrap !important;
-                overflow: hidden !important;
-                text-overflow: ellipsis !important;
-                display: none !important;
-            }
         }
 
         /* ===== EXTRA-SMALL SCREENS (< 380px) ===== */
         @media (max-width: 380px) {
-            .main .block-container {
-                padding-left: 0.15rem !important;
-                padding-right: 0.15rem !important;
-            }
-            .stNumberInput { max-width: 50px !important; }
-            .stNumberInput input { font-size: 0.75rem !important; height: 1.8rem !important; }
-            .stNumberInput div[data-baseweb="input"] { height: 1.8rem !important; }
-            .compact-header { font-size: 0.5rem !important; }
-            .set-circle { width: 18px !important; height: 18px !important; font-size: 0.55rem !important; }
-            .stButton button { min-height: 1.8rem !important; height: 1.8rem !important; min-width: 0px !important; font-size: 0.75rem !important; }
+            div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput { max-width: 54px !important; }
+            div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput input { font-size: 0.75rem !important; height: 1.7rem !important; }
+            div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput div[data-baseweb="input"] { height: 1.7rem !important; }
+            div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stButton button { min-height: 1.7rem !important; height: 1.7rem !important; font-size: 0.75rem !important; }
+            .set-circle { width: 18px !important; height: 18px !important; font-size: 0.6rem !important; }
+            .exercise-header-compact { font-size: 0.75rem; padding: 0.3rem 0.5rem; }
+            .exercise-header-compact .meta { font-size: 0.65rem; }
         }
         </style>
     """,
@@ -495,7 +475,7 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
             rest_seconds = exercise.get("rest_seconds", 60)
             sequence = exercise.get("sequence", "")
 
-            # Exercise header
+            # Exercise header (compact, single line)
             if is_superset:
                 header_text = f"{sequence}. {exercise['name']}"
             else:
@@ -503,214 +483,214 @@ def render_log_workout(consultation_id: int, workout_plan: dict):
 
             st.markdown(
                 f"""
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        padding: 0.75rem 1rem; border-radius: 8px; color: white; margin: 1rem 0 0.5rem 0;">
-                <strong>{header_text}</strong>
-                <span style="opacity: 0.9; margin-left: 1rem; font-size: 0.9rem;">
-                    {exercise.get('sets')} x {exercise.get('reps')} | Rest: {rest_seconds}s
-                </span>
+            <div class="exercise-header-compact">
+                <strong style="overflow:hidden;text-overflow:ellipsis;">{header_text}</strong>
+                <span class="meta">{exercise.get('sets')}x{exercise.get('reps')} &middot; {rest_seconds}s</span>
             </div>
             """,
                 unsafe_allow_html=True,
             )
 
-        if exercise.get("notes"):
-            st.caption(f"💡 {exercise['notes']}")
+            if exercise.get("notes"):
+                st.caption(f"💡 {exercise['notes']}")
 
-        # Add marker for scoped CSS so these columns stay horizontal and compact
-        st.markdown(
-            '<div class="workout-grid-marker" style="display:none;"></div>', unsafe_allow_html=True
-        )
-
-        # Grid layout for sets with weight input
-        # Parse sets - handle ranges like "3-4" by taking the lower bound
-        sets_value = exercise.get("sets", 3)
-        if isinstance(sets_value, str):
-            if "-" in sets_value:
-                try:
-                    num_sets = int(sets_value.split("-")[0])
-                except Exception:
-                    num_sets = 3
-            else:
-                try:
-                    num_sets = int(sets_value)
-                except Exception:
-                    num_sets = 3
-        else:
-            num_sets = int(sets_value) if isinstance(sets_value, (int, float)) else 3
-
-        # Initialize logs for this exercise
-        if exercise_key not in st.session_state.exercise_logs:
-            # Parse reps - handle ranges like "8-10" by taking the midpoint
-            reps_value = exercise.get("reps", 10)
-            if isinstance(reps_value, str):
-                # Handle range like "8-10"
-                if "-" in reps_value:
-                    try:
-                        parts = reps_value.split("-")
-                        default_reps = int((int(parts[0]) + int(parts[1])) / 2)
-                    except Exception:
-                        default_reps = 10
-                else:
-                    try:
-                        default_reps = int(reps_value)
-                    except Exception:
-                        default_reps = 10
-            else:
-                default_reps = int(reps_value) if isinstance(reps_value, (int, float)) else 10
-
-            st.session_state.exercise_logs[exercise_key] = {
-                "sets": [
-                    {"reps": default_reps, "weight": 0.0, "completed": False}
-                    for _ in range(num_sets)
-                ],
-                "exercise_notes": "",
-            }
-
-        if "exercise_notes" not in st.session_state.exercise_logs[exercise_key]:
-            st.session_state.exercise_logs[exercise_key]["exercise_notes"] = ""
-
-        # Table header for sets (Strong app style)
-        hcol1, hcol2, hcol3, hcol4 = st.columns([0.3, 0.7, 0.7, 0.5])
-        with hcol1:
-            st.markdown('<div class="compact-header">SET</div>', unsafe_allow_html=True)
-        with hcol2:
-            st.markdown('<div class="compact-header">KG</div>', unsafe_allow_html=True)
-        with hcol3:
-            st.markdown('<div class="compact-header">REPS</div>', unsafe_allow_html=True)
-        with hcol4:
-            st.markdown('<div class="compact-header">✓</div>', unsafe_allow_html=True)
-
-        # Display each set in a compact single-row layout
-        for set_idx in range(num_sets):
-            timer_key = f"timer_{exercise_key}_{set_idx}"
-            timer_running_key = f"timer_running_{timer_key}"
-            timer_end_key = f"timer_end_{timer_key}"
-
-            if timer_running_key not in st.session_state:
-                st.session_state[timer_running_key] = False
-
-            # Single row for all set details
-            col1, col2, col3, col4 = st.columns([0.3, 0.7, 0.7, 0.5])
-
-            with col1:
-                st.markdown(
-                    f'<div class="set-circle">{set_idx + 1}</div>',
-                    unsafe_allow_html=True,
-                )
-
-            with col2:
-                weight = st.number_input(
-                    "Weight",
-                    min_value=0.0,
-                    max_value=1000.0,
-                    step=2.5,
-                    value=st.session_state.exercise_logs[exercise_key]["sets"][set_idx]["weight"],
-                    key=f"weight_{exercise_key}_{set_idx}",
-                    label_visibility="collapsed",
-                )
-                st.session_state.exercise_logs[exercise_key]["sets"][set_idx]["weight"] = weight
-
-            with col3:
-                reps = st.number_input(
-                    "Reps",
-                    min_value=1,
-                    max_value=100,
-                    value=st.session_state.exercise_logs[exercise_key]["sets"][set_idx]["reps"],
-                    key=f"reps_{exercise_key}_{set_idx}",
-                    label_visibility="collapsed",
-                )
-                st.session_state.exercise_logs[exercise_key]["sets"][set_idx]["reps"] = reps
-
-            with col4:
-                if st.session_state[timer_running_key]:
-                    timer_end = st.session_state.get(timer_end_key)
-                    remaining = max(0, int(timer_end - time.time())) if timer_end else 0
-                    if remaining > 0:
-                        timer_dom_id = f"rest_timer_{exercise_key}_{set_idx}".replace(
-                            " ", "_"
-                        ).replace("-", "_")
-                        st.components.v1.html(
-                            f"""
-                        <div style="text-align: center; font-weight: bold; color: #667eea; padding-top: 2px;">
-                            <span id="{timer_dom_id}">{remaining}s</span>
-                        </div>
-                        <script>
-                        const timerId = "{timer_dom_id}";
-                        const timerEl = document.getElementById(timerId);
-                        const endTime = {int(timer_end)};
-                        window.__chatptTimerCompletionSent = window.__chatptTimerCompletionSent || {{}};
-                        window.__chatptTimerIntervals = window.__chatptTimerIntervals || {{}};
-                        const clearTimerInterval = () => {{
-                            if (window.__chatptTimerIntervals[timerId]) {{
-                                window.clearInterval(window.__chatptTimerIntervals[timerId]);
-                                delete window.__chatptTimerIntervals[timerId];
-                            }}
-                        }};
-                        const updateTimer = () => {{
-                            if (!timerEl || !endTime) {{
-                                clearTimerInterval();
-                                return;
-                            }}
-                            const now = Math.floor(Date.now() / 1000);
-                            const secsRemaining = Math.max(0, endTime - now);
-                            timerEl.textContent = `${{secsRemaining}}s`;
-                            if (secsRemaining <= 0 && !window.__chatptTimerCompletionSent[timerId]) {{
-                                window.__chatptTimerCompletionSent[timerId] = true;
-                                clearTimerInterval();
-                                window.setTimeout(() => {{
-                                    window.parent.postMessage({{ isStreamlitMessage: true, type: "streamlit:rerunScript" }}, "*");
-                                }}, 250);
-                            }}
-                        }};
-                        clearTimerInterval();
-                        updateTimer();
-                        window.__chatptTimerIntervals[timerId] = window.setInterval(updateTimer, 1000);
-                        </script>
-                        """,
-                            height=30,
-                        )
-                    else:
-                        st.session_state[timer_running_key] = False
-                        st.rerun()
-                elif st.session_state.exercise_logs[exercise_key]["sets"][set_idx]["completed"]:
-                    if st.button(
-                        "✅",
-                        key=f"done_{timer_key}",
-                        use_container_width=True,
-                        help="Set Completed - Click to Reset",
-                    ):
-                        st.session_state.exercise_logs[exercise_key]["sets"][set_idx][
-                            "completed"
-                        ] = False
-                        st.rerun()
-                else:
-                    if st.button(
-                        "⏱️",
-                        key=f"start_{timer_key}",
-                        use_container_width=True,
-                        help="Start Rest Timer",
-                    ):
-                        st.session_state[timer_running_key] = True
-                        st.session_state[timer_end_key] = time.time() + rest_seconds
-                        st.session_state.exercise_logs[exercise_key]["sets"][set_idx][
-                            "completed"
-                        ] = True
-                        st.rerun()
-
-            st.markdown("<hr style='margin: 0.2rem 0; opacity: 0.1;'>", unsafe_allow_html=True)
-
-        with st.expander("📝 Optional notes for this exercise", expanded=False):
-            exercise_notes = st.text_area(
-                "Exercise notes",
-                value=st.session_state.exercise_logs[exercise_key].get("exercise_notes", ""),
-                key=f"exercise_notes_{exercise_key}",
-                placeholder="How did this exercise feel? Form notes, RPE, etc.",
-                label_visibility="collapsed",
+            # Add marker for scoped CSS so these columns stay horizontal and compact
+            st.markdown(
+                '<div class="workout-grid-marker" style="display:none;"></div>',
+                unsafe_allow_html=True,
             )
-            st.session_state.exercise_logs[exercise_key]["exercise_notes"] = exercise_notes
 
-        st.markdown("<div style='margin-bottom: 0.25rem;'></div>", unsafe_allow_html=True)
+            # Grid layout for sets with weight input
+            # Parse sets - handle ranges like "3-4" by taking the lower bound
+            sets_value = exercise.get("sets", 3)
+            if isinstance(sets_value, str):
+                if "-" in sets_value:
+                    try:
+                        num_sets = int(sets_value.split("-")[0])
+                    except Exception:
+                        num_sets = 3
+                else:
+                    try:
+                        num_sets = int(sets_value)
+                    except Exception:
+                        num_sets = 3
+            else:
+                num_sets = int(sets_value) if isinstance(sets_value, (int, float)) else 3
+
+            # Initialize logs for this exercise
+            if exercise_key not in st.session_state.exercise_logs:
+                # Parse reps - handle ranges like "8-10" by taking the midpoint
+                reps_value = exercise.get("reps", 10)
+                if isinstance(reps_value, str):
+                    # Handle range like "8-10"
+                    if "-" in reps_value:
+                        try:
+                            parts = reps_value.split("-")
+                            default_reps = int((int(parts[0]) + int(parts[1])) / 2)
+                        except Exception:
+                            default_reps = 10
+                    else:
+                        try:
+                            default_reps = int(reps_value)
+                        except Exception:
+                            default_reps = 10
+                else:
+                    default_reps = int(reps_value) if isinstance(reps_value, (int, float)) else 10
+
+                st.session_state.exercise_logs[exercise_key] = {
+                    "sets": [
+                        {"reps": default_reps, "weight": 0.0, "completed": False}
+                        for _ in range(num_sets)
+                    ],
+                    "exercise_notes": "",
+                }
+
+            if "exercise_notes" not in st.session_state.exercise_logs[exercise_key]:
+                st.session_state.exercise_logs[exercise_key]["exercise_notes"] = ""
+
+            # Compact column header row — shown once per exercise
+            hcol1, hcol2, hcol3, hcol4 = st.columns([0.25, 0.7, 0.7, 0.5])
+            with hcol1:
+                st.markdown('<div class="compact-header">#</div>', unsafe_allow_html=True)
+            with hcol2:
+                st.markdown('<div class="compact-header">KG</div>', unsafe_allow_html=True)
+            with hcol3:
+                st.markdown('<div class="compact-header">REPS</div>', unsafe_allow_html=True)
+            with hcol4:
+                st.markdown('<div class="compact-header">⏱</div>', unsafe_allow_html=True)
+
+            # Display each set in a compact single-row layout: [#] [weight] [reps] [timer]
+            for set_idx in range(num_sets):
+                timer_key = f"timer_{exercise_key}_{set_idx}"
+                timer_running_key = f"timer_running_{timer_key}"
+                timer_end_key = f"timer_end_{timer_key}"
+
+                if timer_running_key not in st.session_state:
+                    st.session_state[timer_running_key] = False
+
+                # Single row for all set details: set#, weight, reps, timer
+                col1, col2, col3, col4 = st.columns([0.25, 0.7, 0.7, 0.5])
+
+                with col1:
+                    st.markdown(
+                        f'<div class="set-circle">{set_idx + 1}</div>',
+                        unsafe_allow_html=True,
+                    )
+
+                with col2:
+                    weight = st.number_input(
+                        "Weight",
+                        min_value=0.0,
+                        max_value=1000.0,
+                        step=2.5,
+                        value=st.session_state.exercise_logs[exercise_key]["sets"][set_idx][
+                            "weight"
+                        ],
+                        key=f"weight_{exercise_key}_{set_idx}",
+                        label_visibility="collapsed",
+                    )
+                    st.session_state.exercise_logs[exercise_key]["sets"][set_idx]["weight"] = weight
+
+                with col3:
+                    reps = st.number_input(
+                        "Reps",
+                        min_value=1,
+                        max_value=100,
+                        value=st.session_state.exercise_logs[exercise_key]["sets"][set_idx]["reps"],
+                        key=f"reps_{exercise_key}_{set_idx}",
+                        label_visibility="collapsed",
+                    )
+                    st.session_state.exercise_logs[exercise_key]["sets"][set_idx]["reps"] = reps
+
+                with col4:
+                    if st.session_state[timer_running_key]:
+                        timer_end = st.session_state.get(timer_end_key)
+                        remaining = max(0, int(timer_end - time.time())) if timer_end else 0
+                        if remaining > 0:
+                            timer_dom_id = f"rest_timer_{exercise_key}_{set_idx}".replace(
+                                " ", "_"
+                            ).replace("-", "_")
+                            st.components.v1.html(
+                                f"""
+                            <div style="text-align: center; font-weight: bold; color: #667eea; padding-top: 2px;">
+                                <span id="{timer_dom_id}">{remaining}s</span>
+                            </div>
+                            <script>
+                            const timerId = "{timer_dom_id}";
+                            const timerEl = document.getElementById(timerId);
+                            const endTime = {int(timer_end)};
+                            window.__chatptTimerCompletionSent = window.__chatptTimerCompletionSent || {{}};
+                            window.__chatptTimerIntervals = window.__chatptTimerIntervals || {{}};
+                            const clearTimerInterval = () => {{
+                                if (window.__chatptTimerIntervals[timerId]) {{
+                                    window.clearInterval(window.__chatptTimerIntervals[timerId]);
+                                    delete window.__chatptTimerIntervals[timerId];
+                                }}
+                            }};
+                            const updateTimer = () => {{
+                                if (!timerEl || !endTime) {{
+                                    clearTimerInterval();
+                                    return;
+                                }}
+                                const now = Math.floor(Date.now() / 1000);
+                                const secsRemaining = Math.max(0, endTime - now);
+                                timerEl.textContent = `${{secsRemaining}}s`;
+                                if (secsRemaining <= 0 && !window.__chatptTimerCompletionSent[timerId]) {{
+                                    window.__chatptTimerCompletionSent[timerId] = true;
+                                    clearTimerInterval();
+                                    window.setTimeout(() => {{
+                                        window.parent.postMessage({{ isStreamlitMessage: true, type: "streamlit:rerunScript" }}, "*");
+                                    }}, 250);
+                                }}
+                            }};
+                            clearTimerInterval();
+                            updateTimer();
+                            window.__chatptTimerIntervals[timerId] = window.setInterval(updateTimer, 1000);
+                            </script>
+                            """,
+                                height=30,
+                            )
+                        else:
+                            st.session_state[timer_running_key] = False
+                            st.rerun()
+                    elif st.session_state.exercise_logs[exercise_key]["sets"][set_idx]["completed"]:
+                        if st.button(
+                            "✅",
+                            key=f"done_{timer_key}",
+                            use_container_width=True,
+                            help="Set Completed - Click to Reset",
+                        ):
+                            st.session_state.exercise_logs[exercise_key]["sets"][set_idx][
+                                "completed"
+                            ] = False
+                            st.rerun()
+                    else:
+                        if st.button(
+                            "⏱️",
+                            key=f"start_{timer_key}",
+                            use_container_width=True,
+                            help="Start Rest Timer",
+                        ):
+                            st.session_state[timer_running_key] = True
+                            st.session_state[timer_end_key] = time.time() + rest_seconds
+                            st.session_state.exercise_logs[exercise_key]["sets"][set_idx][
+                                "completed"
+                            ] = True
+                            st.rerun()
+
+                st.markdown("<hr style='margin: 0.1rem 0; opacity: 0.08;'>", unsafe_allow_html=True)
+
+            with st.expander("📝 Notes", expanded=False):
+                exercise_notes = st.text_area(
+                    "Exercise notes",
+                    value=st.session_state.exercise_logs[exercise_key].get("exercise_notes", ""),
+                    key=f"exercise_notes_{exercise_key}",
+                    placeholder="How did this exercise feel? Form notes, RPE, etc.",
+                    label_visibility="collapsed",
+                )
+                st.session_state.exercise_logs[exercise_key]["exercise_notes"] = exercise_notes
+
+            st.markdown("<div style='margin-bottom: 0.25rem;'></div>", unsafe_allow_html=True)
 
         # Increment display index after processing each group
         display_idx += 1
