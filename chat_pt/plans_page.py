@@ -211,7 +211,7 @@ def render():
         }
 
         /* =====================================================================
-           SCOPED: exercise meta row — sets×reps | rest | swap | info.
+           SCOPED: exercise meta row — sets x reps | rest | swap | info.
            Target horizontal blocks that contain the marker .plans-exercise-meta.
            Kills Streamlit's mobile min-width:calc(100%-24px) so cols stay on one row.
            ===================================================================== */
@@ -234,7 +234,7 @@ def render():
             flex-shrink: 1 !important;
         }
 
-        /* sets×reps (wider text) */
+        /* sets x reps (wider text) */
         div[data-testid="stHorizontalBlock"]:has(.plans-exercise-meta) > div[data-testid="stColumn"]:nth-child(1) {
             flex: 2 1 0 !important;
             flex-basis: 0 !important;

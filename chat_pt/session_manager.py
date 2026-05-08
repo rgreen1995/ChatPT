@@ -158,6 +158,7 @@ def set_session_cookie(
     secret_key: Optional[str] = None,
     duration: int = DEFAULT_SESSION_DURATION,
     cookie_name: str = "chatpt_session",
+    current_page: Optional[str] = None,
 ) -> str:
     """
     Generate JavaScript to set a secure session cookie in the browser.
@@ -170,6 +171,7 @@ def set_session_cookie(
         secret_key: Secret key for HMAC signing. Uses default if None.
         duration: Token validity duration in seconds.
         cookie_name: Name of the cookie.
+        current_page: Current app page to save in localStorage for restoration.
 
     Returns:
     -------
@@ -183,12 +185,23 @@ def set_session_cookie(
     escaped_token = token.replace("\\", "\\\\").replace("'", "\\'")
     escaped_name = cookie_name.replace("\\", "\\\\").replace("'", "\\'")
 
+    page_js = ""
+    if current_page:
+        escaped_page = current_page.replace("\\", "\\\\").replace("'", "\\'")
+        # Save as both a cookie (readable server-side via st.context.cookies) and
+        # localStorage (client-side fallback).
+        page_js = (
+            f"rootDoc.cookie = 'chatpt_page={escaped_page}; path=/; max-age={max_age}; SameSite=Lax';"
+            f"rootWindow.localStorage.setItem('chatpt_page', '{escaped_page}');"
+        )
+
     js = f"""
     <script>
     try {{
-        const rootDoc = (window.parent && window.parent !== window)
-            ? window.parent.document : document;
+        const rootWindow = (window.parent && window.parent !== window) ? window.parent : window;
+        const rootDoc = rootWindow.document;
         rootDoc.cookie = '{escaped_name}={escaped_token}; path=/; max-age={max_age}; SameSite=Lax';
+        {page_js}
     }} catch (e) {{}}
     </script>
     """
@@ -262,6 +275,10 @@ def read_session_cookie_js(cookie_name: str = "chatpt_session") -> str:
             if (!urlParams.has('restore_session')) {{
                 const url = new URL(rootWindow.location);
                 url.searchParams.set('restore_session', sessionToken);
+                try {{
+                    const savedPage = rootWindow.localStorage.getItem('chatpt_page');
+                    if (savedPage) url.searchParams.set('restore_page', savedPage);
+                }} catch (e) {{}}
                 rootWindow.location.href = url.toString();
             }}
         }}

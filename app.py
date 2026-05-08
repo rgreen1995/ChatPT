@@ -10,7 +10,6 @@ from chat_pt.db_interface import (
 )
 from chat_pt.session_manager import (
     clear_session_cookie,
-    read_session_cookie_js,
     restore_session_from_token,
     set_session_cookie,
 )
@@ -207,7 +206,8 @@ def go_back():
 
 def persist_auth_cookie(user_id: int, user_name: str, user_email: str):
     """Persist auth data in a signed browser cookie for session recovery."""
-    js = set_session_cookie(user_id, user_name, user_email)
+    current_page = st.session_state.get("page", "home")
+    js = set_session_cookie(user_id, user_name, user_email, current_page=current_page)
     st.components.v1.html(js, height=0)
 
 
@@ -215,14 +215,6 @@ def clear_auth_cookie():
     """Clear persisted auth cookie from the browser."""
     js = clear_session_cookie()
     st.components.v1.html(js, height=0)
-
-
-def _query_param_scalar(query_params, key, default=None):
-    """Return query param as scalar string for compatibility across Streamlit versions."""
-    value = query_params.get(key, default)
-    if isinstance(value, list):
-        return value[0] if value else default
-    return value
 
 
 if st.session_state.get("scroll_to_top"):
@@ -246,27 +238,25 @@ if st.session_state.user_id is not None:
         st.session_state.user_email or "",
     )
 
-# Check for stored auth cookie on first load OR if session was lost
-if st.session_state.user_id is None:
-    # Inject JS that reads the session cookie and redirects with ?restore_session=<token>
-    st.components.v1.html(read_session_cookie_js(), height=0)
-
-    # Check query params for cookie-based session restore
+# Check for stored auth cookie on first load OR if session was lost.
+# Cookies written by JS are sent with every HTTP request, so st.context.cookies
+# gives us server-side access without any JS redirect dance.
+# Skip if the user just logged out — st.context.cookies still holds the original
+# request cookies until the browser makes a fresh HTTP request.
+if st.session_state.user_id is None and not st.session_state.get("logged_out"):
     try:
-        query_params = st.query_params
-        restore_token = _query_param_scalar(query_params, "restore_session")
-        if restore_token:
-            session_data = restore_session_from_token(
-                restore_token, validate_user_fn=get_user_by_id
-            )
+        cookie_token = st.context.cookies.get("chatpt_session")
+        if cookie_token:
+            session_data = restore_session_from_token(cookie_token, validate_user_fn=get_user_by_id)
             if session_data:
                 st.session_state.user_id = session_data["user_id"]
                 st.session_state.user_name = session_data["user_name"]
                 st.session_state.user_email = session_data["user_email"]
                 st.session_state.auth_checked = True
                 st.session_state.scroll_to_top = True
-                # Clear query params
-                st.query_params.clear()
+                saved_page = st.context.cookies.get("chatpt_page")
+                if saved_page:
+                    st.session_state.page = saved_page
                 st.rerun()
     except Exception:
         pass
@@ -435,6 +425,10 @@ with st.sidebar:
                 del st.session_state.messages
             if "workout_plan" in st.session_state:
                 del st.session_state.workout_plan
+            # Prevent the cookie restoration from immediately re-logging in
+            # (st.context.cookies still holds the original request cookies until
+            # the browser makes a fresh HTTP request with the expired cookie).
+            st.session_state.logged_out = True
             st.rerun()
 
         st.markdown("---")

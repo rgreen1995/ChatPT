@@ -23,17 +23,19 @@ def test_plans_page_css_injection():
                                 arg = call[0][0]
                                 if "<style>" in arg:
                                     called_with_style = True
-                                    # Verify key parts of the new CSS
-                                    assert (
-                                        "/* ===== BUTTON — compact on all screen sizes ===== */"
-                                        in arg
-                                    )
+                                    # Verify key parts of the minimal, non-intrusive CSS.
+                                    assert "/* Button tightening (safe, global) */" in arg
                                     assert ".stButton button {" in arg
-                                    assert "min-height: 2.2rem !important;" in arg
+                                    assert "min-height: 2.4rem !important;" in arg
+                                    # flex overrides must be scoped to the marker class,
+                                    # not applied globally to every stHorizontalBlock.
                                     assert (
-                                        "/* ===== MOBILE-SPECIFIC TIGHTENING (portrait) ===== */"
+                                        'div[data-testid="stHorizontalBlock"]:has(.plans-exercise-meta)'
                                         in arg
                                     )
+                                    # Global (unscoped) overrides that hurt mobile layout must stay absent.
+                                    assert "overflow-x: hidden !important" not in arg
+                                    assert "max-width: 100vw !important" not in arg
                                     break
 
                             assert (
@@ -80,11 +82,15 @@ def test_plans_page_column_ratios():
 
                                 render()
 
-                                # Check column ratios for exercise row
-                                # We expect st.columns([4, 2, 1.5, 1.5]) to be called
+                                # Check column ratios for exercise row.
+                                # Mobile layout fix: each exercise now uses a two-row layout.
+                                # Row 1 is the exercise name (no columns); row 2 uses
+                                # [2, 2, 1, 1] for meta | rest | swap | info.
                                 ratios_found = []
                                 for call in mock_columns.call_args_list:
                                     if isinstance(call[0][0], list):
                                         ratios_found.append(call[0][0])
 
-                                assert [4, 2, 1.5, 1.5] in ratios_found
+                                assert [2, 2, 1, 1] in ratios_found
+                                # The old wide-name single-row ratio must no longer be used.
+                                assert [4, 2, 1.5, 1.5] not in ratios_found

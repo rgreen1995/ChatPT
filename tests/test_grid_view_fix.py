@@ -24,22 +24,20 @@ def test_render_css_content():
                 ), "render() should call st.markdown with a <style> block"
 
                 # Compact, workout-scoped rules should be present
-                assert ".workout-grid-marker" in style_arg
-                assert ":has(.workout-grid-marker)" in style_arg
+                assert ".chatpt-log-row" in style_arg
+                assert ":has(.chatpt-log-row)" in style_arg
                 assert ".exercise-header-compact" in style_arg
                 assert ".compact-header" in style_arg
                 assert ".set-circle" in style_arg
 
-                # Orientation-agnostic: should NOT be gated solely behind a portrait media query
-                # The old portrait-only block was `@media (max-width: 640px)` wrapping all tightening.
-                # Compact styles must apply outside any media query as well.
+                # Scoped to horizontal blocks containing the row marker (not a vertical block).
                 assert (
-                    'div[data-testid="stVerticalBlock"]:has(.workout-grid-marker) .stNumberInput'
+                    '[data-testid="stHorizontalBlock"]:has(.chatpt-log-row) .stNumberInput'
                     in style_arg
                 )
 
-                # Landscape-aware page padding rule added in the redesign
-                assert "orientation: landscape" in style_arg
+                # Mobile override keeps rows horizontal at small widths.
+                assert "@media (max-width: 640px)" in style_arg
 
 
 def test_render_log_workout_column_ratios():

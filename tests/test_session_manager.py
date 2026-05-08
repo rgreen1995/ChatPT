@@ -183,6 +183,28 @@ class TestSetSessionCookie:
         assert result is not None
         assert result["user_id"] == 1
 
+    def test_with_current_page_saves_to_localstorage(self):
+        """When current_page is given the JS should save it to localStorage."""
+        js = set_session_cookie(
+            1, "Alice", "alice@example.com", secret_key=SECRET, current_page="workout_logging"
+        )
+        assert "localStorage.setItem" in js
+        assert "chatpt_page" in js
+        assert "workout_logging" in js
+
+    def test_without_current_page_no_localstorage(self):
+        """When current_page is omitted the JS should not touch localStorage."""
+        js = set_session_cookie(1, "Alice", "alice@example.com", secret_key=SECRET)
+        assert "localStorage" not in js
+
+    def test_current_page_with_special_chars_is_escaped(self):
+        """Single quotes in page names should be escaped so JS doesn't break."""
+        js = set_session_cookie(
+            1, "Alice", "alice@example.com", secret_key=SECRET, current_page="it's a page"
+        )
+        # Raw single quote must not appear inside the JS string literal
+        assert "localStorage.setItem('chatpt_page', 'it\\'s a page')" in js
+
 
 class TestClearSessionCookie:
 
@@ -224,6 +246,17 @@ class TestReadSessionCookieJs:
         """The JS should redirect with a restore_session query param."""
         js = read_session_cookie_js()
         assert "restore_session" in js
+
+    def test_reads_page_from_localstorage(self):
+        """The JS should read the saved page from localStorage."""
+        js = read_session_cookie_js()
+        assert "localStorage.getItem" in js
+        assert "chatpt_page" in js
+
+    def test_includes_restore_page_param(self):
+        """The JS should append restore_page to the redirect URL."""
+        js = read_session_cookie_js()
+        assert "restore_page" in js
 
 
 class TestRestoreSessionFromToken:
